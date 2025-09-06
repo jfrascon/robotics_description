@@ -1,0 +1,263 @@
+<?xml version="1.0"?>
+<!--
+The mecanum_rectangular_base macro defines a rectangular robot base composed of a single rectangular body and four
+mecanum wheels, fully configurable in terms of physical properties, mesh geometry, color, and contact dynamics.
+
+This macro defines the following links and joints:
+  - Links:
+    - ${prefix}${base_name}_footprint_link
+    - ${prefix}${base_name}_link
+    - ${prefix}${front_left_wheel_name}_link
+    - ${prefix}${front_right_wheel_name}_link
+    - ${prefix}${rear_left_wheel_name}_link
+    - ${prefix}${rear_right_wheel_name}_link
+  * Joints:
+    - ${prefix}${base_name}_joint
+    - ${prefix}${front_left_wheel_name}_joint
+    - ${prefix}${front_right_wheel_name}_joint
+    - ${prefix}${rear_left_wheel_name}_joint
+    - ${prefix}${rear_right_wheel_name}_joint
+
+The base body is a box whose dimensions and mass are specified by the parameters 'body_mass' and
+'body_size = bosy_size_x body_size_y body_size_z'.
+
+A mesh can be optionally applied for visualization via the 'body_mesh_visual' parameter, and can be independently scaled along
+each axis using 'base_scale_x', 'base_scale_y', and 'base_scale_z'. The collision geometry can either follow the mesh or
+remain as a box, depending on 'use_base_mesh_for_collision'.
+
+Each wheel is generated using the 'mecanum_wheel' macro, with physical parameters such as 'mecanum_wheel_mass', 'mecanum_wheel_radius',
+and 'mecanum_wheel_thickness'. Left and right wheels can use separate meshes ('left_mecanum_wheel_mesh', 'right_mecanum_wheel_mesh') to account
+for asymmetry in roller orientation. Mesh scaling is controlled by 'mecanum_wheel_radius_scale' and 'mecanum_wheel_thickness_scale'.
+
+THE BASE MESH AND THE WHEEL MESHES ARE EXPECTED TO BE CENTERED AT ITS INNER FRAME. IF NO MESHES ARE PROVIDED, THE VISUAL
+AND COLLISION GEOMETRIES ARE MODELED AS A BOX AND CYLINDERS WITH THE GIVEN DIMENSIONS.
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS', 'SIZE', 'RADIUS' AND 'THICKNESS' PARAMETERS THAT REPRESENT
+THE PHYSICAL PROPERTIES OF THE BASE AND THE WHEELS. THIS IS, THE 'SCALE', 'SCALE_RADIUS' AND 'SCALE_THICKNESS'
+PARAMETERS ARE NOT USED TO SCALE EITHER THE MASS OR THE SIZE OF THE BASE OR THE WHEELS, THEY ARE ONLY USED TO SCALE THE
+MESHES, IF MESHES ARE PROVIDED.
+
+Wheel-ground interaction is modeled with detailed Gazebo physics: contact stiffness ('wheel_kp'), damping (computed
+automatically for critical damping), friction coefficients ('mecanum_wheel_mu_forward' and 'mecanum_wheel_mu_lateral'), penetration threshold, and
+correction velocity. These ensure numerically stable omnidirectional behavior in simulation. By default, the plugin
+parameters are tuned for high-fidelity mecanum kinematics with rolling and sliding modeled separately.
+
+All wheel joints are continuous and parameterized with high torque and velocity limits, configurable via
+'mecanum_wheel_effort_limit' and 'mecanum_wheel_velocity_limit'. These are intended for simulation of ideal actuators; realistic limits
+ should be provided for physically accurate behavior.
+
+The macro does not define the spatial layout of the joints and links by itself. Instead, it expects the user to provide
+the necessary origin tags through the blocks: '*joint_footprint_frame_base_frame',
+'*joint_base_frame_front_left_wheel_frame', and so on. This design allows precise control over wheel placement and base
+pose within larger robot descriptions.
+-->
+<robot name="mecanum_r_base" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="mecanum_r_base"
+                params="base_name:=base
+                        front_left_wheel_name:='front_left_wheel'
+                        front_right_wheel_name:='front_right_wheel'
+                        rear_left_wheel_name:='rear_left_wheel'
+                        rear_right_wheel_name:='rear_right_wheel'
+                        prefix
+                        body_mass
+                        body_size
+                        body_wheelbase
+                        body_track_width
+                        body_ground_clearance
+                        body_mesh_visual:=''
+                        body_mesh_visual_has_color:=False
+                        body_mesh_collision:=''
+                        body_scale:='1 1 1'
+                        body_color='0 0 0 1'
+                        mecanum_wheel_mass
+                        mecanum_wheel_size
+                        mecanum_wheel_velocity_limit:=100
+                        mecanum_wheel_effort_limit:=100000
+                        mecanum_wheel_mu_forward:=1.0
+                        mecanum_wheel_mu_lateral:=0.05
+                        mecanum_wheel_slip_forward:=0.05
+                        mecanum_wheel_slip_lateral:=0.35
+                        mecanum_wheel_mesh_visual_left
+                        mecanum_wheel_mesh_visual_right
+                        mecanum_wheel_mesh_visual_has_color:=False
+                        mecanum_wheel_scale:='1 1 1'
+                        mecanum_wheel_color='1 1 1 1'">
+
+
+    <!-- INCLUDES -->
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/wheels/mecanum_wheel_macro.xacro"/>
+
+
+    <!-- RECTANGULAR BASE -->
+
+    <!--
+    Definition of the joint:
+    - Joint '${prefix}${base_name}_joint', joining the link '${prefix}${base_name}_footprint_link' with the link
+      '${prefix}${base_name}_link'.
+    -->
+
+    <xacro:property name="body_size_lst" value="${body_size.split()}"/>
+    <xacro:property name="body_size_x"   value="${body_size_lst[0]}"/>
+    <xacro:property name="body_size_y"   value="${body_size_lst[1]}"/>
+    <xacro:property name="body_size_z"   value="${body_size_lst[2]}"/>
+
+    <!--
+    Definition of the link ${prefix}${base_name}_footprint_link.
+    KDL does not support a root link with an inertia.
+    -->
+    <link name="${prefix}${base_name}_footprint_link"/>
+
+    <!--
+    Definition of the link '${prefix}${base_name}_link'.
+
+    Convention:
+    vci_pose: The link '${prefix}${base_name}_link' is located in the center of the bottom face of the rectangular base.
+    -->
+
+    <xacro:link_r
+      name="${base_name}"
+      prefix="${prefix}"
+      use_visual="True"
+      use_collision="True"
+      use_inertia="True"
+      mass="${body_mass}"
+      size="${body_size}"
+      mesh_visual="${body_mesh_visual}"
+      mesh_visual_has_color="${body_mesh_visual_has_color}"
+      mesh_collision="${body_mesh_collision}"
+      scale="${body_scale}"
+      color="${body_color}"
+      vci_pose="0 0 ${body_size_z * 0.5} 0 0 0"/>
+
+
+    <!--
+    Definition of the joint '${prefix}${base_name}_joint', joining the link '${prefix}${base_name}_footprint_link'
+    with the link '${prefix}${base_name}_link'.
+
+    Convention:
+
+    The link '${prefix}${base_name}_footprint_link' is located on the ground, just below the link
+    '${prefix}${base_name}_link'. Another way to see is, the link '${prefix}${base_name}_footprint_link' is located on
+    the ground, and the link '${prefix}${base_name}_link' is just over it, at a height of 'body_ground_clearance.
+
+    -->
+
+    <joint name="${prefix}${base_name}_joint" type="fixed">
+      <parent link="${prefix}${base_name}_footprint_link"/>
+      <child link="${prefix}${base_name}_link"/>
+      <origin rpy="0 0 0" xyz="0 0 ${body_ground_clearance}"/>
+    </joint>
+
+    <!-- MECANUM WHEELS -->
+
+    <!--
+    Definition of the links:
+    - Link '${prefix}${front_left_wheel_name}_link'
+    - Link '${prefix}${front_right_wheel_name}_link'
+    - Link '${prefix}${rear_left_wheel_name}_link'
+    - Link '${prefix}${rear_right_wheel_name}_link'
+
+    Definition of the joints:
+    - Joint '${prefix}${front_left_wheel_name}_joint', joining the link '${prefix}${base_name}_link' with the link
+      '${prefix}${front_left_wheel_name}_link'.
+    - Joint '${prefix}${front_right_wheel_name}_joint', joining the link '${prefix}${base_name}_link' with the link
+      '${prefix}${front_right_wheel_name}_link'.
+    - Joint '${prefix}${rear_left_wheel_name}_joint', joining the link '${prefix}${base_name}_link' with the link
+      '${prefix}${rear_left_wheel_name}_link'.
+    - Joint '${prefix}${rear_right_wheel_name}_joint', joining the link '${prefix}${base_name}_link' with the link
+      '${prefix}${rear_right_wheel_name}_link'.
+    -->
+
+    <xacro:property name="half_wheelbase"   value="${body_wheelbase * 0.5}"/>
+    <xacro:property name="half_track_width" value="${body_track_width * 0.5}"/>
+
+    <!--
+    A wheel is a cylinder with its axis along the y-axis, which means that:
+    size_x = 2*radius, size_y = thickness, size_z = 2*radius
+    -->
+    <xacro:property name="mecanum_wheel_radius" value="${0.5 * float(mecanum_wheel_size.split()[0])}"/>
+    <xacro:property name="z_wheel"              value="${-body_ground_clearance + mecanum_wheel_radius}"/>
+
+    <xacro:mecanum_wheel
+      name="${front_left_wheel_name}"
+      prefix="${prefix}"
+      parent_frame="${prefix}${base_name}_link"
+      mass="${mecanum_wheel_mass}"
+      size="${mecanum_wheel_size}"
+      velocity_limit="${mecanum_wheel_velocity_limit}"
+      effort_limit="${mecanum_wheel_effort_limit}"
+      mu_forward="${mecanum_wheel_mu_forward}"
+      mu_lateral="${mecanum_wheel_mu_lateral}"
+      slip_forward="${mecanum_wheel_slip_forward}"
+      slip_lateral="${mecanum_wheel_slip_lateral}"
+      mesh_visual="${mecanum_wheel_mesh_visual_left}"
+      mesh_visual_has_color="${mecanum_wheel_mesh_visual_has_color}"
+      scale="${mecanum_wheel_scale}"
+      color="${mecanum_wheel_color}"
+      joint_parent_fr_wheel_fr="${half_wheelbase} ${half_track_width} ${z_wheel} 0 0 0"
+      base_root_fr="${prefix}${base_name}_footprint_link"
+      fdir1_base_root_fr="${cos(radians(-45))} ${sin(radians(-45))} 0"/>
+
+    <xacro:mecanum_wheel
+      name="${front_right_wheel_name}"
+      prefix="${prefix}"
+      parent_frame="${prefix}${base_name}_link"
+      mass="${mecanum_wheel_mass}"
+      size="${mecanum_wheel_size}"
+      velocity_limit="${mecanum_wheel_velocity_limit}"
+      effort_limit="${mecanum_wheel_effort_limit}"
+      mu_forward="${mecanum_wheel_mu_forward}"
+      mu_lateral="${mecanum_wheel_mu_lateral}"
+      slip_forward="${mecanum_wheel_slip_forward}"
+      slip_lateral="${mecanum_wheel_slip_lateral}"
+      mesh_visual="${mecanum_wheel_mesh_visual_right}"
+      mesh_visual_has_color="${mecanum_wheel_mesh_visual_has_color}"
+      scale="${mecanum_wheel_scale}"
+      color="${mecanum_wheel_color}"
+      joint_parent_fr_wheel_fr="${half_wheelbase} ${-half_track_width} ${z_wheel} 0 0 0"
+      base_root_fr="${prefix}${base_name}_footprint_link"
+      fdir1_base_root_fr="${cos(radians(45))} ${sin(radians(45))} 0"/>
+
+    <xacro:mecanum_wheel
+      name="${rear_left_wheel_name}"
+      prefix="${prefix}"
+      parent_frame="${prefix}${base_name}_link"
+      mass="${mecanum_wheel_mass}"
+      size="${mecanum_wheel_size}"
+      velocity_limit="${mecanum_wheel_velocity_limit}"
+      effort_limit="${mecanum_wheel_effort_limit}"
+      mu_forward="${mecanum_wheel_mu_forward}"
+      mu_lateral="${mecanum_wheel_mu_lateral}"
+      slip_forward="${mecanum_wheel_slip_forward}"
+      slip_lateral="${mecanum_wheel_slip_lateral}"
+      mesh_visual="${mecanum_wheel_mesh_visual_right}"
+      mesh_visual_has_color="${mecanum_wheel_mesh_visual_has_color}"
+      scale="${mecanum_wheel_scale}"
+      color="${mecanum_wheel_color}"
+      joint_parent_fr_wheel_fr="${-half_wheelbase} ${half_track_width} ${z_wheel} 0 0 0"
+      base_root_fr="${prefix}${base_name}_footprint_link"
+      fdir1_base_root_fr="${cos(radians(45))} ${sin(radians(45))} 0"/>
+
+    <xacro:mecanum_wheel
+      name="${rear_right_wheel_name}"
+      prefix="${prefix}"
+      parent_frame="${prefix}${base_name}_link"
+      mass="${mecanum_wheel_mass}"
+      size="${mecanum_wheel_size}"
+      velocity_limit="${mecanum_wheel_velocity_limit}"
+      effort_limit="${mecanum_wheel_effort_limit}"
+      mu_forward="${mecanum_wheel_mu_forward}"
+      mu_lateral="${mecanum_wheel_mu_lateral}"
+      slip_forward="${mecanum_wheel_slip_forward}"
+      slip_lateral="${mecanum_wheel_slip_lateral}"
+      mesh_visual="${mecanum_wheel_mesh_visual_left}"
+      mesh_visual_has_color="${mecanum_wheel_mesh_visual_has_color}"
+      scale="${mecanum_wheel_scale}"
+      color="${mecanum_wheel_color}"
+      joint_parent_fr_wheel_fr="${-half_wheelbase} ${-half_track_width} ${z_wheel} 0 0 0"
+      base_root_fr="${prefix}${base_name}_footprint_link"
+      fdir1_base_root_fr="${cos(radians(-45))} ${sin(radians(-45))} 0"/>
+  </xacro:macro>
+</robot>

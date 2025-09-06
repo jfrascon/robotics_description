@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<!--
+The lidar_body macro defines the links:
+  - '${prefix}${name}_root_link', used to attach the sensor to the robot body.
+  - '${prefix}${name}_link', where the sensor data is generated.
+and the joints:
+  - '${prefix}${name}_root_joint', a fixed joint connecting the root link to the parent frame.
+  - '${prefix}${name}_joint', a fixed joint connecting the data link to the root link.
+
+Parameters:
+- name has 1 value.
+- mass has 1 value, expressed in kg.
+- shape is a string representing the shape of the lidar. It can be:
+  shape='r  sx        sy        sz'        -> box
+  shape='cx thickness 2*radius  2*radius'  -> cylinder along x axis
+  shape='cy 2*radius  thickness 2*radius'  -> cylinder along y axis
+  shape='cz 2*radius  2*radius  thickness' -> cylinder along z axis
+  shape='s  2*radius  2*radius  2*radius'  -> sphere
+- mesh_visual has 1 value, a string with the path to the visual mesh file.
+- mesh_visual_has_color has 1 boolean value, True if the visual mesh has its own colors, False otherwise. If a mesh is
+provided in 'mesh_visual' and this parameter is False, the color provided in the parameter 'color' is used to color the
+visual mesh.
+- mesh_collision has 1 value, a string with the path to the collision mesh file.
+
+IMPORTANT
+
+THE MESHES ARE EXPECTED TO BE CENTERED AT ITS INNER FRAME.
+IF BOTH MESHES ARE PROVIDED, FOR VISUAL AND COLLISION ELEMENTS, THEY MUST HAVE THE SAME SHAPE AND DIMENSIONS.
+WHEN A MESH IS NOT PROVIDED, THE PROPER ELEMENT, VISUAL OR COLLISION IS MODELED USING THE PRIMITIVE DEFINED IN 'SHAPE',
+USING THE DIMENSIONS PROVIDED IN THAT PARAMETER.
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS' AND 'SIZE' PARAMETERS THAT REPRESENT THE REAL PHYSICAL
+PROPERTIES OF THE LIDAR. THIS IS, THE 'SCALE' PARAMETERS ARE NOT USED TO SCALE EITHER THE 'MASS' OR THE 'SIZE' OF THE
+LIDAR, THEY ARE ONLY USED TO SCALE THE MESHES.
+
+- scale has 3 values between quotes in this order 'scale_x scale_y scale_z', expressed in meters.
+- color has 4 values between quotes in this order 'R G B A', each value between 0 and 1.
+
+IMPORTANT:
+
+A CONVENTION IS USED IN THIS MACRO, TO SET THE ROOT FRAME (ROOT_LINK) OF THE LIDAR AT THE CENTER OF ITS BOTTOM FACE.
+
+- joint_root_fr_data_fr has 6 values between quotes in this order 'x y z R P Y'
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+  Consequently, the parameter 'joint_root_fr_data_fr' represents the position and orientation of the data link
+  with respect to the root link, placed at the center of the bottom face of the lidar.
+
+- joint_parent_fr_root_fr ahs 6 values between quotes in this order 'x y z R P Y'
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+  The parameter 'joint_parent_fr_root_fr' represents the position and orientation of the root link
+  with respect to the parent frame.
+-->
+<robot name="lidar_body" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="lidar_body"
+               params="name
+                       prefix:=''
+                       namespace:=''
+                       parent_frame
+                       mass
+                       shape
+                       mesh_visual:=''
+                       mesh_visual_has_color:=False
+                       mesh_collision:=''
+                       scale:=''
+                       color:='1 1 1 1'
+                       joint_root_fr_data_fr
+                       joint_parent_fr_root_fr">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/set_shaped_link_macro.xacro"/>
+
+    <!--
+    Convention:
+    The root frame, '{prefix}{name}_root_link', is placed at the center of the bottom face of the lidar.
+    -->
+
+    <xacro:property name="shape_lst"  value="${shape.split()}"/>
+    <xacro:property name="vci_pose_z" value="${0.5 * float(shape_lst[3])}"/>
+
+    <xacro:set_shaped_link
+      name="${name}_root"
+      prefix="${prefix}"
+      use_visual="True"
+      use_collision="True"
+      use_inertia="True"
+      mass="${mass}"
+      shape="${shape}"
+      mesh_visual="${mesh_visual}"
+      mesh_visual_has_color="${mesh_visual_has_color}"
+      mesh_collision="${mesh_collision}"
+      scale="${scale}"
+      color="${color}"
+      vci_pose="0 0 ${vci_pose_z} 0 0 0"/>
+
+    <!--
+    Definition of the link ${prefix}${name}_link.
+    -->
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <!--
+    Abbreviate from 'joint_' to 'j_' to fit the rpy and xyz values in one line.
+    -->
+    <xacro:property name="j_root_fr_data_fr_lst" value="${joint_root_fr_data_fr.split()}"/>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="${j_root_fr_data_fr_lst[3]} ${j_root_fr_data_fr_lst[4]} ${j_root_fr_data_fr_lst[5]}"
+              xyz="${j_root_fr_data_fr_lst[0]} ${j_root_fr_data_fr_lst[1]} ${j_root_fr_data_fr_lst[2]}"/>
+    </joint>
+
+    <!--
+    Abbreviate from 'joint_' to 'j_' to fit the rpy and xyz values in one line.
+    -->
+    <xacro:property name="j_parent_fr_root_fr_lst" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${j_parent_fr_root_fr_lst[3]} ${j_parent_fr_root_fr_lst[4]} ${j_parent_fr_root_fr_lst[5]}"
+              xyz="${j_parent_fr_root_fr_lst[0]} ${j_parent_fr_root_fr_lst[1]} ${j_parent_fr_root_fr_lst[2]}"/>
+    </joint>
+  </xacro:macro>
+</robot>
+
+<!--
+old fragment, left here for reference
+-->
+<!--
+<xacro:if value="${condition}">
+  ${xacro.fatal('message')}
+</xacro:if>
+-->

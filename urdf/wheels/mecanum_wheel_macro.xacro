@@ -1,0 +1,189 @@
+<robot name="mecanum_wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="mecanum_wheel"
+               params="name
+                       prefix
+                       parent_frame
+                       mass
+                       size
+                       velocity_limit:=100
+                       effort_limit:=100000
+                       mu_forward:=1.0
+                       mu_lateral:=0.05
+                       slip_forward:=0.05
+                       slip_lateral:=0.35
+                       mesh_visual:=''
+                       mesh_visual_has_color:=False
+                       scale:=1.0
+                       color:='0 0 0 1'
+                       joint_parent_fr_wheel_fr
+                       base_root_fr
+                       fdir1_base_root_fr">
+    <!--
+    ============================================================================================
+    Explanation of default joint limits, effort_limit and velocity_limit.
+    ============================================================================================
+    The 'effort' and 'velocity' limits for this joint are intentionally set to extremely high, non-physical values.
+    This is a common and deliberate practice in simulation for a specific reason: to model an "ideal" actuator.
+
+    Why these default values (effort_limit:=100000 velocity_limit:=100)?
+    By setting virtually infinite limits, we ensure that the simulator's physics engine will never be the limiting
+    factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
+    trajectory following) without being constrained by the physical limitations of real-world motors.
+    In essence, we are testing the software logic in isolation.
+
+    Context for the default values:
+    effort_limit = "100000" (Unit: Newton-meters, N·m).
+    This represents the maximum torque the joint can apply. To put this into perspective, a high-performance
+    passenger car engine produces between 200-500 N·m of torque. A value of 100,000 N·m is more in the realm of
+    industrial cranes or ship engines. It is an astronomically high value for a robot wheel.
+
+    - velocity_limit = "100" (Unit: radians/second).
+    This translates to approximately 955 RPM (Revolutions Per Minute). For context, a typical educational robot
+    wheel (like a TurtleBot) spins at around 70-100 RPM. So, 955 RPM is extremely fast.
+
+    If you need a realistic simulation:
+    If your goal is to simulate dynamics that are faithful to a physical robot, you should replace these values with
+    the specifications from your actuator's datasheet. For a typical medium-sized mobile robot, realistic values would
+    be in the range of:
+    - Velocity: 10 to 30 rad/s
+    - Effort:   10 to 100 N·m
+    -->
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <!--
+    A wheel is a cylinder with its axis along the y-axis, which means that:
+    size_x = 2*radius, size_y = thickness, size_z = 2*radius
+    -->
+
+    <xacro:link_c
+      name="${name}"
+      prefix="${prefix}"
+      use_visual="True"
+      use_collision="True"
+      use_inertia="True"
+      mass="${mass}"
+      axis="y"
+      size="${size}"
+      mesh_visual="${mesh_visual}"
+      mesh_visual_has_color="${mesh_visual_has_color}"
+      mesh_collision=""
+      scale="${scale}"
+      color="${color}"
+      vci_pose="0 0 0 0 0 0"/>
+
+    <xacro:property name="j_wheel" value="${joint_parent_fr_wheel_fr.split()}"/>
+
+    <joint name="${prefix}${name}_joint" type="continuous">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="${j_wheel[3]} ${j_wheel[4]} ${j_wheel[5]}" xyz="${j_wheel[0]} ${j_wheel[1]} ${j_wheel[2]}"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="${effort_limit}" velocity="${velocity_limit}"/>
+    </joint>
+
+    <gazebo reference="${prefix}${name}_link">
+      <max_contacts>2</max_contacts> <!-- Default is 10 -->
+      <collision>
+        <surface>
+          <friction>
+            <ode>
+              <!--
+              Read the explanation at the end of this file about how to set fdir1 for mecanum wheels.
+              -->
+              <fdir1 gz:expressed_in="${base_root_fr}">${fdir1_base_root_fr}</fdir1>
+              <!--
+              Reference 'http://sdformat.org/tutorials?tut=sdformat_urdf_extensions&cat=specification#gazebo-elements-for-links'
+              Friction coefficient, in the direction of the wheel rolling, along the contact surface.
+              This coefficient should be high enough to allow the wheel to roll without slipping,
+              from 0.8 a 1.5.
+              High traction along forward direction
+              -->
+              <mu>${mu_forward}</mu>
+              <!--
+              Friction coefficient, in axial direction (the direction of the wheel axis), along the
+              contact surface.
+              This 'can be somehow assimilated to the direcion in which the rollers are moving'.
+              This coefficient should be low enough to allow the rollers to move freely, from 0.03 to
+              0.1.
+              Low friction laterally to emulate rollers.
+              -->
+              <mu2>${mu_lateral}</mu2>
+              <slip1>${slip_forward}</slip1>
+              <slip2>${slip_lateral}</slip2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
+    </gazebo>
+  </xacro:macro>
+</robot>
+
+<!--
+====================================
+Explanation about the mecanum wheels
+====================================
+
+Geometric and contact context
+=============================
+
+* The wheel’s joint uses 'axis = (0, 1, 0)' -> the wheel rotates about y-axis.
+* The ground is horizontal -> the contact normal is Z; therefore the contact plane (tangent) is X–Y in the wheel’s local
+frame.
+* In ODE/Gazebo, 'fdir1' must lie in the contact plane (tangent) -> its Z component is 0.
+
+Conventional vs. Mecanum (the "cylinder + anisotropy" model)
+============================================================
+
+* If you set 'fdir1 = (1, 0, 0)', 'mu = 1.0', 'mu2 = 0.05', you model a conventional wheel: "high" friction aligned with
++X (forward rolling), "low" in the orthogonal direction (Y). You get correct forward/reverse, but no pure lateral
+translation.
+
+* For a mecanum wheel, with this model you must align the high friction direction with the direction perpendicular to
+the roller’s axis in the X–Y plane:
+
+  * The roller’s axis must have low friction (it "freewheels" like a roller) -> that corresponds to 'mu2' (not to
+    'fdir1').
+  * Therefore, 'fdir1' is perpendicular to the roller’s axis (in X–Y).
+    If the roller’s axis projected onto X–Y is a=(a_x, a_y, 0), take:
+
+    fdir1 = R_{+90} a = (-a_y, a_x, 0)
+
+    and normalize if necessary.
+
+Observation: for friction, a line has no orientation; 'v' and '−v' are equivalent**. Pick one sign and be consistent across wheels.
+============
+
+"X" layout (rollers for the four wheels "pointing in an X shape" when viewed from above)
+========================================================================================
+
+In the standard "X" configuration (REP-103, wheel rotates about Y, contact plane X–Y), the 'fdir1' vectors to set per
+wheel are:
+
+* Front-Left (FL) and Rear-Right (RR) -> +45 deg, from +X toward +Y
+
+  * Symbolic: 'fdir1 = (cos 45°,  sin 45°, 0)'
+  * Numeric:  'fdir1 = (0.70710678, 0.70710678, 0)'
+
+* Front-Right (FR) and Rear-Left (RL) -> −45 deg, from +X toward −Y
+
+  * Symbolic: 'fdir1 = (cos 45°,  sin −45°, 0)'
+  * Numeric:  'fdir1 = (0.70710678, −0.70710678, 0)'
+
+With this, a Twist with 'vy != 0' (and 'vx = wz = 0') yields pure lateral translation.
+
+Recommended friction parameters
+===============================
+
+* 'mu = 1.0'  -> high friction along 'fdir1' (perpendicular to the roller’s axis).
+* 'mu2 = 0.05' -> low friction in the orthogonal in-plane direction (approx. the "roller axis").
+* 'slip1', 'slip2' as per your tuning.
+
+Operational verification
+========================
+
+1. 'vx != 0, vy = 0, wz = 0' -> correct forward/reverse.
+2. 'vx = 0, vy != 0, wz = 0' -> pure lateral (sign according to your convention).
+3. If the lateral sign does not match your convention, invert the Y component of all four 'fdir1' vectors
+(or review the FL/FR/RL/RR mapping).
+-->

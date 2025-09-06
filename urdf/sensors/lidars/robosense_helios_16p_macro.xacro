@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot name="robosense_helios_16p" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="robosense_helios_16p"
+               params="name
+                       prefix
+                       namespace
+                       parent_frame
+                       joint_parent_fr_root_fr
+                       sim_cfg:=${None}
+                       use_mesh_visual:=True
+                       use_mesh_collision:=False">
+
+    <xacro:property name="pkg_dir" value="$(find eut_robotics_description)"/>
+
+    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/lidar_3d_ring_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/set_lidar_3d_ring_props_macro.xacro"/>
+
+    <xacro:set_lidar_3d_ring_props
+        desc_cfg="${xacro.load_yaml(pkg_dir + '/config/sensors/lidars/robosense_helios_16p.yaml')}"
+        sim_cfg="${sim_cfg}"
+        prop_prefix="robosense_helios_16p"/>
+
+    <xacro:lidar_3d_ring
+        name="${name}"
+        prefix="${prefix}"
+        namespace="${namespace}"
+        parent_frame="${parent_frame}"
+        mass="${robosense_helios_16p_mass}"
+        shape="${robosense_helios_16p_shape}"
+        mesh_visual="${robosense_helios_16p_mesh_visual if use_mesh_visual else ''}"
+        mesh_visual_has_color="${robosense_helios_16p_mesh_visual_has_color}"
+        mesh_collision="${robosense_helios_16p_mesh_collision if use_mesh_collision else ''}"
+        scale="${robosense_helios_16p_scale}"
+        color="${robosense_helios_16p_color}"
+        joint_root_fr_data_fr="${robosense_helios_16p_joint_root_fr_data_fr}"
+        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
+        use_sim="${robosense_helios_16p_use_sim}"
+        sim_always_on="${robosense_helios_16p_sim_always_on}"
+        sim_visualize="${robosense_helios_16p_sim_visualize}"
+        sim_update_rate="${robosense_helios_16p_sim_update_rate}"
+        sim_hor_fov_deg="${robosense_helios_16p_sim_hor_fov_deg}"
+        sim_hor_res_deg="${robosense_helios_16p_sim_hor_res_deg}"
+        sim_ver_fov_deg="${robosense_helios_16p_sim_ver_fov_deg}"
+        sim_ver_res_deg="${robosense_helios_16p_sim_ver_res_deg}"
+        sim_dist_span="${robosense_helios_16p_sim_dist_span}"
+        sim_gaussian_noise="${robosense_helios_16p_sim_gaussian_noise}"/>
+  </xacro:macro>
+</robot>
+
+<!--
+old fragment, left here for reference
+-->
+<!--
+<xacro:if value="${shape.split()[0] in ('cx', 'cy', 's')}">
+  ${xacro.fatal('A lidar_3d_ring with cylindrical shape and symmetry axis in x or y or a'
+                  'spherical are very weird lidars. Doucble check it.')}
+</xacro:if>
+-->

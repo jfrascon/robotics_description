@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<robot name="all_commons" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/inertia_macros.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_c_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_r_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_s_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/set_shaped_link_macro.xacro"/>
+</robot>

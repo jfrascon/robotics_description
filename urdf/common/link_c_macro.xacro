@@ -1,0 +1,198 @@
+<?xml version="1.0"?>
+<!--
+The link_c macro represents a generic cylindrical shape, with just one link/frame, '${prefix}${name}_link'.
+
+cylinder along x-axis -> axis='x', size='thickness 2*radius  2*radius'
+cylinder along y-axis -> axis='y', size='2*radius  thickness 2*radius'
+cylinder_along z-axis -> axis='z', size='2*radius  2*radius  thickness'
+
+You can assign a mesh to the link, which will be used for the visual element and optionally for the collision
+element. If you want to use a mesh for the visual element but not for the collision element, you can set the
+parameter 'use_mesh_for_collision' to False.
+The mesh can be scaled in any axis using the parameter scale='scale_x scale_y scale_z'.
+
+IF YOU USE A MESH, MAKE SURE IT IS CENTERED AROUND ITS INNER FRAME, THIS IS REQUIRED FOR THE PROPER FUNCTIONING
+OF THE MACRO.
+By default, the standard shapes used in urdf/xacro files are centered around their inner frame, so in order to apply
+the same translations and rotations to the visual, collision and inertial elements, regardless of the use of a mesh
+or not, we required that the mesh is also centered around its inner frame.
+
+If no mesh is provided, a cylinder along the proper axis with dimensions size='size_x size_y size_z' is used ...
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS' AND 'SIZE' PARAMETERS THAT REPRESENT THE REAL
+PHYSICAL PROPERTIES OF THE link. THIS IS, THE 'SCALE' PARAMETER IS NOT USED TO SCALE EITHER THE MASS OR THE SIZE
+OF THE link, THEY ARE ONLY USED TO SCALE THE MESH, IF A MESH IS PROVIDED.
+
+If you want to assign a color to the visual element, you can use the parameter 'color' to set the RGBA color by
+providing a sequence of four floating point values between [0, 1] in the for of 'r g b a'.
+
+The inertia of the link is calculated using the parameters 'mass', 'radius' and 'thickness', using the standard
+formulas for a cylinder along the proper axis.
+
+Finally, the 'vci_origin', ((v)isual, (c)ollision, (i)nertial) element is used to set the position and orientation
+of the visual, collision and inertial elements around the frame '${name}_link'.
+-->
+<robot name="link_c" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro
+    name="link_c"
+    params="name
+            prefix
+            use_visual:=True
+            use_collision:=True
+            use_inertia:=True
+            mass
+            axis
+            size
+            mesh_visual:=''
+            mesh_visual_has_color:=False
+            mesh_collision:=''
+            scale:=${None}
+            color='1 1 1 1'
+            vci_pose">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/inertia_macros.xacro"/>
+
+    <xacro:property name="size_lst"  value="${size.split()}"/>
+    <xacro:property name="size_x"    value="${size_lst[0]}"/>
+    <xacro:property name="size_y"    value="${size_lst[1]}"/>
+    <xacro:property name="size_z"    value="${size_lst[2]}"/>
+
+    <xacro:property name="vci_pose_lst" value="${vci_pose.split()}"/>
+    <xacro:property name="vci_x"        value="${vci_pose_lst[0]}"/>
+    <xacro:property name="vci_y"        value="${vci_pose_lst[1]}"/>
+    <xacro:property name="vci_z"        value="${vci_pose_lst[2]}"/>
+    <xacro:property name="vci_R"        value="${vci_pose_lst[3]}"/>
+    <xacro:property name="vci_P"        value="${vci_pose_lst[4]}"/>
+    <xacro:property name="vci_Y"        value="${vci_pose_lst[5]}"/>
+
+
+    <!--
+    Depending on the axis along which the cylinder is defined, we need to add pi/2 to the roll or pitch angle of the
+    vci_pose, in order to have the cylinder aligned along the proper axis, because the starting point is a cylinder
+    along the z-axis. This is true for a basic urdf cylinder element, and we required the mesh to be aligned along the
+    z-axis as well, so the same rotation is applied to the mesh too, if a mesh is provided.
+    So, when you say you want a cylinder along the 'axis-you-indicate', and pass some 'vci_pose', the macro will
+    apply the proper rotation to the vci_pose you passed, in order to have the cylinder aligned along the
+    'axis-you-indicate'.
+    This is done by defining the properties 'vc_R', 'vc_P', and 'vc_Y', which are then used in the visual and collision
+    elements.
+    The vc_R, vc_P, and vc_Y values are computed as follows:
+    - axis='x' -> vc_R = vci_pose.roll,          vc_P = vci_pose.pitch + (pi/2), vc_Y = vci_pose.yaw
+    - axis='y' -> vc_R = vci_pose.roll + (pi/2), vc_P = vci_pose.pitch,          vc_Y = vci_pose.yaw
+    - axis='z' -> vc_R = vci_pose.roll,          vc_P = vci_pose.pitch,          vc_Y = vci_pose.yaw
+
+    The vci_pose.x, vci_pose.y, and vci_pose.z values are used as they are, without any modification.
+
+    The vci_pose.roll, vci_pose.pitch, and vci_pose.yaw values are passed as they are to the macro computing the
+    inertia, because the inertia is computed assuming the cylinder is along the 'axis-you-indicate', so no additional
+    rotation is required.
+    -->
+
+    <xacro:if value="${axis == 'x'}">
+      <xacro:property name="radius"       value="${0.5 * float(size_y)}"/>
+      <xacro:property name="thickness"    value="${size_x}"/>
+      <xacro:property name="vc_R"         value="${vci_R}"/>
+      <xacro:property name="vc_P"         value="${(0.5 * pi) + float(vci_P)}"/>
+      <xacro:property name="vc_Y"         value="${vci_Y}"/>
+    </xacro:if>
+    <xacro:if value="${axis == 'y'}">
+      <xacro:property name="radius"       value="${0.5 * float(size_x)}"/>
+      <xacro:property name="thickness"    value="${size_y}"/>
+      <xacro:property name="vc_R"         value="${(0.5 * pi) + float(vci_R)}"/>
+      <xacro:property name="vc_P"         value="${vci_P}"/>
+      <xacro:property name="vc_Y"         value="${vci_Y}"/>
+    </xacro:if>
+    <xacro:if value="${axis == 'z'}">
+      <xacro:property name="radius"       value="${0.5 * float(size_x)}"/>
+      <xacro:property name="thickness"    value="${size_z}"/>
+      <xacro:property name="vc_R"         value="${vci_R}"/>
+      <xacro:property name="vc_P"         value="${vci_P}"/>
+      <xacro:property name="vc_Y"         value="${vci_Y}"/>
+    </xacro:if>
+
+    <link name="${prefix}${name}_link">
+      <xacro:if value="${use_visual}">
+        <visual>
+          <xacro:if value="${mesh_visual == ''}"> <!-- Check if no mesh is available -->
+            <geometry>
+              <cylinder radius="${radius}" length="${thickness}"/>
+            </geometry>
+            <material name="${name}_color">
+              <color rgba="${color}"/>
+            </material>
+          </xacro:if>
+          <xacro:if value="${mesh_visual != ''}"> <!-- There is mesh for visual -->
+            <geometry>
+              <!--
+              <mesh filename="package://${mesh_visual}" scale="${scale}"/>
+              -->
+              <mesh filename="file://${mesh_visual}" scale="${scale}"/>
+            </geometry>
+            <xacro:unless value="${mesh_visual_has_color}"> <!-- Check if mesh_visual must be colored -->
+              <material name="${name}_color">
+                <color rgba="${color}"/>
+              </material>
+            </xacro:unless>
+          </xacro:if>
+          <origin rpy="${vc_R} ${vc_P} ${vc_Y}" xyz="${vci_x} ${vci_y} ${vci_z}"/>
+        </visual>
+      </xacro:if>
+      <xacro:if value="${use_collision}">
+        <collision>
+          <xacro:if value="${mesh_collision == ''}"> <!-- Check if no mesh is available -->
+            <geometry>
+              <cylinder radius="${radius}" length="${thickness}"/>
+            </geometry>
+          </xacro:if>
+          <xacro:if value="${mesh_collision != ''}"> <!-- There is mesh for collision -->
+            <geometry>
+              <!--
+              <mesh filename="package://${mesh_collision}" scale="${scale}"/>
+              -->
+              <mesh filename="file://${mesh_collision}" scale="${scale}"/>
+            </geometry>
+          </xacro:if>
+          <origin rpy="${vc_R} ${vc_P} ${vc_Y}" xyz="${vci_x} ${vci_y} ${vci_z}"/>
+        </collision>
+      </xacro:if>
+      <xacro:if value="${use_inertia}">
+        <xacro:if value="${axis == 'x'}">
+          <!--
+          RPY = 0 0 0 when computing the inertia, since we are already taking into account in the macro that computes the
+          inertia that the cylinder is along the x-axis.
+          -->
+          <xacro:solid_cylinder_inertia_x mass="${mass}"
+                                          radius="${radius}"
+                                          thickness="${thickness}"
+                                          xyz="${vci_x} ${vci_y} ${vci_z}"
+                                          rpy="${vci_R} ${vci_P} ${vci_Y}"/>
+        </xacro:if>
+        <xacro:if value="${axis == 'y'}">
+          <!--
+          RPY = 0 0 0 when computing the inertia, since we are already taking into account in the macro that computes the
+          inertia that the cylinder is along the y-axis.
+          -->
+          <xacro:solid_cylinder_inertia_y mass="${mass}"
+                                          radius="${radius}"
+                                          thickness="${thickness}"
+                                          xyz="${vci_x} ${vci_y} ${vci_z}"
+                                          rpy="${vci_R} ${vci_P} ${vci_Y}"/>
+        </xacro:if>
+        <xacro:if value="${axis == 'z'}">
+          <!--
+          RPY = 0 0 0 when computing the inertia, since we are already taking into account in the macro that computes the
+          inertia that the cylinder is along the z-axis.
+          -->
+          <xacro:solid_cylinder_inertia_z mass="${mass}"
+                                          radius="${radius}"
+                                          thickness="${thickness}"
+                                          xyz="${vci_x} ${vci_y} ${vci_z}"
+                                          rpy="${vci_R} ${vci_P} ${vci_Y}"/>
+        </xacro:if>
+      </xacro:if>
+      <xacro:unless value="${use_inertia}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+  </xacro:macro>
+</robot>

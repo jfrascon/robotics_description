@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!--
+This macro is used to define a link with a shape that can be a box, a cylinder or a sphere.
+The field 'shape' defines the type of shape and its dimensions, as follows:
+
+shape='r  sx    sy    sz'                -> box
+shape='cx thickness 2*radius  2*radius'  -> cylinder along x axis
+shape='cy 2*radius  thickness 2*radius'  -> cylinder along y axis
+shape='cz 2*radius  2*radius  thickness' -> cylinder along z axis
+shape='s  2*radius  2*radius  2*radius'  -> sphere
+-->
+<robot name="set_shaped_link" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="set_shaped_link"
+               params="name
+                       prefix
+                       mass
+                       shape
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertia:=True
+                       mesh_visual:=''
+                       mesh_visual_has_color:=False
+                       mesh_collision:=''
+                       scale:=${None}
+                       color:='1 1 1 1'
+                       vci_pose">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <xacro:property name="shape_lst"  value="${shape.split()}"/>
+    <xacro:property name="shape_type" value="${shape_lst[0]}"/>
+
+    <!--
+    Definition of the link ${prefix}${name}_link.
+    -->
+    <xacro:if value="${shape_type == 'r'}">
+      <xacro:link_r
+        name="${name}"
+        prefix="${prefix}"
+        use_visual="${use_visual}"
+        use_collision="${use_collision}"
+        use_inertia="${use_inertia}"
+        mass="${mass}"
+        size="${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"
+        mesh_visual="${mesh_visual}"
+        mesh_visual_has_color="${mesh_visual_has_color}"
+        mesh_collision="${mesh_collision}"
+        scale="${scale}"
+        color="${color}"
+        vci_pose="${vci_pose}"/>
+    </xacro:if>
+    <xacro:if value="${shape_type in ('cx', 'cy', 'cz')}"> <!-- shape_type[1] is the axis -->
+      <xacro:link_c
+        name="${name}"
+        prefix="${prefix}"
+        use_visual="${use_visual}"
+        use_collision="${use_collision}"
+        use_inertia="${use_inertia}"
+        mass="${mass}"
+        axis="${shape_type[1]}"
+        size="${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"
+        mesh_visual="${mesh_visual}"
+        mesh_visual_has_color="${mesh_visual_has_color}"
+        mesh_collision="${mesh_collision}"
+        scale="${scale}"
+        color="${color}"
+        vci_pose="${vci_pose}"/>
+    </xacro:if>
+    <xacro:if value="${shape_type == 's'}">
+      <xacro:link_s
+        name="${name}"
+        prefix="${prefix}"
+        use_visual="${use_visual}"
+        use_collision="${use_collision}"
+        use_inertia="${use_inertia}"
+        mass="${mass}"
+        size="${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"
+        mesh_visual="${mesh_visual}"
+        mesh_visual_has_color="${mesh_visual_has_color}"
+        mesh_collision="${mesh_collision}"
+        scale="${scale}"
+        color="${color}"
+        vci_pose="${vci_pose}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>

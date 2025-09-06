@@ -1,0 +1,107 @@
+<?xml version="1.0"?>
+<!--
+The link macro represents a generic rectangular shape, with just one link/frame, '${prefix}${name}_link'.
+
+You can assign a mesh to the link, which will be used for the visual element and optionally for the collision
+element. If you want to use a mesh for the visual element but not for the collision element, you can set the
+parameter 'use_mesh_for_collision' to False.
+The mesh can be scaled in any axis using the parameter scale='scale_x scale_y scale_z'.
+
+IF YOU USE A MESH, MAKE SURE IT IS CENTERED AROUND ITS INNER FRAME, THIS IS REQUIRED FOR THE PROPER FUNCTIONING
+OF THE MACRO.
+By default, the standard shapes used in urdf/xacro files are centered around their inner frame, so in order to apply
+the same translations and rotations to the visual, collision and inertial elements, regardless of the use of a mesh
+or not, we required that the mesh is also centered around its inner frame.
+
+If no mesh is provided, a link with dimensions size='size_x size_y size_z' is used for both the visual
+and collision elements.
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS' AND 'SIZE' PARAMETERS THAT REPRESENT THE REAL
+PHYSICAL PROPERTIES OF THE link. THIS IS, THE 'SCALE' PARAMETER IS NOT USED TO SCALE EITHER THE MASS OR THE SIZE
+OF THE link, THEY ARE ONLY USED TO SCALE THE MESH, IF A MESH IS PROVIDED.
+
+If you want to assign a color to the visual element, you can use the parameter 'color' to set the RGBA color by
+providing a sequence of four floating point values between [0, 1] in the for of 'r g b a'.
+
+The inertia of the link is calculated using the parameters 'mass', 'size=size_x size_y size_z'.
+
+Finally, the 'vci_origin', ((v)isual, (c)ollision, (i)nertial) element is used to set the position and orientation
+of the visual, collision and inertial elements around the frame '${name}_link'.
+-->
+<robot name="link_r" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro
+    name="link_r"
+    params="name
+            prefix
+            use_visual:=True
+            use_collision:=True
+            use_inertia:=True
+            mass
+            size
+            mesh_visual:=''
+            mesh_visual_has_color:=False
+            mesh_collision:=''
+            scale:=''
+            color='1 1 1 1'
+            vci_pose">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/inertia_macros.xacro"/>
+
+    <xacro:property name="vci_pose_lst" value="${vci_pose.split()}"/>
+    <xacro:property name="vci_xyz"      value="${' '.join(map(str, vci_pose_lst[:3]))}"/>
+    <xacro:property name="vci_rpy"      value="${' '.join(map(str, vci_pose_lst[3:]))}"/>
+
+    <link name="${prefix}${name}_link">
+      <xacro:if value="${use_visual}">
+        <visual>
+          <xacro:if value="${mesh_visual == ''}"> <!-- Check if no mesh is available -->
+            <geometry>
+              <box size="${size}"/>
+            </geometry>
+            <material name="${name}_color">
+              <color rgba="${color}"/>
+            </material>
+          </xacro:if>
+          <xacro:if value="${mesh_visual != ''}"> <!-- There is mesh for visual -->
+            <geometry>
+              <!--
+              <mesh filename="package://${mesh_visual}" scale="${scale}"/>
+              -->
+              <mesh filename="file://${mesh_visual}" scale="${scale}"/>
+            </geometry>
+            <xacro:unless value="${mesh_visual_has_color}"> <!-- Check if mesh_visual must be colored -->
+              <material name="${name}_color">
+                <color rgba="${color}"/>
+              </material>
+            </xacro:unless>
+          </xacro:if>
+          <origin rpy="${vci_rpy}" xyz="${vci_xyz}"/>
+        </visual>
+      </xacro:if>
+      <xacro:if value="${use_collision}">
+        <collision>
+          <xacro:if value="${mesh_collision == ''}"> <!-- Check if no mesh is available -->
+            <geometry>
+              <box size="${size}"/>
+            </geometry>
+          </xacro:if>
+          <xacro:if value="${mesh_collision != ''}"> <!-- There is mesh for collision -->
+            <geometry>
+              <!--
+              <mesh filename="package://${mesh_collision}" scale="${scale}"/>
+              -->
+              <mesh filename="file://${mesh_collision}" scale="${scale}"/>
+            </geometry>
+          </xacro:if>
+          <origin rpy="${vci_rpy}" xyz="${vci_xyz}"/>
+        </collision>
+      </xacro:if>
+      <xacro:if value="${use_inertia}">
+        <xacro:solid_box_inertia mass="${mass}" size="${size}" xyz="${vci_xyz}" rpy="${vci_rpy}"/>
+      </xacro:if>
+      <xacro:unless value="${use_inertia}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+  </xacro:macro>
+</robot>

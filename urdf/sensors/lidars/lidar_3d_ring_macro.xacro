@@ -1,0 +1,171 @@
+<?xml version="1.0"?>
+<!--
+The lidar_3d_ring macro defines a multi‑ring 3D LiDAR, such as Velodyne, Robosense, Ouster, etc.
+
+This macro defines the following links and joints:
+  - Links:
+    - '${prefix}${name}_root_link', used to attach the sensor to the robot body.
+       By convention, the root frame (root_link) of the lidar is set at the center of its bottom face.
+    - '${prefix}${name}_link', where the sensor data is generated.
+  - Joints:
+    - '${prefix}${name}_root_joint', a fixed joint connecting the root link to the parent frame.
+    - '${prefix}${name}_joint', a fixed joint connecting the data link to the root link.
+
+Parameters:
+- name has 1 value.
+- mass has 1 value, expressed in kg.
+- shape is a string representing the shape of the lidar. It can be:
+  shape='r  sx    sy    sz'                -> box
+  shape='cx thickness 2*radius  2*radius'  -> cylinder along x axis
+  shape='cy 2*radius  thickness 2*radius'  -> cylinder along y axis
+  shape='cz 2*radius  2*radius  thickness' -> cylinder along z axis
+  shape='s  2*radius  2*radius  2*radius'  -> sphere
+- mesh_visual has 1 value, a string with the path to the visual mesh file.
+- mesh_visual_has_color has 1 boolean value, True if the visual mesh has its own colors, False otherwise.
+  If a mesh is provided in 'mesh_visual' and this parameter is False, the color provided in the parameter 'color' is
+  used to color the visual mesh.
+- mesh_collision has 1 value, a string with the path to the collision mesh file.
+
+IMPORTANT
+
+THE MESHES ARE EXPECTED TO BE CENTERED AT ITS INNER FRAME.
+IF BOTH MESHES ARE PROVIDED, FOR VISUAL AND COLLISION ELEMENTS, THEY MUST HAVE THE SAME SHAPE AND DIMENSIONS.
+WHEN A MESH IS NOT PROVIDED, THE PROPER ELEMENT, VISUAL OR COLLISION IS MODELED USING THE PRIMITIVE DEFINED IN 'SHAPE',
+USING THE DIMENSIONS PROVIDED IN THAT PARAMETER.
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS' AND 'SIZE' PARAMETERS THAT REPRESENT THE REAL PHYSICAL
+PROPERTIES OF THE LIDAR. THIS IS, THE 'SCALE' PARAMETERS ARE NOT USED TO SCALE EITHER THE 'MASS' OR THE 'SIZE' OF THE
+LIDAR, THEY ARE ONLY USED TO SCALE THE MESHES.
+
+- scale has 3 values between quotes in this order 'scale_x scale_y scale_z', expressed in meters.
+- color has 4 values between quotes in this order 'R G B A', each value between 0 and 1.
+
+IMPORTANT:
+
+- joint_root_fr_data_fr has 6 values between quotes in this order 'x y z R P Y'
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+  Consequently, the parameter 'joint_root_fr_data_fr' represents the position and orientation of the data link
+  with respect to the root link (which is set at the center of the bottom face of the lidar).
+
+- joint_parent_fr_root_fr ahs 6 values between quotes in this order 'x y z R P Y'
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+  The parameter 'joint_parent_fr_root_fr' represents the position and orientation of the root link
+  with respect to the parent frame.
+- sim_always_on has 1 boolean value, True to keep the sensor always on, False to turn it off when not in use.
+- sim_visualize has 1 boolean value, True to visualize the sensor in Gazebo, False otherwise.
+- sim_update_rate has 1 value, expressed in Hz.
+- sim_hor_fov_deg has 2 values between quotes in this order, 'min_hor_angle_deg max_hor_angle_deg', expressed in degrees.
+- sim_hor_res_deg has 1 value, expressed in degrees.
+- sim_ver_fov_deg has 2 values between quotes in this order 'min_ver_angle_deg max_ver_angle_deg', expressed in degrees.
+- sim_ver_res_deg has 1 value, expressed in degrees.
+- sim_dist_span has 2 values between quotes in this order 'min_dist max_dist', expressed in meters.
+- sim_gaussian_noise has 2 values between quotes in this order 'mean stddev', expressed in meters.
+
+IMPORTANT:
+IT IS IMPORTANT TO NOTE THAT GAZEBO WILL PUBLISH 2 TOPICS (NO ROS TOPICS), THE ONE IN THE PARAMETER 'sim_topic',
+WITH TYPE LaserScan (2D) AND ANOTHER ONE, '${sim_topic}/points', WITH TYPE PointCloud2 (3D).
+THERE IS NO WAY TO CHANGE THIS BEHAVIOR OF THE GAZEBO PLUGIN.
+HOWEVER, IN THE ROSGZ BRIDGE TO TRANSFER THE TOPIC FROM THE GAZEBO SIMULATION TO ROS, YOU CAN FIX THIS ISSUE BY
+REMAPPING THE TOPIC TO THE DESIRED NAME, TO FINALLY GET THE TOPIC YOU WANT IN ROS, PROVIDED IN THE PARAMETER
+'sim_topic'.
+
+- 'use_sim' has 1 boolean value, True to include the Gazebo plugin, False otherwise. If False none of the parameters
+  starting with 'sim_' are used.
+
+TO USE LIDAR PLUGIN DO NOT FORGET TO ADD THE FOLLOWING BLOCK TO THE SDF WORLD FILE YOU USE FOR SIMULATION:
+
+<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+    <render_engine>ogre2</render_engine>
+</plugin>
+
+Reference: https://gazebosim.org/docs/harmonic/sensors/
+
+-->
+<robot name="lidar_3d_ring" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="lidar_3d_ring"
+               params="name
+                       prefix:=''
+                       namespace:=''
+                       parent_frame
+                       mass
+                       shape
+                       mesh_visual:=''
+                       mesh_visual_has_color:=False
+                       mesh_collision:=''
+                       scale:=''
+                       color:='1 1 1 1'
+                       joint_root_fr_data_fr
+                       joint_parent_fr_root_fr
+                       use_sim:=False
+                       sim_always_on:=True
+                       sim_visualize:=False
+                       sim_update_rate
+                       sim_hor_fov_deg
+                       sim_hor_res_deg
+                       sim_ver_fov_deg
+                       sim_ver_res_deg
+                       sim_dist_span
+                       sim_gaussian_noise:='0 0'">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_body_macro.xacro"/>
+
+    <xacro:lidar_body
+      name="${name}"
+      prefix="${prefix}"
+      namespace="${namespace}"
+      parent_frame="${parent_frame}"
+      mass="${mass}"
+      shape="${shape}"
+      mesh_visual="${mesh_visual}"
+      mesh_visual_has_color="${mesh_visual_has_color}"
+      mesh_collision="${mesh_collision}"
+      scale="${scale}"
+      color="${color}"
+      joint_root_fr_data_fr="${joint_root_fr_data_fr}"
+      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+
+    <xacro:if value="${use_sim}">
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_3d_ring_plugin_macro.xacro"/>
+
+      <!--
+      The behaviour of the Gazebo Sim plugin for a 3D ring LiDAR is to publish two topics:
+      - A topic with the name provided in the parameter 'topic', with message type LaserScan (2D laser scan).
+      - A topic with the name provided in the parameter 'topic' + '/points', with message type PointCloud2 (3D point
+        cloud).
+      There is no way to avoid the plugin from publishing both topics, and there is no way to change the name of the
+      topic for the PointCloud2, since the plugin always appends '/points' to the topic name provided in the parameter
+      'topic'.
+      Therefore, by defining the topic as '<namespace>/<name>/scan', the plugin will publish:
+      - '<namespace>/<name>/scan' (2D laser scan)
+      - '<namespace>/<name>/scan/points' (3D point cloud)
+      -->
+      <xacro:property name="sim_topic"
+                      value="${(namespace if namespace in ('', '/')
+                                          else namespace.rstrip('/') + '/') + name + '/scan'}"/>
+
+      <xacro:lidar_3d_ring_plugin
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        ver_fov_deg="${sim_ver_fov_deg}"
+        ver_res_deg="${sim_ver_res_deg}"
+        dist_span="${sim_dist_span}"
+        gaussian_noise="${sim_gaussian_noise}"
+        topic="${sim_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>
+
+<!--
+old fragment, left here for reference
+-->
+<!--
+<xacro:if value="${shape.split()[0] in ('cx', 'cy', 's')}">
+  ${xacro.fatal('A lidar_3d_ring with cylindrical shape and symmetry axis in x or y or a'
+                  'spherical are very weird lidars. Doucble check it.')}
+</xacro:if>
+-->

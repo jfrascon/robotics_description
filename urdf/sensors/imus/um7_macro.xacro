@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<robot name="um7" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="um7"
+               params="name
+                       prefix
+                       namespace
+                       parent_frame
+                       joint_parent_fr_root_fr
+                       sim_cfg:=${None}
+                       use_mesh_visual:=True
+                       use_mesh_collision:=False">
+
+    <xacro:property name="pkg_dir" value="$(find eut_robotics_description)"/>
+
+    <xacro:include filename="${pkg_dir}/urdf/sensors/imus/imu_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/imus/set_imu_props_macro.xacro"/>
+
+    <xacro:set_imu_props
+        desc_cfg="${xacro.load_yaml(pkg_dir + '/config/sensors/imus/um7.yaml')}"
+        sim_cfg="${sim_cfg}"
+        prop_prefix="um7"/>
+
+    <xacro:imu
+        name="${name}"
+        prefix="${prefix}"
+        namespace="${namespace}"
+        parent_frame="${parent_frame}"
+        mass="${um7_mass}"
+        shape="${um7_shape}"
+        mesh_visual="${um7_mesh_visual if use_mesh_visual else ''}"
+        mesh_visual_has_color="${um7_mesh_visual_has_color}"
+        mesh_collision="${um7_mesh_collision if use_mesh_collision else ''}"
+        scale="${um7_scale}"
+        color="${um7_color}"
+        joint_root_fr_data_fr="${um7_joint_root_fr_data_fr}"
+        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
+        sim_always_on="${um7_sim_always_on}"
+        sim_update_rate="${um7_sim_update_rate}"
+        sim_ang_vel_gaussian_noise="${um7_sim_ang_vel_gaussian_noise}"
+        sim_ang_vel_gaussian_noise_bias="${um7_sim_ang_vel_gaussian_noise_bias}"
+        sim_ang_vel_gaussian_noise_dynamic_bias="${um7_sim_ang_vel_gaussian_noise_dynamic_bias}"
+        sim_lin_acc_gaussian_noise="${um7_sim_lin_acc_gaussian_noise}"
+        sim_lin_acc_gaussian_noise_bias="${um7_sim_lin_acc_gaussian_noise_bias}"
+        sim_lin_acc_gaussian_noise_dynamic_bias="${um7_sim_lin_acc_gaussian_noise_dynamic_bias}"
+        sim_use_orientation="${um7_sim_use_orientation}"
+        use_sim="${um7_use_sim}"/>
+  </xacro:macro>
+</robot>
+
+<!--
+old fragment, left here for reference
+-->
+<!--
+<xacro:if value="${shape.split()[0] in ('cx', 'cy', 's')}">
+  ${xacro.fatal('A lidar_3d_ring with cylindrical shape and symmetry axis in x or y or a'
+                  'spherical are very weird lidars. Doucble check it.')}
+</xacro:if>
+-->

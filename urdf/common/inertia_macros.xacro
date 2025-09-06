@@ -1,0 +1,144 @@
+<?xml version="1.0"?>
+<robot name="common_inertia_matrices" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!-- https://en.wikipedia.org/wiki/List_of_moments_of_inertia#List_of_3D_inertia_tensors -->
+
+  <xacro:macro name="null_inertia">
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.000001" ixy="0.0" ixz="0.0"
+               iyy="0.000001" iyz="0.0"
+               izz="0.000001"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </inertial>
+  </xacro:macro>
+
+  <!--
+  Inertia of a solid box with mass m and size vector "x y z"
+  Expecting: size="sx sy sz" in meters
+  -->
+  <xacro:macro name="solid_box_inertia" params="mass size xyz rpy">
+    <!-- Parse 'size' as whitespace-separated triple -->
+    <xacro:property name="size_parts" value="${size.split()}"/>
+    <xacro:property name="sx" value="${size_parts[0]}"/>
+    <xacro:property name="sy" value="${size_parts[1]}"/>
+    <xacro:property name="sz" value="${size_parts[2]}"/>
+
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia
+        ixx="${(1.0/12.0) * mass * (sy*sy + sz*sz)}" ixy="0.0" ixz="0.0"
+        iyy="${(1.0/12.0) * mass * (sx*sx + sz*sz)}" iyz="0.0"
+        izz="${(1.0/12.0) * mass * (sx*sx + sy*sy)}"/>
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!--
+    Inertia of a solid cylinder with mass m, radius r, and thickness t
+    whose longitudinal axis is aligned with the X axis of the link frame.
+
+    - The principal axis of rotation is X (polar moment in ixx).
+    - Used when the cylinder lies along the X direction.
+    - The moment of inertia is computed assuming:
+        - Homogeneous solid cylinder.
+        - Center of mass at the cylinder's geometric center.
+        - Inertia expressed in the principal axes of the body.
+
+    Parameters:
+      mass:      Mass of the cylinder [kg]
+      radius:    Radius (perpendicular to X) [m]
+      thickness: Thickness along X [m]
+      *origin: Optional <origin> tag specifying CoM pose w.r.t. the link frame
+  -->
+  <xacro:macro name="solid_cylinder_inertia_x" params="mass radius thickness xyz rpy">
+    <xacro:property name="o" value="${origin.split()}"/>
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${(1.0/2.0) * mass * radius * radius}"
+               iyy="${(1.0/12.0) * mass * (3.0 * radius * radius + thickness * thickness)}" ixy="0.0" ixz="0.0"
+               izz="${(1.0/12.0) * mass * (3.0 * radius * radius + thickness * thickness)}" iyz="0.0"/>
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!--
+    Inertia of a solid cylinder with mass m, radius r, and thickness t
+    whose longitudinal axis is aligned with the Y axis of the link frame.
+
+    - The principal axis of rotation is Y (polar moment in iyy).
+    - Used when the cylinder lies along the Y direction.
+    - The moment of inertia is computed assuming:
+        - Homogeneous solid cylinder.
+        - Center of mass at the cylinder's geometric center.
+        - Inertia expressed in the principal axes of the body.
+
+    Parameters:
+      mass:      Mass of the cylinder [kg]
+      radius:    Radius (perpendicular to X) [m]
+      thickness: Thickness along X [m]
+      *origin: Optional <origin> tag specifying CoM pose w.r.t. the link frame
+  -->
+  <xacro:macro name="solid_cylinder_inertia_y" params="mass radius thickness xyz rpy">
+    <xacro:property name="o" value="${origin.split()}"/>
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${(1.0/12.0) * mass * (3.0 * radius * radius + thickness * thickness)}" ixy="0.0" ixz="0.0"
+               iyy="${(1.0/2.0) * mass * radius * radius}"
+               izz="${(1.0/12.0) * mass * (3.0 * radius * radius + thickness * thickness)}" iyz="0.0"/>
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!--
+    Inertia of a solid cylinder with mass m, radius r, and thickness t
+    whose longitudinal axis is aligned with the Z axis of the link frame.
+
+    - The principal axis of rotation is Z (polar moment in izz).
+    - Used when the cylinder lies along the Z direction.
+    - The moment of inertia is computed assuming:
+        - Homogeneous solid cylinder.
+        - Center of mass at the cylinder's geometric center.
+        - Inertia expressed in the principal axes of the body.
+
+    Parameters:
+      mass:      Mass of the cylinder [kg]
+      radius:    Radius (perpendicular to X) [m]
+      thickness: Thickness along X [m]
+      *origin: Optional <origin> tag specifying CoM pose w.r.t. the link frame
+  -->
+  <xacro:macro name="solid_cylinder_inertia_z" params="mass radius thickness xyz rpy">
+    <xacro:property name="o" value="${origin.split()}"/>
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${(1.0/12.0) * mass * (3.0 * radius * radius + thickness * thickness)}" ixy="0.0" ixz="0.0"
+               iyy="${(1.0/12.0) * mass * (3.0 * radius * radius + thickness * thickness)}" iyz="0.0"
+               izz="${(1.0/2.0) * mass * radius * radius}" />
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Inertia of a hollow sphere with mass m and radius r-->
+  <xacro:macro name="hollow_sphere_inertia" params="mass radius xyz rpy">
+
+    <xacro:property name="o" value="${origin.split()}"/>
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${(2.0/3.0) * mass * radius * radius}" ixy="0.0" ixz="0.0"
+               iyy="${(2.0/3.0) * mass * radius * radius}" iyz="0.0"
+               izz="${(2.0/3.0) * mass * radius * radius}" />
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- Inertia of a solid sphere with mass m and radius r-->
+  <xacro:macro name="solid_sphere_inertia" params="mass radius xyz rpy">
+    <xacro:property name="o" value="${origin.split()}"/>
+    <inertial>
+      <mass value="${mass}" />
+      <inertia ixx="${(2.0/5.0) * mass * radius * radius}" ixy="0.0" ixz="0.0"
+               iyy="${(2.0/5.0) * mass * radius * radius}" iyz="0.0"
+               izz="${(2.0/5.0) * mass * radius * radius}" />
+      <origin rpy="${rpy}" xyz="${xyz}"/>
+    </inertial>
+  </xacro:macro>
+</robot>

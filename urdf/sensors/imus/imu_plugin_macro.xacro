@@ -1,0 +1,274 @@
+<?xml version="1.0"?>
+<!--
+The imu_plugin macro defines a Gazebo plugin that simulates an inertial measurement unit (IMU) attached to a specific
+link in the robot.
+
+This macro does not define any new link or joint. This macro is meant to be used inside a higher-level macro
+(e.g., 'imu') and assumes the user provides a correctly oriented and positioned frame through the '${reference_link}'
+parameter.
+
+The plugin publishes simulated IMU data, including:
+  - Angular velocity (x, y, z), in radians per second
+  - Linear acceleration (x, y, z), in meters per second squared
+  - Orientation (optional), in ENU format, according to REP-103 and REP-145.
+
+The output topic is specified via the 'topic' parameter. The user can control whether the sensor is always active
+('always_on'), and its update rate ('update_rate', in Hz).
+
+The plugin supports advanced noise modeling for each IMU signal component, independently along each axis.
+ang_vel_gaussian_noise = wx_gaussian_noise_mean wx_gaussian_noise_stddev
+                         wy_gaussian_noise_mean wy_gaussian_noise_stddev
+                         wz_gaussian_noise_mean wz_gaussian_noise_stddev
+
+Example gaussian_noise_ang_vel: '0 0 0 0 0 0'
+
+ang_vel_gaussian_noise_bias = wx_gaussian_noise_bias_mean wx_gaussian_noise_bias_stddev
+                              wy_gaussian_noise_bias_mean wy_gaussian_noise_bias_stddev
+                              wz_gaussian_noise_bias_mean wz_gaussian_noise_bias_stddev
+
+Example gaussian_noise_lin_acc: '0 0, 0 0, 0 0'
+
+ang_vel_gaussian_noise_dynamic_bias = wx_gaussian_noise_dynamic_bias_stddev wx_gaussian_noise_dynamic_bias_corr_time
+                                      wy_gaussian_noise_dynamic_bias_stddev wy_gaussian_noise_dynamic_bias_corr_time
+                                      wz_gaussian_noise_dynamic_bias_stddev wz_gaussian_noise_dynamic_bias_corr_time
+
+Example gaussian_noise_bias_ang_vel: '0 0, 0 0, 0 0'
+
+lin_acc_gaussian_noise = accx_gaussian_noise_mean accx_gaussian_noise_stddev
+                         accy_gaussian_noise_mean accy_gaussian_noise_stddev
+                         accz_gaussian_noise_mean accz_gaussian_noise_stddev
+
+Example gaussian_noise_bias_lin_acc: '0 0 0 0 0 0'
+
+lin_acc_gaussian_noise_bias = accx_gaussian_noise_bias_mean accx_gaussian_noise_bias_stddev
+                              accy_gaussian_noise_bias_mean accy_gaussian_noise_bias_stddev
+                              accz_gaussian_noise_bias_mean accz_gaussian_noise_bias_stddev
+
+Example gaussian_noise_dynamic_bias_ang_vel: '0 0 0 0 0 0'
+
+lin_acc_gaussian_noise_dynamic_bias = accx_gaussian_noise_dyn_bias_stddev accx_gaussian_noise_dyn_bias_corr_time
+                                      accy_gaussian_noise_dyn_bias_stddev accy_gaussian_noise_dyn_bias_corr_time
+                                      accz_gaussian_noise_dyn_bias_stddev accz_gaussian_noise_dyn_bias_corr_time
+
+Example gaussian_noise_dynamic_bias_lin_acc: '0 0 0 0 0 0'
+
+This allows the user to simulate a wide range of IMU behaviors, from ideal to highly noisy and drifting sensors,
+enabling realistic testing of sensor fusion and state estimation algorithms.
+
+Orientation output can be enabled or disabled via the 'enable_orientation' flag, depending on whether a 6-DOF or 9-DOF
+IMU behavior is desired.
+
+TO USE IMU PLUGIN DO NOT FORGET TO ADD THE FOLLOWING BLOCK TO THE SDF WORLD FILE YOU USE FOR SIMULATION:
+
+<plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+
+Reference: https://gazebosim.org/docs/harmonic/sensors/
+-->
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="imu_plugin"
+               params="sensor_name
+                       reference_link
+                       topic
+                       always_on:=True
+                       update_rate
+                       ang_vel_gaussian_noise:='0 0 0 0 0 0'
+                       ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
+                       ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       lin_acc_gaussian_noise:='0 0 0 0 0 0'
+                       lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
+                       lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       use_orientation:=True">
+
+    <!-- Gaussian noise for angular velocity -->
+
+    <xacro:property name="ang_vel_gaussian_noise_list"
+                    value="${ang_vel_gaussian_noise.split()}"/>
+
+    <xacro:property name="wx_gaussian_noise"
+                    value="${ang_vel_gaussian_noise_list[:2]}"/>
+
+    <xacro:property name="wy_gaussian_noise"
+                    value="${ang_vel_gaussian_noise_list[2:4]}"/>
+
+    <xacro:property name="wz_gaussian_noise"
+                    value="${ang_vel_gaussian_noise_list[4:]}"/>
+
+    <!-- Gaussian noise bias for angular velocity -->
+
+    <xacro:property name="ang_vel_gaussian_noise_bias_list"
+                    value="${ang_vel_gaussian_noise_bias.split()}"/>
+
+    <xacro:property name="wx_gaussian_noise_bias"
+                    value="${ang_vel_gaussian_noise_bias_list[:2]}"/>
+
+    <xacro:property name="wy_gaussian_noise_bias"
+                    value="${ang_vel_gaussian_noise_bias_list[2:4]}"/>
+
+    <xacro:property name="wz_gaussian_noise_bias"
+                    value="${ang_vel_gaussian_noise_bias_list[4:]}"/>
+
+    <!-- Gaussian noise dynamic bias for angular velocity -->
+
+    <xacro:property name="ang_vel_gaussian_noise_dynamic_bias_list"
+                    value="${ang_vel_gaussian_noise_dynamic_bias.split()}"/>
+
+    <xacro:property name="wx_gaussian_noise_dynamic_bias"
+                    value="${ang_vel_gaussian_noise_dynamic_bias_list[:2]}"/>
+
+    <xacro:property name="wy_gaussian_noise_dynamic_bias"
+                    value="${ang_vel_gaussian_noise_dynamic_bias_list[2:4]}"/>
+
+    <xacro:property name="wz_gaussian_noise_dynamic_bias"
+                    value="${ang_vel_gaussian_noise_dynamic_bias_list[4:]}"/>
+
+    <!-- Gaussian noise for linear acceleration -->
+
+    <xacro:property name="lin_acc_gaussian_noise_list"
+                    value="${lin_acc_gaussian_noise.split()}"/>
+
+    <xacro:property name="accx_gaussian_noise"
+                    value="${lin_acc_gaussian_noise_list[:2]}"/>
+
+    <xacro:property name="accy_gaussian_noise"
+                    value="${lin_acc_gaussian_noise_list[2:4]}"/>
+
+    <xacro:property name="accz_gaussian_noise"
+                    value="${lin_acc_gaussian_noise_list[4:]}"/>
+
+    <!-- Gaussian noise bias for linear acceleration -->
+
+    <xacro:property name="lin_acc_gaussian_noise_bias_list"
+                    value="${lin_acc_gaussian_noise_bias.split()}"/>
+
+    <xacro:property name="accx_gaussian_noise_bias"
+                    value="${lin_acc_gaussian_noise_bias_list[:2]}"/>
+
+    <xacro:property name="accy_gaussian_noise_bias"
+                    value="${lin_acc_gaussian_noise_bias_list[2:4]}"/>
+
+    <xacro:property name="accz_gaussian_noise_bias"
+                    value="${lin_acc_gaussian_noise_bias_list[4:]}"/>
+
+
+    <!-- Gaussian noise dynamic_bias for linear acceleration -->
+
+    <xacro:property name="lin_acc_gaussian_noise_dynamic_bias_list"
+                    value="${lin_acc_gaussian_noise_dynamic_bias.split()}"/>
+
+    <xacro:property name="accx_gaussian_noise_dynamic_bias"
+                    value="${lin_acc_gaussian_noise_dynamic_bias_list[:2]}"/>
+
+    <xacro:property name="accy_gaussian_noise_dynamic_bias"
+                    value="${lin_acc_gaussian_noise_dynamic_bias_list[2:4]}"/>
+
+    <xacro:property name="accz_gaussian_noise_dynamic_bias"
+                    value="${lin_acc_gaussian_noise_dynamic_bias_list[4:]}"/>
+
+    <gazebo reference="${reference_link}">
+      <gravity>True</gravity>
+      <sensor type="imu" name="${sensor_name}">
+        <always_on>${always_on}</always_on>
+        <update_rate>${update_rate}</update_rate>
+        <topic>${topic}</topic>
+        <!--
+        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the Imu message
+        the string '<model>::${parent_frame}::${id}_link', which probably is not what you want.
+        As of 2025-07-26, you'll see 3 warnings when Gazebo starts and an IMU sensor is loaded and the
+        use_gz_plugin is True:
+        [gazebo-2] Warning [Utils.cc:132] [/sdf/model[@name="xxx"]/link[@name="yyy"]/sensor[@name="${id}_gzb"]/frame_id:<urdf-string>:L0]:
+        XML Element[frame_id], child of element[sensor], not defined in SDF. Copying[frame_id] as children of [sensor].
+        [gazebo-2] Warning [Utils.cc:132] [/sdf/model[@name="xxx"]/link[@name="yyy"]/sensor[@name="${id}_gzb"]/frame_id:<data-string>:L216]:
+        XML Element[frame_id], child of element[sensor], not defined in SDF. Copying[frame_id] as children of [sensor].
+        [gazebo-2] Warning [Utils.cc:132] [/sdf/model[@name="xxx"]/link[@name="yyy"]/sensor[@name="${id}_gzb"]/frame_id:<data-string>:L216]:
+        XML Element[frame_id], child of element[sensor], not defined in SDF. Copying[frame_id] as children of [sensor].
+        Do not worry about these warnings, they are harmless and in fact the gz_frame_id is needed to
+        set the 'frame_id' for the IMU message properly.
+        If you use the tag <frame_id> in the <sensor> element, as it is indicated in the sdf specification,
+        you will get the wrong 'frame_id' in the IMU message:
+        '<model>::${parent_frame}::${id}_link'
+        -->
+        <gz_frame_id>${reference_link}</gz_frame_id>
+        <enable_metrics>False</enable_metrics>
+        <!--
+        <imu> element compliant with sdf format 1.7.
+        reference for <imu> element at http://sdformat.org/spec?ver=1.7&elem=sensor#sensor_imu
+        -->
+        <imu>
+          <!--
+          According to REP-103 and REP-145, the orientation reference frame for the IMU is
+          'ENU' (East-North-Up) by default.
+          -->
+          <orientation_reference_frame>
+            <localization>ENU</localization>
+          </orientation_reference_frame>
+          <angular_velocity>
+            <x>
+              <noise type="gaussian">
+                <mean>${wx_gaussian_noise[0]}</mean>
+                <stddev>${wx_gaussian_noise[1]}</stddev>
+                <bias_mean>${wx_gaussian_noise_bias[0]}</bias_mean>
+                <bias_stddev>${wx_gaussian_noise_bias[1]}</bias_stddev>
+                <dynamic_bias_stddev>${wx_gaussian_noise_dynamic_bias[0]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${wx_gaussian_noise_dynamic_bias[1]}</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>${wy_gaussian_noise[0]}</mean>
+                <stddev>${wy_gaussian_noise[1]}</stddev>
+                <bias_mean>${wy_gaussian_noise_bias[0]}</bias_mean>
+                <bias_stddev>${wy_gaussian_noise_bias[1]}</bias_stddev>
+                <dynamic_bias_stddev>${wy_gaussian_noise_dynamic_bias[0]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${wy_gaussian_noise_dynamic_bias[1]}</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>${wz_gaussian_noise[0]}</mean>
+                <stddev>${wz_gaussian_noise[1]}</stddev>
+                <bias_mean>${wz_gaussian_noise_bias[0]}</bias_mean>
+                <bias_stddev>${wz_gaussian_noise_bias[1]}</bias_stddev>
+                <dynamic_bias_stddev>${wz_gaussian_noise_dynamic_bias[0]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${wz_gaussian_noise_dynamic_bias[1]}</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </angular_velocity>
+          <linear_acceleration>
+            <x>
+              <noise type="gaussian">
+                <mean>${accx_gaussian_noise[0]}</mean>
+                <stddev>${accx_gaussian_noise[1]}</stddev>
+                <bias_mean>${accx_gaussian_noise_bias[0]}</bias_mean>
+                <bias_stddev>${accx_gaussian_noise_bias[1]}</bias_stddev>
+                <dynamic_bias_stddev>${accx_gaussian_noise_dynamic_bias[0]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${accx_gaussian_noise_dynamic_bias[1]}</dynamic_bias_correlation_time>
+              </noise>
+            </x>
+            <y>
+              <noise type="gaussian">
+                <mean>${accy_gaussian_noise[0]}</mean>
+                <stddev>${accy_gaussian_noise[1]}</stddev>
+                <bias_mean>${accy_gaussian_noise_bias[0]}</bias_mean>
+                <bias_stddev>${accy_gaussian_noise_bias[1]}</bias_stddev>
+                <dynamic_bias_stddev>${accy_gaussian_noise_dynamic_bias[0]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${accy_gaussian_noise_dynamic_bias[1]}</dynamic_bias_correlation_time>
+              </noise>
+            </y>
+            <z>
+              <noise type="gaussian">
+                <mean>${accz_gaussian_noise[0]}</mean>
+                <stddev>${accz_gaussian_noise[1]}</stddev>
+                <bias_mean>${accz_gaussian_noise_bias[0]}</bias_mean>
+                <bias_stddev>${accz_gaussian_noise_bias[1]}</bias_stddev>
+                <dynamic_bias_stddev>${accz_gaussian_noise_dynamic_bias[0]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${accz_gaussian_noise_dynamic_bias[1]}</dynamic_bias_correlation_time>
+              </noise>
+            </z>
+          </linear_acceleration>
+          <enable_orientation>${use_orientation}</enable_orientation>
+        </imu>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</robot>

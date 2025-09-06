@@ -1,0 +1,108 @@
+name: flart
+size:
+  x: 2.733
+  y: 0.774
+  z: 1.7004688
+
+# Base model
+mecanum_rectangular_base:
+  body:
+    mass: 500.0
+    size: { "x": 1.531034, "y": 0.774138, "z": 1.64 }
+    wheelbase: 0.92
+    track_width: 0.438
+    ground_clearance: 0.06 # Distance from the ground to the bottom face of the base.
+    mesh_visual: bases/flart/mesh_low_res.stl
+    mesh_visual_has_color: False
+    mesh_collision: null
+    scale:
+      x: 1
+      y: 1
+      z: 1
+    color:
+      r: 0
+      g: 0
+      b: 1
+      a: 1
+  mecanum_wheel:
+    mass: 6.5
+    # A wheel is a cylinder with its axis along the y-axis, which means that:
+    # size_x = 2*radius, size_y = thickness, size_z = 2*radius
+    size: { "x": 0.254, "y": 0.082, "z": 0.254 }
+    velocity_limit: 100 # Ideal condition
+    effort_limit: 100000 # Ideal condition
+    mu_forward: 1.5 # 1.0
+    mu_lateral: 0.05 # 0.05
+    slip_forward: 0.01 # 0.02
+    slip_lateral: 0.30 # 0.30
+    mesh_visual: wheels/mecanum_wheels/generic_mecanum_wheel_1/[left_or_right]_wheel_low_res.stl
+    mesh_visual_has_color: False
+    mesh_collision: null
+    # A wheel is a cylinder with its axis along the y-axis, which means that:
+    # scale_x = scales diameter in x-axis
+    # scale_y = scales thickness in y-axis
+    # scale_z = scales diameter in z-axis
+    # To maintain the correct proportions, scale_x and scale_z must be equal.
+    scale:
+      x: 1.0
+      y: 1.0
+      z: 1.0
+    color:
+      r: 0.1
+      g: 0.1
+      b: 0.1
+      a: 1
+
+# Lifting unit model
+fork:
+  tine:
+    mass: 60
+    size: { "x": 1.19, "y": 0.119669, "z": 0.06 }
+    mesh_visual: extras/fork_tine/mesh_low_res.stl
+    mesh_visual_has_color: False
+    mesh_collision: null
+    scale: { "x": 1, "y": 1, "z": 1 }
+  base:
+    mass: 70
+    size: { "x": 0.035, "y": 0.7, "z": 0.5 }
+  # Why this?
+  # Usually, forks are attached to the robot, on the front or the back side. The fork usually is a heavy body.
+  # Attaching the fork with a considerable mass to the robot base, will affect the robot's center of mass,
+  # which will affect the robot's dynamics and stability in simulation.
+  # Thefore, the parameters oyu have tune for your robot to move, will not work when you have the fork attached.
+  # Since we use simulation to have a kinematic simulation not a dynamic simulation, we can ignore the inertia
+  # of the fork, so even though it is attached to the robot, the robot will move as it has no fork attached.
+  use_inertia: False
+  tine_separation: 0.2523306
+  lower_limit: -0.01
+  upper_limit: 0.8
+  brake_distance: 0.20
+  # The velocity limit of 0.5 m/s is based on typical lift speeds of industrial forklifts, which commonly operate in the
+  # range of 0.4 - 0.6 m/s under load.
+  velocity_limit: 0.5 # m/s
+  # Velocity when the measured effort reaches 'fork_limits.effort'.
+  velocity_limit_full_effort: 0.25 # half of the velocity limit
+  acceleration: 0.5 # m/s^2
+  max_load: 1000.0 # Kg
+  effort_tolerance: 0.1 # [0 to 1]
+  dynamics_damping: 50
+  clearance_under_fork: 0.02 # Distance from the ground to the bottom face of the fork_base/tines.
+  color: { "r": 0.2, "g": 0.2, "b": 0.2, "a": 1 }
+
+front_lidar:
+  model: robosense_helios_16p
+
+front_imu:
+  model: um7
+#
+#
+# Explanation of 'fork_limits.lower':
+# ----------------------------------
+# For prismatic joints, if you require the joint to have a 'lower_limit' of exactly '0.0', this value can cause the
+# joint not to move when using position or velocity controllers. This happens if, at spawn, the joint is initialized
+# slightly below the limit (e.g., −1.9e−12), let's say with a little noise.
+# This small negative value, beyond the lower limit, will block movements. Effort controllers are unaffected.
+# To prevent this, set 'lower_limit' to a small negative value (e.g., −0.001) so the joint can travel from just below
+# zero up to the 'upper_limit'.
+# If the joint is required to have a lower limit below 0, from specification or design, then you are ok, and you can set
+# tha value.

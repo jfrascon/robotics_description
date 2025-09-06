@@ -1,0 +1,267 @@
+<?xml version="1.0"?>
+<!--
+The name of the robot model, 'flart', is obtained from the combination of the words 'forklift' and 'artisteril',
+which is the company that manufactures the forklift robot.
+-->
+<robot name="flart" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+
+  <xacro:property name="pkg_dir"    value="$(find eut_robotics_description)"/>
+  <xacro:property name="config_dir" value="${pkg_dir}/config"/>
+  <xacro:property name="urdf_dir"   value="${pkg_dir}/urdf"/>
+
+  <!-- INCLUDES -->
+
+  <xacro:include filename="${urdf_dir}/common/all_commons.xacro"/>
+  <xacro:include filename="${urdf_dir}/bases/mecanum_r_base_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/bases/set_mecanum_r_base_props_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/extras/fork_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/extras/set_fork_props_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/sensors/all_sensors_macro.xacro"/>
+
+  <!--
+  An input configuration file can be provided when instantiating this xacro file.
+  If no input configuration file is provided, the default configuration file is used.
+  -->
+  <xacro:property name="desc_cfg" value="${xacro.load_yaml(config_dir + '/robots/flart/description.yaml')}"/>
+
+  <!-- ===================================================================== -->
+  <!-- ARGS -->
+  <xacro:arg name="robot_name"           default="${desc_cfg['name']}"/>
+  <xacro:arg name="namespace"            default=""/>
+  <xacro:arg name="use_visual_meshes"    default="True"/>
+  <xacro:arg name="use_collision_meshes" default="False"/>
+  <xacro:arg name="use_sim_mode"         default="False"/>
+  <xacro:arg name="sim_cfg_file"         default=""/>
+  <xacro:arg name="use_front_lidar_sim"  default="True"/>
+  <xacro:arg name="use_front_imu_sim"    default="True"/>
+
+  <!-- args into properties for easy manipulation -->
+  <xacro:property name="robname"              value="$(arg robot_name)"/>
+  <xacro:property name="ns"                   value="$(arg namespace)"/>
+
+  <xacro:property name="robot_namespace"
+                  value="${(ns + robname) if ns in ('', '/') else (ns.rstrip('/') + '/' + robname)}"/>
+  <xacro:property name="robot_prefix"
+                  value="${(robname + '_') if ns in ('', '/') else (ns.strip('/').replace('/', '_') + '_' + robname + '_')}"/>
+
+  <xacro:property name="use_visual_meshes"    value="$(arg use_visual_meshes)"/>
+  <xacro:property name="use_collision_meshes" value="$(arg use_collision_meshes)"/>
+  <xacro:property name="use_sim_mode"         value="$(arg use_sim_mode)"/>
+
+  <!--
+  If not working in simulation mode, do not load the simulation configuration for the robot from the simulation
+  configuration file.
+  If working in simulation mode, but no configuration file is provided, set an empty dictionary, meaning no
+  configuration is available.
+  -->
+  <xacro:property name="sim_cfg_file" value="$(arg sim_cfg_file)"/>
+  <xacro:property name="sim_cfg"
+                  value="${xacro.load_yaml(sim_cfg_file)
+                           if use_sim_mode and sim_cfg_file else dict()}"/>
+
+  <xacro:property name="use_front_lidar_sim" value="$(arg use_front_lidar_sim)"/>
+  <xacro:property name="use_front_imu_sim"   value="$(arg use_front_imu_sim)"/>
+
+  <!-- ===================================================================== -->
+  <!-- ROBOT -->
+  <!-- ===================================================================== -->
+
+  <!--
+  Names used in this robot for devices/parts:
+  - base
+  - front_left_wheel
+  - front_right_wheel
+  - rear_left_wheel
+  - rear_right_wheel
+  - fork
+  - front_lidar
+  - front_imu
+  -->
+
+  <xacro:property name="robot_size_x" value="${desc_cfg['size']['x']}"/>
+  <xacro:property name="robot_size_y" value="${desc_cfg['size']['y']}"/>
+  <xacro:property name="robot_size_z" value="${desc_cfg['size']['z']}"/>
+
+  <!-- ===================================================================== -->
+  <!-- MECANUM RECTANGULAR BASE -->
+  <!-- ===================================================================== -->
+
+  <xacro:set_mecanum_r_base_props desc_cfg="${desc_cfg['mecanum_rectangular_base']}" prop_prefix="base"/>
+
+
+  <xacro:mecanum_r_base
+    base_name="base"
+    front_left_wheel_name="front_left_wheel"
+    front_right_wheel_name="front_right_wheel"
+    rear_left_wheel_name="rear_left_wheel"
+    rear_right_wheel_name="rear_right_wheel"
+    prefix="${robot_prefix}"
+    body_mass="${base_body_mass}"
+    body_size="${base_body_size}"
+    body_wheelbase="${base_body_wheelbase}"
+    body_track_width="${base_body_track_width}"
+    body_ground_clearance="${base_body_ground_clearance}"
+    body_mesh_visual="${base_body_mesh_visual if use_visual_meshes else ''}"
+    body_mesh_visual_has_color="${base_body_mesh_visual_has_color}"
+    body_mesh_collision="${base_body_mesh_collision if use_collision_meshes else ''}"
+    body_scale="${base_body_scale}"
+    body_color="${base_body_color}"
+    mecanum_wheel_mass="${base_mecanum_wheel_mass}"
+    mecanum_wheel_size="${base_mecanum_wheel_size}"
+    mecanum_wheel_velocity_limit="${base_mecanum_wheel_velocity_limit}"
+    mecanum_wheel_effort_limit="${base_mecanum_wheel_effort_limit}"
+    mecanum_wheel_mu_forward="${base_mecanum_wheel_mu_forward}"
+    mecanum_wheel_mu_lateral="${base_mecanum_wheel_mu_lateral}"
+    mecanum_wheel_slip_forward="${base_mecanum_wheel_slip_forward}"
+    mecanum_wheel_slip_lateral="${base_mecanum_wheel_slip_lateral}"
+    mecanum_wheel_mesh_visual_left="${base_mecanum_wheel_mesh_visual_left if use_visual_meshes else ''}"
+    mecanum_wheel_mesh_visual_right="${base_mecanum_wheel_mesh_visual_right if use_visual_meshes else ''}"
+    mecanum_wheel_mesh_visual_has_color="${base_mecanum_wheel_mesh_visual_has_color}"
+    mecanum_wheel_scale="${base_mecanum_wheel_scale}"
+    mecanum_wheel_color="${base_mecanum_wheel_color}"/>
+
+
+  <!-- ===================================================================== -->
+  <!-- FORK -->
+  <!-- ===================================================================== -->
+
+  <xacro:set_fork_props desc_cfg="${desc_cfg['fork']}" prop_prefix="fork"/>
+
+  <!--
+  padding_x, is the empty space between the edge of the base and the beginning of the tines.
+  (Note: the tines start at the back face of the fork base)
+  robot_size_x = base_body_size_x + padding_x + tine_size_x.
+  padding_x = robot_size_x - base_body_size_x - tine_size_x.
+  -->
+
+  <xacro:property name="padding_x" value="${robot_size_x - base_body_size_x - fork_tine_size_x}"/>
+
+  <xacro:property name="joint_base_fr_fork_fr_x"
+                  value="${(-base_body_size_x * 0.5) - padding_x - fork_base_size_x}"/>
+
+  <xacro:property name="joint_base_fr_fork_fr_z"
+                  value="${-base_body_ground_clearance + fork_tine_size_z + fork_clearance_under_fork}"/>
+
+    <xacro:fork
+    name="fork"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}base_link"
+    use_inertia="${fork_use_inertia}"
+    tine_mass="${fork_tine_mass}"
+    tine_size="${fork_tine_size}"
+    base_mass="${fork_base_mass}"
+    base_size="${fork_base_size}"
+    tine_separation="${fork_tine_separation}"
+    lower_limit="${fork_lower_limit}"
+    upper_limit="${fork_upper_limit}"
+    brake_distance="${fork_brake_distance}"
+    velocity_limit="${fork_velocity_limit}"
+    velocity_limit_full_effort="${fork_velocity_limit_full_effort}"
+    acceleration="${fork_acceleration}"
+    max_load="${fork_max_load}"
+    effort_tolerance="${fork_effort_tolerance}"
+    dynamics_damping="${fork_dynamics_damping}"
+    tine_mesh_visual="${fork_tine_mesh_visual if use_visual_meshes else ''}"
+    tine_mesh_visual_has_color="${fork_tine_mesh_visual_has_color}"
+    tine_mesh_collision="${fork_tine_mesh_collision if use_collision_meshes else ''}"
+    tine_scale="${fork_tine_scale}"
+    color="${fork_color}"
+    joint_parent_fr_root_fr="${joint_base_fr_fork_fr_x} 0 ${joint_base_fr_fork_fr_z} 0 0 ${pi}"/>
+
+  <!-- ===================================================================== -->
+  <!-- TOP PLATFORM -->
+  <!-- ===================================================================== -->
+
+  <!-- (t)op (p)latform -->
+  <xacro:property name="tp_mass"    value="1"/>
+  <xacro:property name="tp_size_x"  value="0.08"/>
+  <xacro:property name="tp_size_y"  value="0.08"/>
+  <xacro:property name="tp_size_z"  value="0.146"/>
+  <xacro:property name="tp_color"   value="0.1 0.1 0.1 1"/>
+
+  <xacro:link_r
+    name="top_platform"
+    prefix="${robot_prefix}"
+    mass="${tp_mass}"
+    size="${tp_size_x} ${tp_size_y} ${tp_size_z}"
+    color="${tp_color}"
+    vci_pose="0 0 ${0.5 * tp_size_z} 0 0 0"/>
+
+  <joint name="${robot_prefix}top_platform_joint" type="fixed">
+    <parent link="${robot_prefix}base_link"/>
+    <child link="${robot_prefix}top_platform_link"/>
+    <origin rpy="0 0 0" xyz="-0.08629 0 ${base_body_size_z}"/>
+  </joint>
+
+
+  <!-- ===================================================================== -->
+  <!-- SENSORS -->
+  <!-- ===================================================================== -->
+
+  <!--
+  FRONT_LIDAR
+  -->
+
+  <!--
+  Check to verify that the robot's configuration has the proper lidar model listed.
+  -->
+
+  <xacro:if value="${desc_cfg['front_lidar']['model'] != 'robosense_helios_16p'}">
+    ${xacro.fatal("The 'front_lidar' model detected in the robot's configuration file is not a 'robosense_helios_16p'")}
+  </xacro:if>
+
+  <xacro:property name="front_lidar_cfg"
+                  value="${xacro.load_yaml(config_dir + '/sensors/lidars/robosense_helios_16p.yaml')}"/>
+
+  <xacro:property name="joint_base_fr_front_lidar_fr_x"
+                  value="${(0.5 * base_body_size_x) + (0.5 * front_lidar_cfg['shape']['size']['x']) - 0.028}"/>
+
+  <xacro:robosense_helios_16p
+    name="front_lidar"
+    prefix="${robot_prefix}"
+    namespace="${robot_namespace}"
+    parent_frame="${robot_prefix}base_link"
+    joint_parent_fr_root_fr="${joint_base_fr_front_lidar_fr_x} 0 0.28 0 0 0"
+    sim_cfg="${sim_cfg.get('front_lidar') if use_sim_mode and sim_cfg and use_front_lidar_sim else None}"
+    use_mesh_visual="${use_visual_meshes}"
+    use_mesh_collision="${use_collision_meshes}"/>
+
+  <!-- FRONT IMU -->
+
+  <!--
+  Check to verify that the robot's configuration has the proper imu model listed.
+  -->
+
+  <xacro:if value="${desc_cfg['front_imu']['model'] != 'um7'}">
+    ${xacro.fatal("The 'front_imu' model detected in the robot's configuration file is not a 'um7'")}
+  </xacro:if>
+
+
+  <!--
+  Position and orientation of the frame '${robot_prefix}front_imu_root_link' with respect to the frame
+  '${robot_prefix}front_lidar_root_link'.
+  -->
+
+  <xacro:property name="joint_front_lidar_fr_front_imu_fr"
+                  value="0 0 ${front_lidar_cfg['shape']['size']['z']} 0 0 0"/>
+
+  <xacro:um7
+    name="front_imu"
+    prefix="${robot_prefix}"
+    namespace="${robot_namespace}"
+    parent_frame="${robot_prefix}front_lidar_root_link"
+    joint_parent_fr_root_fr="${joint_front_lidar_fr_front_imu_fr}"
+    sim_cfg="${sim_cfg.get('front_imu') if use_sim_mode and sim_cfg and use_front_imu_sim else None}"
+    use_mesh_visual="${use_visual_meshes}"
+    use_mesh_collision="${use_collision_meshes}"/>
+
+  <xacro:if value="${use_sim_mode}">
+    <xacro:include filename="${urdf_dir}/robots/flart/ros2_control_sim.xacro"/>
+    <xacro:r2c namespace="${robot_namespace}"
+               fork_joint_name="${robot_prefix}fork_root_joint"
+               front_left_wheel_joint_name="${robot_prefix}front_left_wheel_joint"
+               front_right_wheel_joint_name="${robot_prefix}front_right_wheel_joint"
+               rear_left_wheel_joint_name="${robot_prefix}rear_left_wheel_joint"
+               rear_right_wheel_joint_name="${robot_prefix}rear_right_wheel_joint"/>
+  </xacro:if>
+</robot>

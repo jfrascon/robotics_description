@@ -1,0 +1,57 @@
+always_on: True
+update_rate: 75.0 # hz
+ang_vel_gaussian_noise:
+  {
+    "mean_x": 0,
+    "stddev_x": 0.0002,
+    "mean_y": 0,
+    "stddev_y": 0.0002,
+    "mean_z": 0,
+    "stddev_z": 0.0002,
+  }
+ang_vel_gaussian_noise_bias:
+  {
+    "mean_x": 0.0000075,
+    "stddev_x": 0.0000008,
+    "mean_y": 0.000075,
+    "stddev_y": 0.0000008,
+    "mean_z": 0.000075,
+    "stddev_z": 0.0000008,
+  }
+ang_vel_gaussian_noise_dynamic_bias:
+  {
+    "stddev_x": 0,
+    "corr_time_x": 0,
+    "stddev_y": 0,
+    "corr_time_y": 0,
+    "stddev_z": 0,
+    "corr_time_z": 0,
+  }
+lin_acc_gaussian_noise:
+  {
+    "mean_x": 0,
+    "stddev_x": 0.017,
+    "mean_y": 0,
+    "stddev_y": 0.017,
+    "mean_z": 0,
+    "stddev_z": 0.017,
+  }
+lin_acc_gaussian_noise_bias:
+  {
+    "mean_x": 0.1,
+    "stddev_x": 0.001,
+    "mean_y": 0.1,
+    "stddev_y": 0.001,
+    "mean_z": 0.1,
+    "stddev_z": 0.001,
+  }
+lin_acc_gaussian_noise_dynamic_bias:
+  {
+    "stddev_x": 0,
+    "corr_time_x": 0,
+    "stddev_y": 0,
+    "corr_time_y": 0,
+    "stddev_z": 0,
+    "corr_time_z": 0,
+  }
+use_orientation: True

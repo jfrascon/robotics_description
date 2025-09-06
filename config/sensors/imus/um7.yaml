@@ -1,0 +1,26 @@
+mass: 0.0110
+# type: 'r'  -> box,                   size_x,             size_y,             size_z
+#       'cx' -> cylinder along x axis, size_x = thickness, size_y = 2*radius,  size_z = 2*radius
+#       'cy' -> cylinder along y axis, size_x = 2*radius,  size_y = thickness, size_z = 2*radius
+#       'cz' -> cylinder along z axis, size_x = 2*radius,  size_y = 2*radius,  size_z = thickness
+#       's'  -> sphere,                size_x = 2*radius,  size_y = 2*radius,  size_z = 2*radius
+shape: { "type": "r", "size": { "x": 0.0285, "y": 0.0285, "z": 0.0112 } }
+# IMPORTANT
+# The inner frame for 'mesh_visual' and 'mesh_collision' must be located at the center of the mesh.
+# Both meshes musth have the same shape and dimensiones.
+# mesh_visual: sensors/imus/um7/mesh.dae
+mesh_visual: null
+mesh_visual_has_color: False
+mesh_collision: null # Not available, box is used for collision instead.
+# scale: { "x": 1, "y": 1, "z": 1 }
+scale: null
+color: { "r": 0.1, "g": 0.1, "b": 0.1, "a": 1.0 }
+# This pose sets the position and orientation of the sensor frame with respect the root frame, located
+# at the center of the bottom face of the rectangle.
+joint_root_fr_data_fr:
+  x: -0.007
+  y: -0.01
+  z: 0.01118
+  R: 3.141592654
+  P: 0
+  Y: 1.570796327

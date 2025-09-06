@@ -1,0 +1,62 @@
+# Front lidar is a RoboSense Helios 16P
+front_lidar:
+  # use_sim: True # Enable or disable the sensor simulation.
+  use_gpu_sensor: True
+  always_on: True
+  visualize: False
+  update_rate: 10
+  hor_fov_deg: { "min": -120.0, "max": 120.0 }
+  hor_res_deg: 0.2
+  ver_fov_deg: { "min": -15.0, "max": 15.0 }
+  ver_res_deg: 2.0
+  dist_span: { "min": 0.2, "max": 50.0 } # m
+  gaussian_noise: { "mean": 0.0, "stddev": 0.01 }
+
+# Front imu is an UM7
+front_imu:
+  # use_sim: True # Enable or disable the sensor simulation.
+  always_on: True
+  update_rate: 75.0
+  ang_vel_gaussian_noise:
+    mean_x: 0,
+    stddev_x: 0.0002,
+    mean_y: 0,
+    stddev_y: 0.0002,
+    mean_z: 0,
+    stddev_z: 0.0002,
+  ang_vel_gaussian_noise_bias:
+    mean_x: 0.0000075,
+    stddev_x: 0.0000008,
+    mean_y: 0.000075,
+    stddev_y: 0.0000008,
+    mean_z: 0.000075,
+    stddev_z: 0.0000008,
+  ang_vel_gaussian_noise_dynamic_bias:
+    stddev_x: 0,
+    corr_time_x: 0,
+    stddev_y: 0,
+    corr_time_y: 0,
+    stddev_z: 0,
+    corr_time_z: 0,
+  lin_acc_gaussian_noise:
+    mean_x: 0,
+    stddev_x: 0.017,
+    mean_y: 0,
+    stddev_y: 0.017,
+    mean_z: 0,
+    stddev_z: 0.017,
+  lin_acc_gaussian_noise_bias:
+    mean_x: 0.1,
+    stddev_x: 0.001,
+    mean_y: 0.1,
+    stddev_y: 0.001,
+    mean_z: 0.1,
+    stddev_z: 0.001,
+  lin_acc_gaussian_noise_dynamic_bias:
+    stddev_x: 0,
+    corr_time_x: 0,
+    stddev_y: 0,
+    corr_time_y: 0,
+    stddev_z: 0,
+    corr_time_z: 0,
+  use_orientation: True

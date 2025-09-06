@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<!--
+The lidar_2d macro defines a planar laser scanner that sweeps only in the horizontal plane of the sensor.
+
+This macro defines exactly the same link and joint set produced by lidar_3d_ring:
+  - Links:
+    - ${name}_root_link, used to attach the sensor to the robot body.
+    - ${name}_link, where the sensor data is generated.
+  - Joints:
+    - ${name}_root_joint, a fixed joint connecting the root link to the parent frame.
+    - ${name}_joint, a fixed joint connecting the data link to the root link.
+
+The physical body of the sensor is modeled either using a primitive box or a mesh. The parameters 'mass' and
+'size=size_x size_y size_z' define its inertial and collision properties.
+If a mesh is provided via the 'mesh' parameter, it is used for the visual element, and optionally for collision if
+'use_mesh_for_collision' is True.
+Mesh scaling is handled independently along each axis via 'scale=scale_x scale_y scale_z'.
+
+THE MESH IS EXPECTED TO BE CENTERED AT ITS INNER FRAME. IF NO MESH IS PROVIDED, THE VISUAL AND COLLISION GEOMETRIES ARE
+MODELED AS A BOX WITH THE GIVEN DIMENSIONS.
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS' AND 'SIZE_<XYZ>' PARAMETERS THAT REPRESENT THE REAL
+PHYSICAL PROPERTIES OF THE LIDAR. THIS IS, THE SCALE_<XYZ> PARAMETERS ARE NOT USED TO SCALE EITHER THE MASS OR THE SIZE
+OF THE LIDAR, THEY ARE ONLY USED TO SCALE THE MESH, IF A MESH IS PROVIDED.
+
+A color can be assigned to the visual using the 'color' parameter in RGBA format.
+
+If 'sim_in_gz' is set to True, the macro instantiates a Gazebo LiDAR plugin inside a <gazebo> block. This plugin
+simulates a 2D LiDAR, using CPU backend.
+The plugin parameters include:
+  - Angular ranges and resolution:
+    - Horizontal: from 'hor_min_angle_deg' to 'hor_max_angle_deg' with 'hor_samples'
+    - Vertical: 0 degrees with 1 sample.
+  - Range limits: 'min_dist' and 'max_dist'
+  - Update rate in Hz
+  - Option to enable or disable visualization
+  - Gaussian noise model with configurable mean and standard deviation: gaussian_noise = 'mean stddev'
+  - Output topic name via the 'topic' parameter.
+
+GAZEBO WILL PUBLISH 1 TOPICS, THE ONE YOU PROVIDED IN THE PARAMETER 'topic', WITH TYPE LaserScan (2D)
+
+The visual, collision and inertial elements are positioned and oriented using the *vci_origin block.
+The joint joint_parent_frame_root_frame is used to specify how the root link is connected to the parent frame.
+The joint joint_root_frame_data_frame is used to specify how the data link is connected to the root link.
+
+TO USE LIDAR PLUGIN DO NOT FORGET TO ADD THE FOLLOWING BLOCK TO THE SDF WORLD FILE YOU USE FOR SIMULATION:
+
+<plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+    <render_engine>ogre2</render_engine>
+</plugin>
+
+Reference: https://gazebosim.org/docs/harmonic/sensors/
+
+Mandatory parameters:
+- name has 1 value.
+- parent_frame has 1 value.
+- mass has 1 value, expressed in kg.
+- size has 3 values between quotes in this order 'size_x size_y size_z', expressed in meters.
+- update_rate has 1 value, expressed in Hz.
+- hor_fov_deg has 2 values between quotes in this order, 'min_hor_angle_deg max_hor_angle_deg', expressed in degrees.
+- hor_res_deg has 1 value, expressed in degrees.
+- dist_span has 2 values between quotes in this order 'min_dist max_dist', expressed in meters.
+- vci_pose has 6 values between quotes in this order 'x y z R P Y'.
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+- joint_root_fr_data_fr has 6 values between quotes in this order 'x y z R P Y'
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+- joint_parent_fr_root_fr ahs 6 values between quotes in this order 'x y z R P Y'
+  'x y z' are expressed in meters and 'R P Y' are expressed in radians.
+-->
+
+<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="lidar_2d"
+               params="name
+                       prefix:=''
+                       namespace:=''
+                       parent_frame
+                       mass
+                       shape
+                       mesh_visual:=''
+                       mesh_visual_has_color:=False
+                       mesh_collision:=''
+                       scale:=''
+                       color:='1 1 1 1'
+                       joint_root_fr_data_fr
+                       joint_parent_fr_root_fr
+                       use_sim:=False
+                       sim_always_on:=True
+                       sim_visualize:=False
+                       sim_update_rate
+                       sim_hor_fov_deg
+                       sim_hor_res_deg
+                       sim_dist_span
+                       sim_gaussian_noise:='0 0'">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_body_macro.xacro"/>
+
+    <xacro:lidar_body
+      name="${name}"
+      prefix="${prefix}"
+      namespace="${namespace}"
+      parent_frame="${parent_frame}"
+      mass="${mass}"
+      shape="${shape}"
+      mesh_visual="${mesh_visual}"
+      mesh_visual_has_color="${mesh_visual_has_color}"
+      mesh_collision="${mesh_collision}"
+      scale="${scale}"
+      color="${color}"
+      joint_root_fr_data_fr="${joint_root_fr_data_fr}"
+      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+
+    <xacro:if value="${use_sim}">
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_2d_plugin_macro.xacro"/>
+
+      <xacro:property name="sim_topic"
+                      value="${(namespace if namespace in ('', '/')
+                                          else namespace.rstrip('/') + '/') + name + '/scan'}"/>
+
+      <xacro:lidar_2d_plugin
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        dist_span="${sim_dist_span}"
+        gaussian_noise="${sim_gaussian_noise}"
+        topic="${sim_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>

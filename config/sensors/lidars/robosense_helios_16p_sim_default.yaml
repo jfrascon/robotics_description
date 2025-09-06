@@ -1,0 +1,9 @@
+always_on: True
+visualize: False
+update_rate: 10
+hor_fov_deg: { "min": -180.0, "max": 180.0 }
+hor_res_deg: 0.2
+ver_fov_deg: { "min": -15.0, "max": 15.0 }
+ver_res_deg: 2.0
+dist_span: { "min": 0.2, "max": 150.0 } # m
+gaussian_noise: { "mean": 0.0, "stddev": 0.01 }
