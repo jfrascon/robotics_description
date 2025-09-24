@@ -36,13 +36,12 @@ which is the company that manufactures the forklift robot.
   <xacro:arg name="use_front_imu_sim"    default="True"/>
 
   <!-- args into properties for easy manipulation -->
-  <xacro:property name="robname"              value="$(arg robot_name)"/>
-  <xacro:property name="ns"                   value="$(arg namespace)"/>
+  <xacro:property name="robname" value="$(arg robot_name)"/>
+  <xacro:property name="ns"      value="$(arg namespace)"/>
 
   <xacro:property name="robot_namespace"
                   value="${(ns + robname) if ns in ('', '/') else (ns.rstrip('/') + '/' + robname)}"/>
-  <xacro:property name="robot_prefix"
-                  value="${(robname + '_') if ns in ('', '/') else (ns.strip('/').replace('/', '_') + '_' + robname + '_')}"/>
+  <xacro:property name="robot_prefix" value="${robname + '_'}"/>
 
   <xacro:property name="use_visual_meshes"    value="$(arg use_visual_meshes)"/>
   <xacro:property name="use_collision_meshes" value="$(arg use_collision_meshes)"/>

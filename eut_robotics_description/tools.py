@@ -7,17 +7,12 @@ so that launch scripts can avoid duplicating logic.
 
 from __future__ import annotations
 
+from typing import Union
+
 from launch import LaunchContext, LaunchDescriptionEntity
 from launch.actions import SetLaunchConfiguration
 from launch.substitution import Substitution
-from launch.substitutions import (
-    EqualsSubstitution,
-    IfElseSubstitution,
-    LaunchConfiguration,
-    OrSubstitution,
-    PythonExpression,
-    TextSubstitution,
-)
+from launch.substitutions import EqualsSubstitution, IfElseSubstitution, LaunchConfiguration, PythonExpression
 
 # ------------------------------------------------------------------------------
 # Regular functions
@@ -89,6 +84,12 @@ def make_robot_namespace(namespace_subst: Substitution | str, robot_name_subst: 
     # namespace='/ns1/ns2'  -> robot_namespace = '/ns1/ns2' + '/' + robot_name
     # namespace='/ns1/ns2/' -> robot_namespace = '/ns1/ns2' + '/' + robot_name
 
+    if not isinstance(namespace_subst, (str, Substitution)):
+        raise TypeError('namespace_subst must be str or Substitution')
+
+    if not isinstance(robot_name_subst, (str, Substitution)):
+        raise TypeError('robot_name_subst must be str or Substitution')
+
     is_empty = EqualsSubstitution(namespace_subst, '')
 
     return IfElseSubstitution(
@@ -98,42 +99,56 @@ def make_robot_namespace(namespace_subst: Substitution | str, robot_name_subst: 
     )
 
 
-def make_robot_prefix(namespace_subst: Substitution | str, robot_name_subst: Substitution | str) -> Substitution:
+# def make_robot_prefix(namespace_subst: Substitution | str, robot_name_subst: Substitution | str) -> Substitution:
+#     """
+#     Build the robot prefix Substitution, flattening namespace with '_'.
+
+#     - If namespace is '' or '/', prefix becomes '<robot_name>_'
+#     - Else: '<ns_flat>_<robot_name>_'
+#       where ns_flat = namespace.strip('/').replace('/', '_')
+
+#     Example
+#     - rp = make_robot_prefix(LaunchConfiguration('namespace'), LaunchConfiguration('robot_name'))
+
+#     Use rp to parameterize joints/links.
+#     """
+#     # The 'prefix' is similar to the 'namespace', it is a 'flatenized' version of the namespace, i.e., it uses the
+#     # character '_' as a separator instead of the character '/'.
+#     # The 'robot_prefix' is the concatenation of the 'prefix' and the 'robot_name', # using the character '_' as a
+#     # separator.
+
+#     # namespace=''          -> robot_prefix = robot_name + '_'
+#     # namespace='/'         -> robot_prefix = robot_name + '_'
+#     # namespace='ns'        -> robot_prefix = 'ns' + '_' + robot_name + '_'
+#     # namespace='ns/'       -> robot_prefix = 'ns' + '_' + robot_name + '_'
+#     # namespace='/ns/'      -> robot_prefix = 'ns' + '_' + robot_name + '_'
+#     # namespace='/ns1/ns2'  -> robot_prefix = 'ns1_ns2' + '_' + robot_name + '_'
+#     # namespace='/ns1/ns2/' -> robot_prefix = 'ns1_ns2' + '_' + robot_name + '_'
+#     ns_is_empty_or_slash = OrSubstitution(
+#         EqualsSubstitution(namespace_subst, ''), EqualsSubstitution(namespace_subst, '/')
+#     )
+
+#     return IfElseSubstitution(
+#         condition=ns_is_empty_or_slash,
+#         if_value=[robot_name_subst, TextSubstitution(text='_')],
+#         else_value=PythonExpression(
+#             ["'", namespace_subst, "'.strip('/').replace('/', '_') + '_' + '", robot_name_subst, "_'"]
+#         ),
+#     )
+
+
+def make_robot_prefix(
+    namespace_subst: Union[Substitution, str, None], robot_name_subst: Union[Substitution, str]
+) -> Substitution:
     """
-    Build the robot prefix Substitution, flattening namespace with '_'.
-
-    - If namespace is '' or '/', prefix becomes '<robot_name>_'
-    - Else: '<ns_flat>_<robot_name>_'
-      where ns_flat = namespace.strip('/').replace('/', '_')
-
-    Example
-    - rp = make_robot_prefix(LaunchConfiguration('namespace'), LaunchConfiguration('robot_name'))
-
-    Use rp to parameterize joints/links.
+    Build the robot prefix substitution that appends '_' to the robot name.
     """
-    # The 'prefix' is similar to the 'namespace', it is a 'flatenized' version of the namespace, i.e., it uses the
-    # character '_' as a separator instead of the character '/'.
-    # The 'robot_prefix' is the concatenation of the 'prefix' and the 'robot_name', # using the character '_' as a
-    # separator.
+    # Keep namespace_subst parameter to avoid touching call sites; reserved for future use.
 
-    # namespace=''          -> robot_prefix = robot_name + '_'
-    # namespace='/'         -> robot_prefix = robot_name + '_'
-    # namespace='ns'        -> robot_prefix = 'ns' + '_' + robot_name + '_'
-    # namespace='ns/'       -> robot_prefix = 'ns' + '_' + robot_name + '_'
-    # namespace='/ns/'      -> robot_prefix = 'ns' + '_' + robot_name + '_'
-    # namespace='/ns1/ns2'  -> robot_prefix = 'ns1_ns2' + '_' + robot_name + '_'
-    # namespace='/ns1/ns2/' -> robot_prefix = 'ns1_ns2' + '_' + robot_name + '_'
-    ns_is_empty_or_slash = OrSubstitution(
-        EqualsSubstitution(namespace_subst, ''), EqualsSubstitution(namespace_subst, '/')
-    )
+    if not isinstance(robot_name_subst, (str, Substitution)):
+        raise TypeError('robot_name_subst must be str or Substitution')
 
-    return IfElseSubstitution(
-        condition=ns_is_empty_or_slash,
-        if_value=[robot_name_subst, TextSubstitution(text='_')],
-        else_value=PythonExpression(
-            ["'", namespace_subst, "'.strip('/').replace('/', '_') + '_' + '", robot_name_subst, "_'"]
-        ),
-    )
+    return PythonExpression(["'", robot_name_subst, "' + '_'"])
 
 
 # ------------------------------------------------------------------------------
