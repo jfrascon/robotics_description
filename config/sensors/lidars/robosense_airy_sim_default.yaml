@@ -1,0 +1,12 @@
+always_on: True
+visualize: False
+update_rate: 10
+hor_fov_deg: { "min": -180.0, "max": 180.0 }
+hor_res_deg: 0.4
+ver_fov_deg: { "min": -15.0, "max": 15.0 }
+# On page 11 of the Robosense Airy it is stated that: Vertical range is 90 degrees, with 96 beams, so vertical
+# resolution is 0.947, but if you do the math you get 90/96 = 0.9375
+ver_res_deg: 0.9375
+# Blind zone: 0.1 m
+dist_span: { "min": 0.1, "max": 60.0 } # m
+gaussian_noise: { "mean": 0.0, "stddev": 0.01 }

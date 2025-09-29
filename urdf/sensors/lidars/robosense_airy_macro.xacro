@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<robot name="robosense_airy" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="robosense_airy"
+               params="name
+                       prefix
+                       namespace
+                       parent_frame
+                       joint_parent_fr_root_fr
+                       sim_cfg:=${None}
+                       use_mesh_visual:=True
+                       use_mesh_collision:=False">
+
+    <xacro:property name="pkg_dir" value="$(find eut_robotics_description)"/>
+
+    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/generic_macros/lidar_3d_ring_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/generic_macros/set_lidar_3d_ring_props_macro.xacro"/>
+
+    <xacro:set_lidar_3d_ring_props
+        desc_cfg="${xacro.load_yaml(pkg_dir + '/config/sensors/lidars/robosense_airy.yaml')}"
+        sim_cfg="${sim_cfg}"
+        prop_prefix="robosense_airy"/>
+
+    <xacro:lidar_3d_ring
+        name="${name}"
+        prefix="${prefix}"
+        namespace="${namespace}"
+        parent_frame="${parent_frame}"
+        mass="${robosense_airy_mass}"
+        shape="${robosense_airy_shape}"
+        mesh_visual="${robosense_airy_mesh_visual if use_mesh_visual else ''}"
+        mesh_visual_has_color="${robosense_airy_mesh_visual_has_color}"
+        mesh_collision="${robosense_airy_mesh_collision if use_mesh_collision else ''}"
+        scale="${robosense_airy_scale}"
+        color="${robosense_airy_color}"
+        joint_root_fr_data_fr="${robosense_airy_joint_root_fr_data_fr}"
+        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
+        use_sim="${robosense_airy_use_sim}"
+        sim_always_on="${robosense_airy_sim_always_on}"
+        sim_visualize="${robosense_airy_sim_visualize}"
+        sim_update_rate="${robosense_airy_sim_update_rate}"
+        sim_hor_fov_deg="${robosense_airy_sim_hor_fov_deg}"
+        sim_hor_res_deg="${robosense_airy_sim_hor_res_deg}"
+        sim_ver_fov_deg="${robosense_airy_sim_ver_fov_deg}"
+        sim_ver_res_deg="${robosense_airy_sim_ver_res_deg}"
+        sim_dist_span="${robosense_airy_sim_dist_span}"
+        sim_gaussian_noise="${robosense_airy_sim_gaussian_noise}"/>
+  </xacro:macro>
+</robot>

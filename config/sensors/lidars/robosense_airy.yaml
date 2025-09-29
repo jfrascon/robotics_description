@@ -1,0 +1,27 @@
+mass: 0.25
+# type: 'r'  -> box,                   size_x,             size_y,             size_z
+#       'cx' -> cylinder along x axis, size_x = thickness, size_y = 2*radius,  size_z = 2*radius
+#       'cy' -> cylinder along y axis, size_x = 2*radius,  size_y = thickness, size_z = 2*radius
+#       'cz' -> cylinder along z axis, size_x = 2*radius,  size_y = 2*radius,  size_z = thickness
+#       's'  -> sphere,                size_x = 2*radius,  size_y = 2*radius,  size_z = 2*radius
+shape: { "type": "cz", "size": { "x": 0.06, "y": 0.06, "z": 0.063 } }
+# IMPORTANT
+# The inner frame for 'mesh_visual' and 'mesh_collision' must be located at the center of the mesh.
+# Both meshes musth have the same shape and dimensiones.
+mesh_visual: sensors/lidars/robosense_airy/mesh_low_res.dae
+mesh_visual_has_color: True
+mesh_collision: null # Not avaiable, cylinder-z is used for collision instead.
+scale: { "x": 1.0, "y": 1.0, "z": 1.0 }
+color: { "r": 0.424, "g": 0.424, "b": 0.424, "a": 1.0 }
+# This pose sets the position and orientation of the sensor frame with respect the root frame, located at the center of
+# the bottom face of the cylinder.
+# The Airy sensor is 'ackwardly' designed, as the light source is not located at the center of the dome, at some height,
+# it is located deviated from the center of the dome, and at some height.
+# The location of the optical center is shown in page 63 of the Airy user manual.
+# However, on page 27 it is stated that:
+# "The origin of the coordinates for the LiDAR is defined at the center of the LiDAR base."
+# Therefore, the driver is making a transformation of the data to provide each point of the point cloud, referred to the
+# center of the base of the sensor.
+# Therefore, for practical purposes, we can assume the data frame is located at the center of the base of the sensor,
+# coinciding with the root frame of the sensor.
+joint_root_fr_data_fr: { "x": 0, "y": 0, "z": 0, "R": 0, "P": 0, "Y": 0 }
