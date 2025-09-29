@@ -67,9 +67,9 @@
       size="${size}"
       mesh_visual="${mesh_visual}"
       mesh_visual_has_color="${mesh_visual_has_color}"
+      color="${color}"
       mesh_collision=""
       scale="${scale}"
-      color="${color}"
       vci_pose="0 0 0 0 0 0"/>
 
     <xacro:property name="j_wheel" value="${joint_parent_fr_wheel_fr.split()}"/>
