@@ -92,7 +92,7 @@ Mandatory parameters:
                        sim_dist_span
                        sim_gaussian_noise:='0 0'">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_body_macro.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/lidar_body_macro.xacro"/>
 
     <xacro:lidar_body
       name="${name}"
@@ -110,7 +110,7 @@ Mandatory parameters:
       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_2d_plugin_macro.xacro"/>
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/lidar_2d_plugin_macro.xacro"/>
 
       <xacro:property name="sim_topic"
                       value="${(namespace if namespace in ('', '/')

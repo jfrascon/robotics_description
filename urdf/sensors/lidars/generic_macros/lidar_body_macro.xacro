@@ -11,10 +11,12 @@ Parameters:
 - name has 1 value.
 - mass has 1 value, expressed in kg.
 - shape is a string representing the shape of the lidar. It can be:
-  shape='r  sx        sy        sz'        -> box
-  shape='cx thickness 2*radius  2*radius'  -> cylinder along x axis
-  shape='cy 2*radius  thickness 2*radius'  -> cylinder along y axis
-  shape='cz 2*radius  2*radius  thickness' -> cylinder along z axis
+            size_x    size_y    size_z
+            ========= ========= =========
+  shape='r  sx        sy        sz'        -> box.
+  shape='cx thickness 2*radius  2*radius'  -> cylinder along x axis.
+  shape='cy 2*radius  thickness 2*radius'  -> cylinder along y axis.
+  shape='cz 2*radius  2*radius  thickness' -> cylinder along z axis.
   shape='s  2*radius  2*radius  2*radius'  -> sphere
 - mesh_visual has 1 value, a string with the path to the visual mesh file.
 - mesh_visual_has_color has 1 boolean value, True if the visual mesh has its own colors, False otherwise. If a mesh is

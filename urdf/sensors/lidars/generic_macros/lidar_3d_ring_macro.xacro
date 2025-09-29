@@ -107,7 +107,7 @@ Reference: https://gazebosim.org/docs/harmonic/sensors/
                        sim_dist_span
                        sim_gaussian_noise:='0 0'">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_body_macro.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/lidar_body_macro.xacro"/>
 
     <xacro:lidar_body
       name="${name}"
@@ -125,7 +125,7 @@ Reference: https://gazebosim.org/docs/harmonic/sensors/
       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_3d_ring_plugin_macro.xacro"/>
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/lidar_3d_ring_plugin_macro.xacro"/>
 
       <!--
       The behaviour of the Gazebo Sim plugin for a 3D ring LiDAR is to publish two topics:

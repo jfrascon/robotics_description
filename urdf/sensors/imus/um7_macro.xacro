@@ -12,8 +12,8 @@
 
     <xacro:property name="pkg_dir" value="$(find eut_robotics_description)"/>
 
-    <xacro:include filename="${pkg_dir}/urdf/sensors/imus/imu_macro.xacro"/>
-    <xacro:include filename="${pkg_dir}/urdf/sensors/imus/set_imu_props_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/imus/generic_macros/imu_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/imus/generic_macros/set_imu_props_macro.xacro"/>
 
     <xacro:set_imu_props
         desc_cfg="${xacro.load_yaml(pkg_dir + '/config/sensors/imus/um7.yaml')}"

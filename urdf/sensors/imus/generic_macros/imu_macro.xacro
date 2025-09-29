@@ -138,7 +138,7 @@ joint_root_fr_data_fr has 6 values between quotes in this order 'x y z R P Y'
     </joint>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/imus/imu_plugin_macro.xacro"/>
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/imus/generic_macros/imu_plugin_macro.xacro"/>
 
       <xacro:property name="sim_topic"
                       value="${(namespace if namespace in ('', '/')

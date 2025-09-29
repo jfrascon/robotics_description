@@ -12,8 +12,8 @@
 
     <xacro:property name="pkg_dir" value="$(find eut_robotics_description)"/>
 
-    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/lidar_3d_ring_macro.xacro"/>
-    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/set_lidar_3d_ring_props_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/generic_macros/lidar_3d_ring_macro.xacro"/>
+    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/generic_macros/set_lidar_3d_ring_props_macro.xacro"/>
 
     <xacro:set_lidar_3d_ring_props
         desc_cfg="${xacro.load_yaml(pkg_dir + '/config/sensors/lidars/robosense_helios_16p.yaml')}"

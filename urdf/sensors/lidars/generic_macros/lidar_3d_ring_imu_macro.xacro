@@ -141,7 +141,7 @@ Reference: https://gazebosim.org/docs/harmonic/sensors/
                        sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
                        sim_imu_use_orientation:=True">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/lidar_3d_ring_macro.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/lidar_3d_ring_macro.xacro"/>
 
     <!--
     The 'lidar_3d_ring' macro creates the links:
@@ -206,7 +206,7 @@ Reference: https://gazebosim.org/docs/harmonic/sensors/
     </joint>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/imus/imu.plugin_macro.xacro"/>
+      <xacro:include filename="$(find eut_robotics_description)/urdf/imus/generic_macros/imu.plugin_macro.xacro"/>
 
       <xacro:property name="sim_imu_topic"
                       value="${(namespace if namespace in ('', '/')
