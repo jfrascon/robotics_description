@@ -16,22 +16,18 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
   <buildtool_depend>ament_cmake_python</buildtool_depend>
 
+  <!-- Runtime dependencies (launch/*.py and tools rely on launch*, launch_ros, ament_index_python, PyYAML, Jinja2). -->
+  <exec_depend>ament_index_python</exec_depend>
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>gz_ros2_control</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
+  <exec_depend>launch</exec_depend>
+  <exec_depend>launch_ros</exec_depend>
   <exec_depend>mecanum_drive_controller</exec_depend>
+  <exec_depend>python3-jinja2</exec_depend>
+  <exec_depend>python3-yaml</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>xacro</exec_depend>
-  <!-- Launch and Python runtime deps used by launch/*.py and tools.py -->
-   <!-- launch.actions, launch.substitutions, ... -->
-  <exec_depend>launch</exec_depend>
-  <!-- launch_ros.actions.Node, ComposableNode, ParameterValue, etc. -->
-  <exec_depend>launch_ros</exec_depend>
-  <!-- To use get_package_share_directory -->
-  <exec_depend>ament_index_python</exec_depend>
-  <!-- PyYAML and Jinja2 used in ros2_control_sim.launch.py and others -->
-  <exec_depend>python3-yaml</exec_depend>
-  <exec_depend>python3-jinja2</exec_depend>
 
   <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>launch_testing_ament_cmake</test_depend>
