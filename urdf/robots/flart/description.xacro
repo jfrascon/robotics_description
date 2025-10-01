@@ -12,8 +12,10 @@ which is the company that manufactures the forklift robot.
   <!-- INCLUDES -->
 
   <xacro:include filename="${urdf_dir}/common/all_commons.xacro"/>
-  <xacro:include filename="${urdf_dir}/bases/mecanum_r_base_macro.xacro"/>
-  <xacro:include filename="${urdf_dir}/bases/set_mecanum_r_base_props_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/bases/rectangular_body_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/bases/set_rectangular_body_props_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/wheels/wheel_macro.xacro"/>
+  <xacro:include filename="${urdf_dir}/wheels/set_wheel_props_macro.xacro"/>
   <xacro:include filename="${urdf_dir}/extras/fork_macro.xacro"/>
   <xacro:include filename="${urdf_dir}/extras/set_fork_props_macro.xacro"/>
   <xacro:include filename="${urdf_dir}/sensors/all_sensors_macro.xacro"/>
@@ -26,6 +28,7 @@ which is the company that manufactures the forklift robot.
 
   <!-- ===================================================================== -->
   <!-- ARGS -->
+  <!-- ===================================================================== -->
   <xacro:arg name="robot_name"           default="${desc_cfg['name']}"/>
   <xacro:arg name="namespace"            default=""/>
   <xacro:arg name="use_visual_meshes"    default="True"/>
@@ -84,41 +87,153 @@ which is the company that manufactures the forklift robot.
   <!-- ===================================================================== -->
   <!-- MECANUM RECTANGULAR BASE -->
   <!-- ===================================================================== -->
+  <!--
+  A base is composed of a body and wheels.
+  In this case, the base is rectangular with mecanum wheels.
 
-  <xacro:set_mecanum_r_base_props desc_cfg="${desc_cfg['mecanum_rectangular_base']}" prop_prefix="base"/>
+  The rectangular_body macro defines the following links and joints:
+  - Links:
+    * ${prefix}${name}_footprint_link = ${robot_prefix}${base_name}_footprint_link
+    * ${prefix}${name}_link = ${robot_prefix}${base_name}_link
+  - Joints:
+    * ${prefix}${name}_joint = ${robot_prefix}${base_name}_joint, joining the links
+      ${robot_prefix}${base_name}_footprint_link and ${robot_prefix}${base_name}_link.
 
+  THE LINK '${robot_prefix}${base_name}_link' IS LOCATED AT THE CENTER OF THE BOTTOM FACE OF THE BASE BODY.
 
-  <xacro:mecanum_r_base
-    base_name="base"
-    front_left_wheel_name="front_left_wheel"
-    front_right_wheel_name="front_right_wheel"
-    rear_left_wheel_name="rear_left_wheel"
-    rear_right_wheel_name="rear_right_wheel"
+  THE LINK '${robot_prefix}${base_name}_footprint_link' IS LOCATED ON THE GROUND, JUST BELOW THE LINK
+  '${robot_prefix}${base_name}_link'.
+  ANOTHER WAY TO SEE IS, THE LINK '${robot_prefix}${base_name}_footprint_link' IS LOCATED ON THE GROUND, AND THE LINK
+  '${robot_prefix}${base_name}_link' IS JUST OVER IT, AT A HEIGHT OF 'GROUND_CLEARANCE' METERS.
+  -->
+
+  <xacro:property name="base_name"              value="base"/>
+  <xacro:property name="front_left_wheel_name"  value="front_left_wheel"/>  <!-- flw -->
+  <xacro:property name="front_right_wheel_name" value="front_right_wheel"/> <!-- frw -->
+  <xacro:property name="rear_left_wheel_name"   value="rear_left_wheel"/>   <!-- rlw -->
+  <xacro:property name="rear_right_wheel_name"  value="rear_right_wheel"/>  <!-- rrw -->
+
+  <xacro:set_rectangular_body_props desc_cfg="${desc_cfg['base']['body']}" prop_prefix="base_body"/>
+  <xacro:property name="base_body_half_wheelbase"   value="${0.5 * base_body_wheelbase}"/>
+  <xacro:property name="base_body_half_track_width" value="${0.5 * base_body_track_width}"/>
+
+  <xacro:rectangular_body
+    name="${base_name}"
     prefix="${robot_prefix}"
-    body_mass="${base_body_mass}"
-    body_size="${base_body_size}"
-    body_wheelbase="${base_body_wheelbase}"
-    body_track_width="${base_body_track_width}"
-    body_ground_clearance="${base_body_ground_clearance}"
-    body_mesh_visual="${base_body_mesh_visual if use_visual_meshes else ''}"
-    body_mesh_visual_has_color="${base_body_mesh_visual_has_color}"
-    body_mesh_collision="${base_body_mesh_collision if use_collision_meshes else ''}"
-    body_scale="${base_body_scale}"
-    body_color="${base_body_color}"
-    mecanum_wheel_mass="${base_mecanum_wheel_mass}"
-    mecanum_wheel_size="${base_mecanum_wheel_size}"
-    mecanum_wheel_velocity_limit="${base_mecanum_wheel_velocity_limit}"
-    mecanum_wheel_effort_limit="${base_mecanum_wheel_effort_limit}"
-    mecanum_wheel_mu_forward="${base_mecanum_wheel_mu_forward}"
-    mecanum_wheel_mu_lateral="${base_mecanum_wheel_mu_lateral}"
-    mecanum_wheel_slip_forward="${base_mecanum_wheel_slip_forward}"
-    mecanum_wheel_slip_lateral="${base_mecanum_wheel_slip_lateral}"
-    mecanum_wheel_mesh_visual_left="${base_mecanum_wheel_mesh_visual_left if use_visual_meshes else ''}"
-    mecanum_wheel_mesh_visual_right="${base_mecanum_wheel_mesh_visual_right if use_visual_meshes else ''}"
-    mecanum_wheel_mesh_visual_has_color="${base_mecanum_wheel_mesh_visual_has_color}"
-    mecanum_wheel_scale="${base_mecanum_wheel_scale}"
-    mecanum_wheel_color="${base_mecanum_wheel_color}"/>
+    mass="${base_body_mass}"
+    size="${base_body_size_x} ${base_body_size_y} ${base_body_size_z}"
+    ground_clearance="${base_body_ground_clearance}"
+    mesh_visual="${base_body_mesh_visual if use_visual_meshes else ''}"
+    mesh_visual_has_color="${base_body_mesh_visual_has_color}"
+    color="${base_body_color}"
+    mesh_collision="${base_body_mesh_collision if use_collision_meshes else ''}"
+    scale="${base_body_scale}"/>
 
+  <!--
+  Definition of the four mecanum wheels.
+  -->
+
+  <xacro:set_wheel_props desc_cfg="${desc_cfg['base']['wheel']}" prop_prefix="wheel"/>
+
+  <!--
+  The front left and the rear right mecanum wheels are of the same type, left type.
+  The front right and the rear left mecanum wheels are of the same type, right type.
+  The left and right meshes for the same mecanum wheel model are supposed to be called '<side>_xxx.stl'
+  where {{side}} is either 'left' or 'right', and 'xxx' is the rest of the file name.
+  Therefore, in the property '${prop_prefix}_mesh_visual', we could have and empty value (no mesh) or a value like
+  '/path/to/meshes/{{side}}_<whatever>'.ext'
+
+  Next, we get the left and right mesh names by replacing {{side}} with 'left' and 'right', respectively, if a non-empty
+  mesh name is provided. If no mesh name is provided, the left and right mesh names are also empty.
+  -->
+
+  <xacro:property name="wheel_mesh_visual_left"
+                  value="${wheel_mesh_visual.replace('[side]', 'left') if wheel_mesh_visual else ''}"/>
+
+  <xacro:property name="wheel_mesh_visual_right"
+                  value="${wheel_mesh_visual.replace('[side]', 'right') if wheel_mesh_visual else ''}"/>
+
+  <xacro:property name="z_wheel" value="${-base_body_ground_clearance + wheel_radius}"/>
+
+  <xacro:wheel
+    name="${front_left_wheel_name}"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}${base_name}_link"
+    mass="${wheel_mass}"
+    shape="${wheel_shape}"
+    velocity_limit="${wheel_velocity_limit}"
+    effort_limit="${wheel_effort_limit}"
+    mu="${wheel_mu}"
+    mu2="${wheel_mu2}"
+    slip1="${wheel_slip1}"
+    slip2="${wheel_slip2}"
+    mesh_visual="${wheel_mesh_visual_left}"
+    mesh_visual_has_color="${wheel_mesh_visual_has_color}"
+    color="${wheel_color}"
+    scale="${wheel_scale}"
+    joint_parent_fr_wheel_fr="${base_body_half_wheelbase} ${base_body_half_track_width} ${z_wheel} 0 0 0"
+    base_root_fr="${robot_prefix}${base_name}_footprint_link"
+    fdir1_base_root_fr="${cos(radians(45))} ${sin(radians(45))} 0"/>
+
+  <xacro:wheel
+    name="${front_right_wheel_name}"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}${base_name}_link"
+    mass="${wheel_mass}"
+    shape="${wheel_shape}"
+    velocity_limit="${wheel_velocity_limit}"
+    effort_limit="${wheel_effort_limit}"
+    mu="${wheel_mu}"
+    mu2="${wheel_mu2}"
+    slip1="${wheel_slip1}"
+    slip2="${wheel_slip2}"
+    mesh_visual="${wheel_mesh_visual_right}"
+    mesh_visual_has_color="${wheel_mesh_visual_has_color}"
+    color="${wheel_color}"
+    scale="${wheel_scale}"
+    joint_parent_fr_wheel_fr="${base_body_half_wheelbase} ${-base_body_half_track_width} ${z_wheel} 0 0 0"
+    base_root_fr="${robot_prefix}${base_name}_footprint_link"
+    fdir1_base_root_fr="${-cos(radians(45))} ${sin(radians(45))} 0"/>
+
+  <xacro:wheel
+    name="${rear_left_wheel_name}"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}${base_name}_link"
+    mass="${wheel_mass}"
+    shape="${wheel_shape}"
+    velocity_limit="${wheel_velocity_limit}"
+    effort_limit="${wheel_effort_limit}"
+    mu="${wheel_mu}"
+    mu2="${wheel_mu2}"
+    slip1="${wheel_slip1}"
+    slip2="${wheel_slip2}"
+    mesh_visual="${wheel_mesh_visual_right}"
+    mesh_visual_has_color="${wheel_mesh_visual_has_color}"
+    color="${wheel_color}"
+    scale="${wheel_scale}"
+    joint_parent_fr_wheel_fr="${-base_body_half_wheelbase} ${base_body_half_track_width} ${z_wheel} 0 0 0"
+    base_root_fr="${robot_prefix}${base_name}_footprint_link"
+    fdir1_base_root_fr="${-cos(radians(45))} ${sin(radians(45))} 0"/>
+
+  <xacro:wheel
+    name="${rear_right_wheel_name}"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}${base_name}_link"
+    mass="${wheel_mass}"
+    shape="${wheel_shape}"
+    velocity_limit="${wheel_velocity_limit}"
+    effort_limit="${wheel_effort_limit}"
+    mu="${wheel_mu}"
+    mu2="${wheel_mu2}"
+    slip1="${wheel_slip1}"
+    slip2="${wheel_slip2}"
+    mesh_visual="${wheel_mesh_visual_left}"
+    mesh_visual_has_color="${wheel_mesh_visual_has_color}"
+    color="${wheel_color}"
+    scale="${wheel_scale}"
+    joint_parent_fr_wheel_fr="${-base_body_half_wheelbase} ${-base_body_half_track_width} ${z_wheel} 0 0 0"
+    base_root_fr="${robot_prefix}${base_name}_footprint_link"
+    fdir1_base_root_fr="${cos(radians(45))} ${sin(radians(45))} 0"/>
 
   <!-- ===================================================================== -->
   <!-- FORK -->
