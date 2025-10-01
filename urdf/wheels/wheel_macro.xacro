@@ -1,70 +1,121 @@
-<robot name="mecanum_wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="mecanum_wheel"
+<?xml version="1.0"?>
+<!--
+A wheel is either a cylinder with its rotation axis along the y-axis or a sphere, no more geometries are allowed.
+
+In the case of a cylinder:
+size_x = 2*radius, size_y = thickness, size_z = 2*radius
+
+which is represented as:
+shape='c 2*radius  thickness  2*radius'
+
+In the case of a sphere:
+size_x = size_y = size_z = 2*radius
+
+shape='s 2*radius  2*radius  2*radius'  -> sphere.
+-->
+<robot name="wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="wheel"
                params="name
                        prefix
                        parent_frame
                        mass
-                       size
+                       shape
                        velocity_limit:=100
                        effort_limit:=100000
-                       mu_forward:=1.0
-                       mu_lateral:=0.05
-                       slip_forward:=0.05
-                       slip_lateral:=0.35
+                       mu:=1.0
+                       mu2:=0.05
+                       slip1:=0.05
+                       slip2:=0.35
                        mesh_visual:=''
                        mesh_visual_has_color:=False
-                       scale:=1.0
                        color:='0 0 0 1'
+                       scale:=1.0
                        joint_parent_fr_wheel_fr
                        base_root_fr
                        fdir1_base_root_fr">
     <!--
-    ============================================================================================
-    Explanation of default joint limits, effort_limit and velocity_limit.
-    ============================================================================================
+    ================================================================================================
+    Explanation of the default values for the fields 'effort_limit' and 'velocity_limit'
+    ================================================================================================
     The 'effort' and 'velocity' limits for this joint are intentionally set to extremely high, non-physical values.
-    This is a common and deliberate practice in simulation for a specific reason: to model an "ideal" actuator.
-
-    Why these default values (effort_limit:=100000 velocity_limit:=100)?
+    This is a common and deliberate practice in simulation for the specific reason of modeling an 'ideal' actuator.
     By setting virtually infinite limits, we ensure that the simulator's physics engine will never be the limiting
     factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
     trajectory following) without being constrained by the physical limitations of real-world motors.
     In essence, we are testing the software logic in isolation.
 
-    Context for the default values:
-    effort_limit = "100000" (Unit: Newton-meters, N·m).
+    effort_limit = "100000" (units of Newton-meters).
     This represents the maximum torque the joint can apply. To put this into perspective, a high-performance
-    passenger car engine produces between 200-500 N·m of torque. A value of 100,000 N·m is more in the realm of
+    passenger car engine produces between 200-500 N·m of torque. A value of 100000 N·m is more in the realm of
     industrial cranes or ship engines. It is an astronomically high value for a robot wheel.
 
-    - velocity_limit = "100" (Unit: radians/second).
-    This translates to approximately 955 RPM (Revolutions Per Minute). For context, a typical educational robot
-    wheel (like a TurtleBot) spins at around 70-100 RPM. So, 955 RPM is extremely fast.
+    velocity_limit = "100" (units of radians/second).
+    This translates to approximately 955 rpm. For context, a typical educational robot wheel (like a TurtleBot) spins
+    at around 70-100 rpm. So, 955 rpm is extremely fast.
 
-    If you need a realistic simulation:
-    If your goal is to simulate dynamics that are faithful to a physical robot, you should replace these values with
-    the specifications from your actuator's datasheet. For a typical medium-sized mobile robot, realistic values would
-    be in the range of:
-    - Velocity: 10 to 30 rad/s
-    - Effort:   10 to 100 N·m
+    If you need a realistic simulation of a physical robot, you should replace these values with the specifications
+    from your wheel. For a typical medium-sized wheel, realistic values would be in the range of:
+    Effort:   10 to 100 N·m
+    Velocity: 10 to 30 rad/s
     -->
 
     <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
-    A wheel is a cylinder with its axis along the y-axis, which means that:
+    A wheel is either a cylinder with its rotation axis along the y-axis or a sphere.
+
+    In the case of a cylinder:
     size_x = 2*radius, size_y = thickness, size_z = 2*radius
+
+    In the case of a sphere:
+    size_x = size_y = size_z = 2*radius
     -->
 
-    <xacro:link_c
+    <xacro:property name="shape_lst"  value="${shape.split()}"/>
+    <xacro:property name="shape_type" value="${shape_lst[0]}"/>
+
+    <xacro:if value="${shape_type not in ('c', 's')}">
+      ${xacro.fatal("The field 'shape' must be either 'c', cylinder or 's', sphere, for a wheel")}
+    </xacro:if>
+
+    <xacro:property name="radius_from_size_x" value="${0.5 * float(shape_lst[1])}"/>
+    <xacro:property name="radius_from_size_z" value="${0.5 * float(shape_lst[3])}"/>
+    <!--
+    By using such a small epsilon, basically we are forcing the user to provide exactly the same value for size_x and
+    size_z (2*radius) in the case of a cylinder with its axis along y or to provide exactly the same value for size_x,
+    size_y and size_z (2*radius) in the case of a sphere.
+    -->
+    <xacro:property name="epsilon" value="0.0005"/> <!-- 0.5 mm -->
+
+    <xacro:if value="${shape_type == 'c'}">
+      <!--
+      If the difference between the radius computed from size_x and size_z is greater than epsilon, we consider that the
+      user made a mistake and we stop the processing with an error message.
+      -->
+      <xacro:if value="${math.fabs(radius_from_size_x - radius_from_size_z) > epsilon}">
+        ${xacro.fatal("For a cylindrical wheel, the size_x and size_z (2*radius) must be equal")}
+      </xacro:if>
+      <xacro:property name="final_shape_type" value="cy"/> <!-- cylinder along y axis -->
+    </xacro:if>
+
+    <xacro:unless value="${shape_type == 'c'}"> <!-- if not a cylinder, it must be a sphere -->
+      <xacro:property name="radius_from_size_y" value="${0.5 * float(shape_lst[2])}"/>
+      <xacro:if value="${math.fabs(radius_from_size_x - radius_from_size_z) > epsilon or math.fabs(radius_from_size_x - radius_from_size_y) > epsilon}">
+        ${xacro.fatal("For a spherical wheel, the size_x, size_y and size_z (2*radius) must be equal")}
+      </xacro:if>
+      <xacro:property name="final_shape_type" value="s"/> <!-- sphere -->
+    </xacro:unless>
+
+    <!-- No mesh collision for the wheel, just a primitive cylinder along the y-axis or a sphere -->
+
+    <xacro:set_shaped_link
       name="${name}"
       prefix="${prefix}"
       use_visual="True"
       use_collision="True"
       use_inertia="True"
       mass="${mass}"
-      axis="y"
-      size="${size}"
+      shape="${final_shape_type} ${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"
       mesh_visual="${mesh_visual}"
       mesh_visual_has_color="${mesh_visual_has_color}"
       color="${color}"
@@ -94,23 +145,22 @@
               <fdir1 gz:expressed_in="${base_root_fr}">${fdir1_base_root_fr}</fdir1>
               <!--
               Reference 'http://sdformat.org/tutorials?tut=sdformat_urdf_extensions&cat=specification#gazebo-elements-for-links'
-              Friction coefficient, in the direction of the wheel rolling, along the contact surface.
-              This coefficient should be high enough to allow the wheel to roll without slipping,
-              from 0.8 a 1.5.
+              Friction coefficient in the direction of the wheel rolling, along the contact surface.
+              This coefficient should be high enough to allow the wheel to roll without slipping, from 0.8 a 1.5.
               High traction along forward direction
               -->
-              <mu>${mu_forward}</mu>
+              <mu>${mu}</mu>
               <!--
-              Friction coefficient, in axial direction (the direction of the wheel axis), along the
-              contact surface.
-              This 'can be somehow assimilated to the direcion in which the rollers are moving'.
-              This coefficient should be low enough to allow the rollers to move freely, from 0.03 to
-              0.1.
+              Friction coefficient in axial direction (the direction of the wheel axis), along the contact surface.
+
+              For a mecanum wheel:
+              This can be somehow assimilated to the direcion in which the rollers are moving.
+              This coefficient should be low enough to allow the rollers to move freely, from 0.03 to 0.1.
               Low friction laterally to emulate rollers.
               -->
-              <mu2>${mu_lateral}</mu2>
-              <slip1>${slip_forward}</slip1>
-              <slip2>${slip_lateral}</slip2>
+              <mu2>${mu2}</mu2>
+              <slip1>${slip1}</slip1>
+              <slip2>${slip2}</slip2>
             </ode>
           </friction>
         </surface>

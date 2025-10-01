@@ -4,8 +4,8 @@ size:
   y: 0.774
   z: 1.7004688
 
-# Base model
-mecanum_rectangular_base:
+# The flart robot uses a rectangular base body with four mecanum wheels.
+base:
   body:
     mass: 500.0
     size: { "x": 1.531034, "y": 0.774138, "z": 1.64 }
@@ -14,30 +14,43 @@ mecanum_rectangular_base:
     ground_clearance: 0.06 # Distance from the ground to the bottom face of the base.
     mesh_visual: bases/flart/mesh_low_res.stl
     mesh_visual_has_color: False
-    mesh_collision: null
-    scale:
-      x: 1
-      y: 1
-      z: 1
     color:
       r: 0
       g: 0
       b: 1
       a: 1
-  mecanum_wheel:
+    mesh_collision: null
+    scale:
+      x: 1
+      y: 1
+      z: 1
+  # mecanum wheel
+  wheel:
     mass: 6.5
-    # A wheel is a cylinder with its axis along the y-axis, which means that:
-    # size_x = 2*radius, size_y = thickness, size_z = 2*radius
-    size: { "x": 0.254, "y": 0.082, "z": 0.254 }
+    # A wheel is either a cylinder (c) with its rotation axis along the y-axis or a sphere (s), no more geometries are
+    # allowed.
+    # In the case of a cylinder:
+    # shape:  { "type": "c", "size": { "x": 2*radius, "y": thickness, "z": 2*radius } }
+    # In the case of a sphere:
+    # shape:  { "type": "s", "size": { "x": 2*radius, "y": 2*radius, "z": 2*radius } }
+    shape:  { "type": "c", "size": { "x": 0.254, "y": 0.082, "z": 0.254 } }
     velocity_limit: 100 # Ideal condition
     effort_limit: 100000 # Ideal condition
-    mu_forward: 1.5 # 1.0
-    mu_lateral: 0.05 # 0.05
-    slip_forward: 0.01 # 0.02
-    slip_lateral: 0.30 # 0.30
-    mesh_visual: wheels/mecanum_wheels/generic_mecanum_wheel_1/[left_or_right]_wheel_low_res.stl
+    mu: 0.05
+    mu2: 1.25
+    slip1: 0.02
+    slip2: 0.01
+    # The front left and the rear right mecanum wheels are of the same type, left type.
+    # The front right and the rear left mecanum wheels are of the same type, right type.
+    # The left and right meshes for the same mecanum wheel model are supposed to be called '<side>_xxx.stl'
+    # where [side] is either 'left' or 'right', and 'xxx' is the rest of the file name.
+    mesh_visual: wheels/mecanum_wheels/generic_mecanum_wheel_1/[side]_wheel_low_res.stl
     mesh_visual_has_color: False
-    mesh_collision: null
+    color:
+      r: 0.1
+      g: 0.1
+      b: 0.1
+      a: 1
     # A wheel is a cylinder with its axis along the y-axis, which means that:
     # scale_x = scales diameter in x-axis
     # scale_y = scales thickness in y-axis
@@ -47,11 +60,6 @@ mecanum_rectangular_base:
       x: 1.0
       y: 1.0
       z: 1.0
-    color:
-      r: 0.1
-      g: 0.1
-      b: 0.1
-      a: 1
 
 # Lifting unit model
 fork:

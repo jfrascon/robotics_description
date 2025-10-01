@@ -79,11 +79,11 @@ def launch_controllers_sim(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
     # depends on the geometry of the robot base.
     # In this launch file we refer to that parameter, 'sum_of_robot_center_projection_on_X_Y_axis', as 'lx_plus_ly'.
     try:
-        base_cfg = flart_cfg['mecanum_rectangular_base']
+        base_cfg = flart_cfg['base']
         base_body_cfg = base_cfg['body']
         lx = 0.5 * base_body_cfg['wheelbase']
         ly = 0.5 * base_body_cfg['track_width']
-        wheel_radius = 0.5 * base_cfg['mecanum_wheel']['size']['x']
+        wheel_radius = 0.5 * base_cfg['wheel']['shape']['size']['x']
     except KeyError as e:
         raise KeyError(f"Missing required key '{e.args[0]}' in robot config file: '{flart_cfg_file}'") from e
 
