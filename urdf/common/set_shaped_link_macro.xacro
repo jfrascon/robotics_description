@@ -82,5 +82,8 @@ shape='s  2*radius  2*radius  2*radius'  -> sphere
         color="${color}"
         vci_pose="${vci_pose}"/>
     </xacro:if>
+    <xacro:if value="${shape_type not in ('r', 'cx', 'cy', 'cz', 's')}">
+      ${xacro.fatal("The field 'shape' must be one of the following 'r', 'cx', 'cy', 'cz', 's'")}
+    </xacro:if>
   </xacro:macro>
 </robot>

@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<!--
+The rectangular_body_macro defines the main structure of a mobile base for a robot.
+
+A base is composed of a body and wheels. This macro only defines the body part.
+
+This macro defines the following links and joints:
+  - Links:
+    * ${prefix}${name}_footprint_link
+    * ${prefix}${name}_link
+  - Joints:
+    * ${prefix}${name}_joint
+
+The base body is a box whose dimensions and mass are specified by the parameters 'mass' and
+'size = bosy_size_x body_size_y body_size_z'.
+
+************************************************************************************************************************
+THE LINK '${PREFIX}${BASE_NAME}_LINK' IS LOCATED AT THE CENTER OF THE BOTTOM FACE OF THE RECTANGULAR BASE BODY.
+THEREFORE, VCI_POSE_Z = 0.5 * BODY_SIZE_Z
+
+THE LINK '${PREFIX}${BASE_NAME}_FOOTPRINT_LINK' IS LOCATED ON THE GROUND, JUST BELOW THE LINK
+'${PREFIX}${BASE_NAME}_LINK'.
+ANOTHER WAY TO SEE IS, THE LINK '${PREFIX}${BASE_NAME}_FOOTPRINT_LINK' IS LOCATED ON THE GROUND, AND THE LINK
+'${PREFIX}${BASE_NAME}_LINK' IS JUST OVER IT, AT A HEIGHT OF 'GROUND_CLEARANCE' METERS.
+************************************************************************************************************************
+
+A mesh can be optionally applied for visualization via the 'mesh_visual' parameter, and can be independently scaled
+along each axis using 'base_scale_x', 'base_scale_y', and 'base_scale_z'.
+The collision geometry can either follow the mesh or remain as a box, depending on 'use_base_mesh_for_collision'.
+
+THE BASE MESH IS EXPECTED TO BE CENTERED AT ITS INNER FRAME. IF NO MESHES ARE PROVIDED, THE VISUAL AND COLLISION
+GEOMETRIES ARE MODELED AS A BOX.
+
+THE USER IS RESPONSIBLE FOR PASSING THE VALUES OF THE 'MASS', 'SIZE' PARAMETERS THAT REPRESENT THE PHYSICAL PROPERTIES
+OF THE BASE.
+THE 'SCALE' PARAMETER IS NOT USED TO SCALE EITHER THE MASS OR THE SIZE OF THE BODY. IT IS ONLY USED TO SCALE THE MESH,
+IF A MESHES IS PROVIDED.
+-->
+<robot name="rectangular_body" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="rectangular_body"
+                params="name:=base
+                        prefix
+                        mass
+                        size
+                        ground_clearance
+                        mesh_visual:=''
+                        mesh_visual_has_color:=False
+                        mesh_collision:=''
+                        scale:='1 1 1'
+                        color='0 0 0 1'">
+
+
+    <!-- INCLUDES -->
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <!--
+    RECTANGULAR BASE
+
+    Base = Body + wheels
+
+    -->
+
+    <xacro:property name="body_size_lst" value="${size.split()}"/>
+    <xacro:property name="body_size_x"   value="${body_size_lst[0]}"/>
+    <xacro:property name="body_size_y"   value="${body_size_lst[1]}"/>
+    <xacro:property name="body_size_z"   value="${body_size_lst[2]}"/>
+
+    <!--
+    Definition of the link ${prefix}${name}_footprint_link.
+    KDL does not support a root link with an inertia.
+    -->
+    <link name="${prefix}${name}_footprint_link"/>
+
+    <!--
+    Definition of the link '${prefix}${name}_link'.
+    -->
+
+    <xacro:link_r
+      name="${name}"
+      prefix="${prefix}"
+      use_visual="True"
+      use_collision="True"
+      use_inertia="True"
+      mass="${mass}"
+      size="${size}"
+      mesh_visual="${mesh_visual}"
+      mesh_visual_has_color="${mesh_visual_has_color}"
+      color="${color}"
+      mesh_collision="${mesh_collision}"
+      scale="${scale}"
+      vci_pose="0 0 ${body_size_z * 0.5} 0 0 0"/>
+
+
+    <!--
+    Joint '${prefix}${name}_joint' connects the link '${prefix}${name}_footprint_link'
+    with the link '${prefix}${name}_link'.
+    -->
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_footprint_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="0 0 0" xyz="0 0 ${ground_clearance}"/>
+    </joint>
+  </xacro:macro>
+</robot>
