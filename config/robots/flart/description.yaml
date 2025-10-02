@@ -36,6 +36,7 @@ base:
     shape:  { "type": "c", "size": { "x": 0.254, "y": 0.082, "z": 0.254 } }
     velocity_limit: 100 # Ideal condition
     effort_limit: 100000 # Ideal condition
+    max_contacts: 3
     mu: 0.05
     mu2: 1.25
     slip1: 0.02

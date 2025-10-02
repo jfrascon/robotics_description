@@ -22,6 +22,7 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
                        shape
                        velocity_limit:=100
                        effort_limit:=100000
+                       max_contacts:=3
                        mu:=1.0
                        mu2:=0.05
                        slip1:=0.05
@@ -134,7 +135,7 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
     </joint>
 
     <gazebo reference="${prefix}${name}_link">
-      <max_contacts>2</max_contacts> <!-- Default is 10 -->
+      <max_contacts>${max_contacts}</max_contacts> <!-- Default is 10 -->
       <collision>
         <surface>
           <friction>

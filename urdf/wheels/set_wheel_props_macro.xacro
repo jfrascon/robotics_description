@@ -48,6 +48,9 @@
 
     <xacro:property name="${prop_prefix}_velocity_limit" value="${desc_cfg['velocity_limit']}" scope="parent"/>
     <xacro:property name="${prop_prefix}_effort_limit"   value="${desc_cfg['effort_limit']}"   scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_max_contacts"   value="${desc_cfg.get('max_contacts', 10)}" scope="parent"/>
+
     <xacro:property name="${prop_prefix}_mu"             value="${desc_cfg['mu']}"             scope="parent"/>
     <xacro:property name="${prop_prefix}_mu2"            value="${desc_cfg['mu2']}"            scope="parent"/>
     <xacro:property name="${prop_prefix}_slip1"          value="${desc_cfg['slip1']}"          scope="parent"/>
