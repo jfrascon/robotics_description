@@ -109,7 +109,7 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
 
     <!-- No mesh collision for the wheel, just a primitive cylinder along the y-axis or a sphere -->
 
-    <xacro:set_shaped_link
+    <xacro:link_w_shape
       name="${name}"
       prefix="${prefix}"
       use_visual="True"

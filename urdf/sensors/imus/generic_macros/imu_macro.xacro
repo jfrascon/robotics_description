@@ -95,7 +95,7 @@ joint_root_fr_data_fr has 6 values between quotes in this order 'x y z R P Y'
     <xacro:property name="shape_lst"  value="${shape.split()}"/>
     <xacro:property name="vci_pose_z" value="${0.5 * float(shape_lst[3])}"/>
 
-    <xacro:set_shaped_link
+    <xacro:link_w_shape
       name="${name}_root"
       prefix="${prefix}"
       use_visual="True"

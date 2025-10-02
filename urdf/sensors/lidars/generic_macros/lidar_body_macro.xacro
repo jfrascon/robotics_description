@@ -68,7 +68,7 @@ A CONVENTION IS USED IN THIS MACRO, TO SET THE ROOT FRAME (ROOT_LINK) OF THE LID
                        joint_root_fr_data_fr
                        joint_parent_fr_root_fr">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/set_shaped_link_macro.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
     Convention:
@@ -78,7 +78,7 @@ A CONVENTION IS USED IN THIS MACRO, TO SET THE ROOT FRAME (ROOT_LINK) OF THE LID
     <xacro:property name="shape_lst"  value="${shape.split()}"/>
     <xacro:property name="vci_pose_z" value="${0.5 * float(shape_lst[3])}"/>
 
-    <xacro:set_shaped_link
+    <xacro:link_w_shape
       name="${name}_root"
       prefix="${prefix}"
       use_visual="True"

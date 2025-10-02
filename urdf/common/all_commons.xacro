@@ -4,5 +4,5 @@
   <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_c_macro.xacro"/>
   <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_r_macro.xacro"/>
   <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_s_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/set_shaped_link_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_w_shape_macro.xacro"/>
 </robot>

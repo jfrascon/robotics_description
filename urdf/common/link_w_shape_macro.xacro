@@ -9,8 +9,8 @@ shape='cy 2*radius  thickness 2*radius'  -> cylinder along y axis
 shape='cz 2*radius  2*radius  thickness' -> cylinder along z axis
 shape='s  2*radius  2*radius  2*radius'  -> sphere
 -->
-<robot name="set_shaped_link" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="set_shaped_link"
+<robot name="link_w_shape" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="link_w_shape"
                params="name
                        prefix
                        mass
