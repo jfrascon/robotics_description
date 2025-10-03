@@ -18,19 +18,19 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
                params="name
                        prefix
                        parent_frame
-                       mass
+                       mass:=0.1
                        shape
                        velocity_limit:=100
                        effort_limit:=100000
-                       max_contacts:=3
-                       mu:=1.0
-                       mu2:=0.05
-                       slip1:=0.05
-                       slip2:=0.35
+                       max_contacts:=10
+                       mu:=1
+                       mu2:=1
+                       slip1:=0
+                       slip2:=0
                        mesh_visual:=''
                        mesh_visual_has_color:=False
                        color:='0 0 0 1'
-                       scale:=1.0
+                       scale:='1 1 1'
                        joint_parent_fr_wheel_fr
                        base_root_fr
                        fdir1_base_root_fr">
@@ -45,12 +45,12 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
     trajectory following) without being constrained by the physical limitations of real-world motors.
     In essence, we are testing the software logic in isolation.
 
-    effort_limit = "100000" (units of Newton-meters).
+    effort_limit = "100000" (Newton-meters).
     This represents the maximum torque the joint can apply. To put this into perspective, a high-performance
     passenger car engine produces between 200-500 N·m of torque. A value of 100000 N·m is more in the realm of
     industrial cranes or ship engines. It is an astronomically high value for a robot wheel.
 
-    velocity_limit = "100" (units of radians/second).
+    velocity_limit = "100" (radians/second).
     This translates to approximately 955 rpm. For context, a typical educational robot wheel (like a TurtleBot) spins
     at around 70-100 rpm. So, 955 rpm is extremely fast.
 
@@ -135,8 +135,8 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
     </joint>
 
     <gazebo reference="${prefix}${name}_link">
-      <max_contacts>${max_contacts}</max_contacts> <!-- Default is 10 -->
       <collision>
+        <max_contacts>${max_contacts}</max_contacts>
         <surface>
           <friction>
             <ode>
