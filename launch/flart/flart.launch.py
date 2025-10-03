@@ -166,20 +166,6 @@ def generate_launch_description():
             }.items(),
             condition=IfCondition(LaunchConfiguration('use_sim_time')),
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'sensors_real.launch.py']
-                )
-            ),
-            launch_arguments={
-                'robot_name': LaunchConfiguration('robot_name'),
-                'namespace': LaunchConfiguration('namespace'),
-                'use_front_lidar': LaunchConfiguration('use_front_lidar'),
-                'use_front_imu': LaunchConfiguration('use_front_imu'),
-            }.items(),
-            condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
-        ),
         # Launch ros2_control nodes, i.e., controllers and controller manager, either in simulation or real mode.
         # ros2 control in simulation mode.
         IncludeLaunchDescription(
