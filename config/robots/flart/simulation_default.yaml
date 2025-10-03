@@ -1,6 +1,6 @@
 # Front lidar is a RoboSense Helios 16P
 front_lidar:
-  # use_sim: True # Enable or disable the sensor simulation.
+  enabled: true
   use_gpu_sensor: True
   always_on: True
   visualize: False
@@ -14,7 +14,7 @@ front_lidar:
 
 # Front imu is an UM7
 front_imu:
-  # use_sim: True # Enable or disable the sensor simulation.
+  enabled: true
   always_on: True
   update_rate: 75.0
   ang_vel_gaussian_noise:

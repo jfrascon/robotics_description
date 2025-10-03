@@ -37,6 +37,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument('robot_name', default_value='flart', description='The unique name for the robot'),
         DeclareLaunchArgument('namespace', default_value='', description='Namespace for all resources'),
+        DeclareLaunchArgument('odom_frame', default_value='odom', description='Odometry frame name of the robot'),
         DeclareLaunchArgument(
             'use_visual_meshes',
             default_value='True',
@@ -61,18 +62,6 @@ def generate_launch_description():
             description='Path to the simulation configuration file (default: flart/simulation_default.yaml)',
         ),
         DeclareLaunchArgument(
-            'use_front_lidar_sim',
-            default_value='True',
-            choices=['True', 'true', 'False', 'false'],
-            description='Whether to simulate the front lidar (default: True)',
-        ),
-        DeclareLaunchArgument(
-            'use_front_imu_sim',
-            default_value='True',
-            choices=['True', 'true', 'False', 'false'],
-            description='Whether to simulate the front imu (default: True)',
-        ),
-        DeclareLaunchArgument(
             'rsp_publish_frequency',
             default_value='20.0',
             description='Frequency of publication for robot_state_publisher',
@@ -92,8 +81,6 @@ def generate_launch_description():
         ),
         LogInfo(msg=['robot_prefix: ', robot_prefix]),
         LogInfo(msg=['Simulation config file: ', LaunchConfiguration('sim_cfg_file')]),
-        LogInfo(msg=['Add front_lidar plugin in description: ', LaunchConfiguration('use_front_lidar_sim')]),
-        LogInfo(msg=['Add front_imu plugin in description: ', LaunchConfiguration('use_front_imu_sim')]),
         LogInfo(msg=['RSP publish frequency: ', LaunchConfiguration('rsp_publish_frequency')]),
         OpaqueFunction(function=launch_robot_state_publisher),
     ]
@@ -116,30 +103,20 @@ def launch_robot_state_publisher(ctx: LaunchContext) -> list[LaunchDescriptionEn
         # could pass an empty string), or the default one.
         sim_cfg_file = LaunchConfiguration('sim_cfg_file').perform(ctx)
 
+        if not isinstance(sim_cfg_file, str):
+            raise TypeError(f"Expected 'sim_cfg_file' to be of type 'str', but got '{type(sim_cfg_file)}'")
+
+        if not sim_cfg_file:
+            raise ValueError('The provided simulation configuration file is an empty string')
+
         # If the user provided a simulation configuration file, check it exists.
         # If the user provided and empty string, it means no simulation configuration file provided, so no file
         # existence check is needed, but no sensor will be simulated.
-        if sim_cfg_file and not Path(sim_cfg_file).is_file():
+        if not Path(sim_cfg_file).is_file():
             raise FileNotFoundError(f"The provided simulation configuration file does not exist: '{sim_cfg_file}'")
     else:
         # If we are not in simulation mode, do not use any simulation configuration file; it is no needed.
         sim_cfg_file = ''
-
-    # If we are not in simulation mode, do not simulate any sensor.
-    # If we are in simulation mode, but no simulation configuration file is provided, no sensor can be simulated.
-    # Force boolean semantics: Python 'and' returns the first falsy operand (e.g. ''),
-    # so wrap sim_cfg_file with bool(...) to avoid propagating an empty string.
-    can_simulate_sensors = use_sim_time and bool(sim_cfg_file)
-
-    # If we are in simulation mode, and a simulation configuration file is provided, use the input from the user to
-    # decide if a sensor should be simulated or not.
-    use_front_lidar_sim = can_simulate_sensors and perform_typed_substitution(
-        ctx, normalize_typed_substitution(LaunchConfiguration('use_front_lidar_sim'), bool), bool
-    )
-
-    use_front_imu_sim = can_simulate_sensors and perform_typed_substitution(
-        ctx, normalize_typed_substitution(LaunchConfiguration('use_front_imu_sim'), bool), bool
-    )
 
     robot_description_param = ParameterValue(
         Command(
@@ -169,10 +146,6 @@ def launch_robot_state_publisher(ctx: LaunchContext) -> list[LaunchDescriptionEn
                 LaunchConfiguration('use_sim_time'),
                 ' sim_cfg_file:=',
                 sim_cfg_file,
-                ' use_front_lidar_sim:=',
-                str(use_front_lidar_sim),
-                ' use_front_imu_sim:=',
-                str(use_front_imu_sim),
             ]
         ),
         value_type=str,

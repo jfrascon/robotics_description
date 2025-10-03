@@ -35,8 +35,10 @@ which is the company that manufactures the forklift robot.
   <xacro:arg name="use_collision_meshes" default="False"/>
   <xacro:arg name="use_sim_mode"         default="False"/>
   <xacro:arg name="sim_cfg_file"         default=""/>
-  <xacro:arg name="use_front_lidar_sim"  default="True"/>
-  <xacro:arg name="use_front_imu_sim"    default="True"/>
+
+  <!--
+  Create properties from args for easy manipulation.
+  -->
 
   <!-- args into properties for easy manipulation -->
   <xacro:property name="robname" value="$(arg robot_name)"/>
@@ -57,12 +59,15 @@ which is the company that manufactures the forklift robot.
   configuration is available.
   -->
   <xacro:property name="sim_cfg_file" value="$(arg sim_cfg_file)"/>
-  <xacro:property name="sim_cfg"
-                  value="${xacro.load_yaml(sim_cfg_file)
-                           if use_sim_mode and sim_cfg_file else dict()}"/>
 
-  <xacro:property name="use_front_lidar_sim" value="$(arg use_front_lidar_sim)"/>
-  <xacro:property name="use_front_imu_sim"   value="$(arg use_front_imu_sim)"/>
+  <!--
+  If the 'use_sim_mode' argument is True, then the 'sim_cfg_file' argument is required (non-empty).
+  -->
+  <xacro:if value="${use_sim_mode and not sim_cfg_file}">
+    ${xacro.fatal("The argument 'sim_cfg_file' is empty while 'use_sim_mode' is set to True")}
+  </xacro:if>
+
+  <xacro:property name="sim_cfg" value="${xacro.load_yaml(sim_cfg_file) if use_sim_mode else dict()}"/>
 
   <!-- ===================================================================== -->
   <!-- ROBOT -->
@@ -334,13 +339,15 @@ which is the company that manufactures the forklift robot.
   <xacro:property name="joint_base_fr_front_lidar_fr_x"
                   value="${(0.5 * base_body_size_x) + (0.5 * front_lidar_cfg['shape']['size']['x']) - 0.028}"/>
 
+  <xacro:property name="front_lidar_sim_cfg" value="${sim_cfg.get('front_lidar', dict()) if use_sim_mode else dict()}"/>
+
   <xacro:robosense_helios_16p
     name="front_lidar"
     prefix="${robot_prefix}"
     namespace="${robot_namespace}"
     parent_frame="${robot_prefix}base_link"
     joint_parent_fr_root_fr="${joint_base_fr_front_lidar_fr_x} 0 0.28 0 0 0"
-    sim_cfg="${sim_cfg.get('front_lidar') if use_sim_mode and sim_cfg and use_front_lidar_sim else None}"
+    sim_cfg="${front_lidar_sim_cfg if front_lidar_sim_cfg.get('enabled', False) else None}"
     use_mesh_visual="${use_visual_meshes}"
     use_mesh_collision="${use_collision_meshes}"/>
 
@@ -363,17 +370,20 @@ which is the company that manufactures the forklift robot.
   <xacro:property name="joint_front_lidar_fr_front_imu_fr"
                   value="0 0 ${front_lidar_cfg['shape']['size']['z']} 0 0 0"/>
 
+  <xacro:property name="front_imu_sim_cfg" value="${sim_cfg.get('front_imu', dict()) if use_sim_mode else dict()}"/>
+
   <xacro:um7
     name="front_imu"
     prefix="${robot_prefix}"
     namespace="${robot_namespace}"
     parent_frame="${robot_prefix}front_lidar_root_link"
     joint_parent_fr_root_fr="${joint_front_lidar_fr_front_imu_fr}"
-    sim_cfg="${sim_cfg.get('front_imu') if use_sim_mode and sim_cfg and use_front_imu_sim else None}"
+    sim_cfg="${front_imu_sim_cfg if front_imu_sim_cfg.get('enabled', False) else None}"
     use_mesh_visual="${use_visual_meshes}"
     use_mesh_collision="${use_collision_meshes}"/>
 
   <xacro:if value="${use_sim_mode}">
+    <!--
     <xacro:include filename="${urdf_dir}/robots/flart/ros2_control_sim.xacro"/>
     <xacro:r2c namespace="${robot_namespace}"
                fork_joint_name="${robot_prefix}fork_root_joint"

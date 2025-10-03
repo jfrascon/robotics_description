@@ -5,15 +5,9 @@ from launch_ros.substitutions import FindPackageShare
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.conditions import IfCondition, UnlessCondition
+from launch.conditions import IfCondition, UnlessCondition  # noqa: F401
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import (
-    EqualsSubstitution,
-    IfElseSubstitution,
-    LaunchConfiguration,
-    PathJoinSubstitution,
-    TextSubstitution,
-)
+from launch.substitutions import IfElseSubstitution, LaunchConfiguration, PathJoinSubstitution, TextSubstitution
 
 
 def generate_launch_description():
@@ -57,20 +51,6 @@ def generate_launch_description():
             default_value='20.0',
             description='Frequency of publication for robot_state_publisher',
         ),
-        # 'use_<sensor> are share between the robot description and the sensors launch file.
-        DeclareLaunchArgument(
-            'use_front_lidar',
-            default_value='True',
-            choices=['True', 'true', 'False', 'false'],
-            description='Whether to use the front lidar sensor',
-        ),
-        DeclareLaunchArgument(
-            'use_front_imu',
-            default_value='True',
-            choices=['True', 'true', 'False', 'false'],
-            description='Whether to use the front imu sensor',
-        ),
-        #
         DeclareLaunchArgument(
             'use_composition',
             default_value='False',
@@ -121,28 +101,6 @@ def generate_launch_description():
                     if_value=LaunchConfiguration('sim_cfg_file'),
                     else_value=TextSubstitution(text=''),
                 ),
-                # If the robot is running in real mode, no sensor can be simulated.
-                # If the robot is running in simulation mode, the simulation of each sensor depends on whether a
-                # simulation configuration file is available or not, and on whether the user wants to use that
-                # sensor or not.
-                'use_front_lidar_sim': IfElseSubstitution(
-                    condition=LaunchConfiguration('use_sim_time'),
-                    if_value=IfElseSubstitution(
-                        condition=EqualsSubstitution(LaunchConfiguration('sim_cfg_file'), ''),
-                        if_value=TextSubstitution(text='False'),
-                        else_value=LaunchConfiguration('use_front_lidar'),
-                    ),
-                    else_value=TextSubstitution(text='False'),
-                ),
-                'use_front_imu_sim': IfElseSubstitution(
-                    condition=LaunchConfiguration('use_sim_time'),
-                    if_value=IfElseSubstitution(
-                        condition=EqualsSubstitution(LaunchConfiguration('sim_cfg_file'), ''),
-                        if_value=TextSubstitution(text='False'),
-                        else_value=LaunchConfiguration('use_front_imu'),
-                    ),
-                    else_value=TextSubstitution(text='False'),
-                ),
                 'rsp_publish_frequency': LaunchConfiguration('rsp_publish_frequency'),
             }.items(),
         ),
@@ -156,8 +114,7 @@ def generate_launch_description():
             launch_arguments={
                 'robot_name': LaunchConfiguration('robot_name'),
                 'namespace': LaunchConfiguration('namespace'),
-                'use_front_lidar': LaunchConfiguration('use_front_lidar'),
-                'use_front_imu': LaunchConfiguration('use_front_imu'),
+                'sim_cfg_file': LaunchConfiguration('sim_cfg_file'),
                 'use_composition': LaunchConfiguration('use_composition'),
                 'create_own_container': LaunchConfiguration('create_own_container'),
                 'container_name': LaunchConfiguration('container_name'),

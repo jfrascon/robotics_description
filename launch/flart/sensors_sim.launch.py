@@ -1,5 +1,9 @@
+import os
+from pathlib import Path
 from typing import Any
 
+import yaml
+from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import LoadComposableNodes, Node
 from launch_ros.descriptions import ComposableNode
 
@@ -21,16 +25,15 @@ def generate_launch_description():
         DeclareLaunchArgument('robot_name', default_value='flart', description='The unique name for the robot'),
         DeclareLaunchArgument('namespace', default_value='', description='Namespace for all resources'),
         DeclareLaunchArgument(
-            'use_front_lidar',
-            default_value='True',
-            choices=['True', 'true', 'False', 'false'],
-            description='Whether to simulate the front lidar',
-        ),
-        DeclareLaunchArgument(
-            'use_front_imu',
-            default_value='True',
-            choices=['True', 'true', 'False', 'false'],
-            description='Whether to simulate the front imu',
+            'sim_cfg_file',
+            default_value=os.path.join(
+                get_package_share_directory('eut_robotics_description'),
+                'config',
+                'robots',
+                'flart',
+                'simulation_default.yaml',
+            ),
+            description='Path to the simulation configuration file (default: flart/simulation_default.yaml)',
         ),
         DeclareLaunchArgument(
             'use_composition',
@@ -175,6 +178,53 @@ def launch_sensor_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
     # ldes = (l)aunch (d)escription (e)ntitie(s) to return.
     ldes: list[LaunchDescriptionEntity] = []
 
+    # If we are in simulation mode, get the simulation configuration file provided by the user (be aware, the user
+    # could pass an empty string), or the default one.
+    sim_cfg_file = LaunchConfiguration('sim_cfg_file').perform(ctx)
+
+    if not isinstance(sim_cfg_file, str):
+        raise TypeError(f"Expected 'sim_cfg_file' to be of type 'str', but got '{type(sim_cfg_file)}'")
+
+    if not sim_cfg_file:
+        raise ValueError('The provided simulation configuration file is an empty string')
+
+    sim_cfg_path = Path(sim_cfg_file)
+
+    # If the user provided a simulation configuration file, check it exists.
+    # If the user provided and empty string, it means no simulation configuration file provided, so no file
+    # existence check is needed, but no sensor will be simulated.
+    if not sim_cfg_path.is_file():
+        raise FileNotFoundError(f"The provided simulation configuration file does not exist: '{sim_cfg_file}'")
+
+    try:
+        with sim_cfg_path.open('r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+    except Exception as e:
+        raise RuntimeError(f"Invalid YAML at '{sim_cfg_file}': {e}") from e
+
+    # Handle empty/None content explicitly
+    if data is None:
+        raise RuntimeError(f"Simulation configuration file '{sim_cfg_file}' is empty")
+
+    if not isinstance(data, dict):
+        raise RuntimeError(
+            f"Simulation configuration file '{sim_cfg_file}' must be a mapping (YAML dict). Got: {type(data).__name__}"
+        )
+
+    # Validate non-empty mapping.
+    if not data:
+        raise RuntimeError(f"Parameters file '{sim_cfg_file}' has no nodes (empty mapping).")
+
+    front_lidar_sim_cfg = data.get('front_lidar', {})
+    use_front_lidar = front_lidar_sim_cfg.get('enabled', False)
+
+    ldes.append(LogInfo(msg=['Simulate front_lidar: ', str(use_front_lidar)]))
+
+    front_imu_sim_cfg = data.get('front_imu', {})
+    use_front_imu = front_imu_sim_cfg.get('enabled', False)
+
+    ldes.append(LogInfo(msg=['Simulate front_imu: ', str(use_front_imu)]))
+
     bridge_name = f'rosgz_bridge_{LaunchConfiguration("robot_name").perform(ctx)}'
 
     bridge_cfg: dict[str, Any] = {
@@ -182,12 +232,6 @@ def launch_sensor_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         'expand_gz_topic_names': True,
         'bridge_names': [],  # Add the names of the individual channels here.
     }
-
-    use_front_lidar = perform_typed_substitution(
-        ctx, normalize_typed_substitution(LaunchConfiguration('use_front_lidar'), bool), bool
-    )
-
-    ldes.append(LogInfo(msg=['Simulate front_lidar: ', str(use_front_lidar)]))
 
     if use_front_lidar:
         front_lidar_channel = f'{bridge_name}_front_lidar'  # One channel in the bridge for the front lidar.
@@ -212,12 +256,6 @@ def launch_sensor_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         bridge_cfg[f'bridges.{front_lidar_channel}.lazy'] = True
 
         ldes.append(LogInfo(msg=['front_lidar_topic: ', front_lidar_topic]))
-
-    use_front_imu = perform_typed_substitution(
-        ctx, normalize_typed_substitution(LaunchConfiguration('use_front_imu'), bool), bool
-    )
-
-    ldes.append(LogInfo(msg=['Simulate front_imu: ', str(use_front_imu)]))
 
     if use_front_imu:
         # One channel in the bridge for the front imu.
