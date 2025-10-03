@@ -23,9 +23,7 @@ def generate_launch_description():
     ldes = [
         DeclareLaunchArgument('robot_name', default_value='flart', description='The unique name for the robot'),
         DeclareLaunchArgument('namespace', default_value='', description='Namespace for all resources'),
-        DeclareLaunchArgument(
-            'odometry_frame', default_value='odom', description='The odometry frame used in the project'
-        ),
+        DeclareLaunchArgument('odom_frame', default_value='odom', description='The odometry frame used in the project'),
         SetLaunchConfiguration('robot_namespace', robot_namespace),
         SetLaunchConfiguration('robot_prefix', robot_prefix),
         LogInfo(
@@ -40,7 +38,7 @@ def generate_launch_description():
             ]
         ),
         LogInfo(msg=['robot_prefix: ', robot_prefix]),
-        LogInfo(msg=['odometry_frame: ', LaunchConfiguration('odometry_frame')]),
+        LogInfo(msg=['odom_frame: ', LaunchConfiguration('odom_frame')]),
         OpaqueFunction(function=launch_controllers_sim),
     ]
 
@@ -98,7 +96,7 @@ def launch_controllers_sim(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         'wheels_radius': wheel_radius,
         'lx_plus_ly': lx + ly,  # Substitution for 'sum_of_robot_center_projection_on_X_Y_axis'
         'base_frame_name': f'{robot_prefix}base_footprint_link',
-        'odom_frame_name': robot_prefix + LaunchConfiguration('odometry_frame').perform(ctx),
+        'odom_frame_name': robot_prefix + LaunchConfiguration('odom_frame').perform(ctx),
         'fork_joint_name': f'{robot_prefix}fork_root_joint',
     }
 

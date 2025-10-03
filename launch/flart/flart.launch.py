@@ -96,9 +96,7 @@ def generate_launch_description():
             choices=['debug', 'info', 'warn', 'error'],
             description='Log level for the bridge node (default: info)',
         ),
-        DeclareLaunchArgument(
-            'odometry_frame', default_value='odom', description='The odometry frame used in the project'
-        ),
+        DeclareLaunchArgument('odom_frame', default_value='odom', description='The odometry frame used in the project'),
         # Launch de robot description, both in simulation and real mode.
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(

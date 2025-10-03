@@ -14,9 +14,7 @@ def generate_launch_description():
     ldes = [
         DeclareLaunchArgument('robot_name', default_value='flart', description='The unique name for the robot'),
         DeclareLaunchArgument('namespace', default_value='', description='Namespace for all resources'),
-        DeclareLaunchArgument(
-            'odometry_frame', default_value='odom', description='The odometry frame used in the project'
-        ),
+        DeclareLaunchArgument('odom_frame', default_value='odom', description='The odometry frame used in the project'),
         SetLaunchConfiguration('robot_namespace', robot_namespace),
         SetLaunchConfiguration('robot_prefix', robot_prefix),
         LogInfo(msg=['[REAL r2c] robot_name: ', robot_name]),
