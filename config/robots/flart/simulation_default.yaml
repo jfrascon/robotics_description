@@ -1,3 +1,14 @@
+gz_sim_systems_VelocityControl:
+  enabled: true
+  initial_linear: { "x": 0.0, "y": 0.0, "z": 0.0 }
+  initial_angular: { "x": 0.0, "y": 0.0, "z": 0.0 }
+
+gz_sim_systems_OdometryPublisher:
+  enabled: true
+  odom_publish_frequency: 50.0
+  offset: { "x": 0.0, "y": 0.0, "z": 0.0, "R": 0.0, "P": 0.0, "Y": 0.0 }
+  gaussian_noise: 0
+
 # Front lidar is a RoboSense Helios 16P
 front_lidar:
   enabled: true

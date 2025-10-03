@@ -396,5 +396,122 @@ which is the company that manufactures the forklift robot.
                front_right_wheel_joint_name="${robot_prefix}front_right_wheel_joint"
                rear_left_wheel_joint_name="${robot_prefix}rear_left_wheel_joint"
                rear_right_wheel_joint_name="${robot_prefix}rear_right_wheel_joint"/>
+  -->
+
+    <xacro:property name="velocity_control_sim_cfg"
+                    value="${sim_cfg.get('gz_sim_systems_VelocityControl', dict())}"/>
+
+    <xacro:property name="odometry_publisher_sim_cfg"
+                    value="${sim_cfg.get('gz_sim_systems_OdometryPublisher', dict())}"/>
+
+    <gazebo>
+      <!--
+      Reference for system plugins:
+      https://gazebosim.org/api/gazebo/6/namespaceignition_1_1gazebo_1_1systems.html
+      -->
+
+      <xacro:if value="${velocity_control_sim_cfg.get('enabled', False)}">
+        <xacro:property name="initial_linear"
+                        value="${velocity_control_sim_cfg.get('initial_linear', dict(x=0, y=0, z=0))}"/>
+
+        <xacro:property name="initial_angular"
+                        value="${velocity_control_sim_cfg.get('initial_angular', dict(x=0, y=0, z=0))}"/>
+
+        <!--
+        Reference: https://gazebosim.org/api/gazebo/6/classignition_1_1gazebo_1_1systems_1_1VelocityControl.html
+        Linear and angular velocity controller which is directly set on a model.
+        -->
+        <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+          <topic>${robot_namespace}/cmd_vel</topic>
+          <initial_linear>${initial_linear['x']} ${initial_linear['y']} ${initial_linear['z']}</initial_linear>
+          <initial_angular>${initial_angular['x']} ${initial_angular['y']} ${initial_angular['z']}</initial_angular>
+        </plugin>
+      </xacro:if>
+
+      <xacro:if value="${odometry_publisher_sim_cfg.get('enabled', False)}">
+        <!--
+        Reference: https://gazebosim.org/api/gazebo/6/classignition_1_1gazebo_1_1systems_1_1OdometryPublisher.html
+        This plugin publishes the absolute pose (position and orientation) and velocities of the robot with respect to
+        Gazebo's world frame.
+        Strictly speaking, odometry is the pose (and some might consider velocities as well) of the robot with respect
+        to its starting pose.
+        Global localization, on the other hand, is the pose (again, some might consider velocities as well) of the robot
+        with respect to a fixed global frame, considered the root frame for the application.
+        The root frame for the application is usually called 'map' or 'world', and the odometry frame is usually called
+        'odom'.
+        Each robot has its own odometry frame in an application, while there is usually a single global frame for the
+        application.
+
+        The whole point of the explanation above is to let the reader now that although the plugin is called
+        'OdometryPublisher', it is in fact a source of global localization for the robot, with respect to Gazebo's world
+        frame.
+        Therefore, the plugin 'OdometryPublisher' is providing the transformation 'T_world_fr_robot_root_fr', where
+        the term 'robot_root_fr' is the generic expression to describe the frame that acts as the root frame for the
+        robot, in this file, '${robot_prefix}base_footprint_link', but in other robots it could be
+        '${robot_prefix}base_link' or any other name.
+        Therefore, in the application where this xacro file is used, it is needed to compute the transformations
+        'T_odom_fr_robot_root_frame' and transformation 'T_world_fr_odom_fr'.
+
+        The transformation 'T_odom_fr_robot_root_fr' can be computed, for example, by integrating the velocities
+        of the robot in the odometry frame, or using an Extended Kalman Filter (EKF) or a similar method.
+
+        The relation between these three transformations is:
+
+        T_world_fr_robot_root_fr = T_world_fr_odom_fr * T_odom_fr_robot_root_fr
+              ^                       ^                          ^
+        provided by the plugin     derived                  this is computed
+
+        T_world_fr_odom_fr = T_world_fr_robot_root_fr * inv(T_odom_fr_robot_root_fr)
+
+        When in simulation, the transformation 'T_world_fr_odom_fr' can be computed by the node in the package
+        'eut_fake_localization', and the transformation 'T_odom_fr_robot_root_fr' can be computed by the
+        'eut_ground_vehicle_twist_odometry' node, for example.
+
+        -->
+        <xacro:property name="odom_publish_frequency"
+                        value="${odometry_publisher_sim_cfg.get('odom_publish_frequency', 50)}"/>
+
+        <xacro:property name="offset"
+                        value="${odometry_publisher_sim_cfg.get('offset', dict(x=0, y=0, z=0, R=0, P=0, Y=0))}"/>
+
+        <xacro:property name="gaussian_noise"
+                        value="${odometry_publisher_sim_cfg.get('gaussian_noise', 0)}"/>
+
+        <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+          <odom_frame>${robot_prefix}${odom_frame}</odom_frame>
+          <robot_base_frame>${robot_prefix}${base_name}_footprint_link</robot_base_frame>
+          <odom_publish_frequency>${odom_publish_frequency}</odom_publish_frequency>
+          <!--
+          Custom topic on which this system will publish odometry messages.
+          We use the odom_covariance_topic to publish the odometry with covariance messages.
+          <odom_topic>...</odom_topic>
+          -->
+          <!--
+          Custom topic on which this system will publish odometry with covariance messages.
+          -->
+          <odom_covariance_topic>${robot_namespace}/odom</odom_covariance_topic>
+          <!--
+          Custom topic on which this system will publish the transform from odom_frame to robot_base_frame.
+          -->
+          <tf_topic>/tf</tf_topic>
+          <dimensions>2</dimensions> <!-- 2D (x, y, yaw) -->
+          <!--
+          Position offset relative to the body fixed frame, the default value is 0 0 0.
+          This offset will be added to the odometry message.
+          -->
+          <xyz_offset>${offset['x']} ${offset['y']} ${offset['z']}</xyz_offset>
+          <!--
+          Rotation offset relative to the body fixed frame, the default value is 0 0 0.
+          This offset will be added to the odometry message.
+          -->
+          <rpy_offset>${offset['R']} ${offset['P']} ${offset['Y']}</rpy_offset>
+          <!--
+          Standard deviation of the Gaussian noise to be added to pose and twist messages.
+          This element is optional, and the default value is 0.
+          -->
+          <gaussian_noise>${gaussian_noise}</gaussian_noise>
+        </plugin>
+      </xacro:if>
+    </gazebo>
   </xacro:if>
 </robot>
