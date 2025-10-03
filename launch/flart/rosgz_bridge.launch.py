@@ -82,7 +82,7 @@ def generate_launch_description():
         ),
         LogInfo(msg=['use_composition: ', LaunchConfiguration('use_composition')]),
         # Launch the bridge; the function will no-op if no sensors are enabled.
-        OpaqueFunction(function=launch_sensor_bridge),
+        OpaqueFunction(function=launch_rosgz_bridge),
     ]
 
     return LaunchDescription(ldes)
@@ -174,7 +174,7 @@ def create_standard_bridge(
     ]
 
 
-def launch_sensor_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
+def launch_rosgz_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
     # ldes = (l)aunch (d)escription (e)ntitie(s) to return.
     ldes: list[LaunchDescriptionEntity] = []
 

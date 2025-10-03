@@ -109,7 +109,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
                 PathJoinSubstitution(
-                    [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'sensors_sim.launch.py']
+                    [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'rosgz_bridge.launch.py']
                 )
             ),
             launch_arguments={
@@ -126,33 +126,33 @@ def generate_launch_description():
         ),
         # Launch ros2_control nodes, i.e., controllers and controller manager, either in simulation or real mode.
         # ros2 control in simulation mode.
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'ros2_control_sim.launch.py']
-                )
-            ),
-            launch_arguments={
-                'robot_name': LaunchConfiguration('robot_name'),
-                'namespace': LaunchConfiguration('namespace'),
-                'odometry_frame': LaunchConfiguration('odometry_frame'),
-            }.items(),
-            condition=IfCondition(LaunchConfiguration('use_sim_time')),
-        ),
-        # ros2 control in real mode.
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource(
-                PathJoinSubstitution(
-                    [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'ros2_control_real.launch.py']
-                )
-            ),
-            launch_arguments={
-                'robot_name': LaunchConfiguration('robot_name'),
-                'namespace': LaunchConfiguration('namespace'),
-                'odometry_frame': LaunchConfiguration('odometry_frame'),
-            }.items(),
-            condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
-        ),
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         PathJoinSubstitution(
+        #             [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'ros2_control_sim.launch.py']
+        #         )
+        #     ),
+        #     launch_arguments={
+        #         'robot_name': LaunchConfiguration('robot_name'),
+        #         'namespace': LaunchConfiguration('namespace'),
+        #         'odom_frame': LaunchConfiguration('odom_frame'),
+        #     }.items(),
+        #     condition=IfCondition(LaunchConfiguration('use_sim_time')),
+        # ),
+        # # ros2 control in real mode.
+        # IncludeLaunchDescription(
+        #     PythonLaunchDescriptionSource(
+        #         PathJoinSubstitution(
+        #             [FindPackageShare('eut_robotics_description'), 'launch', 'flart', 'ros2_control_real.launch.py']
+        #         )
+        #     ),
+        #     launch_arguments={
+        #         'robot_name': LaunchConfiguration('robot_name'),
+        #         'namespace': LaunchConfiguration('namespace'),
+        #         'odom_frame': LaunchConfiguration('odom_frame'),
+        #     }.items(),
+        #     condition=UnlessCondition(LaunchConfiguration('use_sim_time')),
+        # ),
     ]
 
     return LaunchDescription(ldes)
