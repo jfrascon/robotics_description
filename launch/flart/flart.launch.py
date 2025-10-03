@@ -76,7 +76,7 @@ def generate_launch_description():
             choices=['debug', 'info', 'warn', 'error'],
             description='Log level for the bridge node (default: info)',
         ),
-        DeclareLaunchArgument('odom_frame', default_value='odom', description='The odometry frame used in the project'),
+        DeclareLaunchArgument('odom_frame', default_value='odom', description='Odometry frame name for the robot'),
         # Launch de robot description, both in simulation and real mode.
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource(
@@ -88,6 +88,7 @@ def generate_launch_description():
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
                 'robot_name': LaunchConfiguration('robot_name'),
                 'namespace': LaunchConfiguration('namespace'),
+                'odom_frame': LaunchConfiguration('odom_frame'),
                 'use_visual_meshes': LaunchConfiguration('use_visual_meshes'),
                 'use_collision_meshes': LaunchConfiguration('use_collision_meshes'),
                 # If the robot is running in real mode, do not pass any simulation configuration file, since no sensor

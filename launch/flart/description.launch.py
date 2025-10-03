@@ -134,6 +134,8 @@ def launch_robot_state_publisher(ctx: LaunchContext) -> list[LaunchDescriptionEn
                 LaunchConfiguration('robot_name'),
                 ' namespace:=',
                 LaunchConfiguration('namespace'),
+                ' odom_frame:=',
+                LaunchConfiguration('odom_frame'),
                 # User can disable the use of visual or collision meshes, for example to improve performance when
                 # simulating the robot in Gazebo.
                 ' use_visual_meshes:=',

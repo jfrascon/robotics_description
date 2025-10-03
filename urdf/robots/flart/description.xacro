@@ -31,6 +31,10 @@ which is the company that manufactures the forklift robot.
   <!-- ===================================================================== -->
   <xacro:arg name="robot_name"           default="${desc_cfg['name']}"/>
   <xacro:arg name="namespace"            default=""/>
+  <!--
+  Note that robot_prefix, defined below, will be appended to the odom_frame name.
+  -->
+  <xacro:arg name="odom_frame"           default="odom"/>
   <xacro:arg name="use_visual_meshes"    default="True"/>
   <xacro:arg name="use_collision_meshes" default="False"/>
   <xacro:arg name="use_sim_mode"         default="False"/>
@@ -48,6 +52,7 @@ which is the company that manufactures the forklift robot.
                   value="${(ns + robname) if ns in ('', '/') else (ns.rstrip('/') + '/' + robname)}"/>
   <xacro:property name="robot_prefix" value="${robname + '_'}"/>
 
+  <xacro:property name="odom_frame"           value="$(arg odom_frame)"/>
   <xacro:property name="use_visual_meshes"    value="$(arg use_visual_meshes)"/>
   <xacro:property name="use_collision_meshes" value="$(arg use_collision_meshes)"/>
   <xacro:property name="use_sim_mode"         value="$(arg use_sim_mode)"/>
