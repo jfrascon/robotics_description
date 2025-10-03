@@ -26,7 +26,7 @@ base:
       z: 1
   # mecanum wheel
   wheel:
-    mass: 6.5
+    mass: 6.5  # optional, default is 0.1 Kg
     # A wheel is either a cylinder (c) with its rotation axis along the y-axis or a sphere (s), no more geometries are
     # allowed.
     # In the case of a cylinder:
@@ -34,20 +34,22 @@ base:
     # In the case of a sphere:
     # shape:  { "type": "s", "size": { "x": 2*radius, "y": 2*radius, "z": 2*radius } }
     shape:  { "type": "c", "size": { "x": 0.254, "y": 0.082, "z": 0.254 } }
-    velocity_limit: 100 # Ideal condition
-    effort_limit: 100000 # Ideal condition
-    max_contacts: 3
-    mu: 0.05
-    mu2: 1.25
-    slip1: 0.02
-    slip2: 0.01
+    # By using default values of the 'velocity_limit' and 'effort_limit', you are considering the wheel is ideal, can
+    # rotate at any speed and can provide any torque.
+    # velocity_limit: # optional, default is 100 rad/s
+    # effort_limit:   # optional, default is 100000 N·m
+    max_contacts: 2   # optional, default is 10
+    # mu:             # optional, default is 1.0
+    # mu2:            # optional, default is 1.0
+    # slip1:          # optional, default is 0
+    # slip2:          # optional, default is 0
     # The front left and the rear right mecanum wheels are of the same type, left type.
     # The front right and the rear left mecanum wheels are of the same type, right type.
     # The left and right meshes for the same mecanum wheel model are supposed to be called '<side>_xxx.stl'
     # where [side] is either 'left' or 'right', and 'xxx' is the rest of the file name.
     mesh_visual: wheels/mecanum_wheels/generic_mecanum_wheel_1/[side]_wheel_low_res.stl
     mesh_visual_has_color: False
-    color:
+    color:            # optional, default is black (0,0,0,1)
       r: 0.1
       g: 0.1
       b: 0.1
@@ -57,7 +59,7 @@ base:
     # scale_y = scales thickness in y-axis
     # scale_z = scales diameter in z-axis
     # To maintain the correct proportions, scale_x and scale_z must be equal.
-    scale:
+    scale:            # optional, default is (1.0, 1.0, 1.0)
       x: 1.0
       y: 1.0
       z: 1.0
