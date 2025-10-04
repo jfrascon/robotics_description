@@ -78,18 +78,6 @@ which is the company that manufactures the forklift robot.
   <!-- ROBOT -->
   <!-- ===================================================================== -->
 
-  <!--
-  Names used in this robot for devices/parts:
-  - base
-  - front_left_wheel
-  - front_right_wheel
-  - rear_left_wheel
-  - rear_right_wheel
-  - fork
-  - front_lidar
-  - front_imu
-  -->
-
   <xacro:property name="robot_size_x" value="${desc_cfg['size']['x']}"/>
   <xacro:property name="robot_size_y" value="${desc_cfg['size']['y']}"/>
   <xacro:property name="robot_size_z" value="${desc_cfg['size']['z']}"/>
@@ -121,8 +109,7 @@ which is the company that manufactures the forklift robot.
   -->
 
   <xacro:property name="base_name"              value="base"/>
-  <xacro:property name="front_left_wheel_name"  value="front_left_wheel"/>  <!-- flw -->
-  <xacro:property name="front_right_wheel_name" value="front_right_wheel"/> <!-- frw -->
+  <xacro:property name="front_wheel_name"       value="front_wheel"/>       <!-- fw -->
   <xacro:property name="rear_left_wheel_name"   value="rear_left_wheel"/>   <!-- rlw -->
   <xacro:property name="rear_right_wheel_name"  value="rear_right_wheel"/>  <!-- rrw -->
 
@@ -145,37 +132,33 @@ which is the company that manufactures the forklift robot.
     scale="${base_body_scale}"/>
 
   <!--
-  Definition of the four mecanum wheels.
+  Definition of the wheel blocks:
+  wheel_block = rotation_gear + wheel
+
+  Front and rear wheels can rotate, so this way the omnidirectional motion is achieved.
   -->
+  <link name="${robot_prefix}${front_wheel_name}_gear_link">
+    <xacro:null_inertia/>
+  </link>
+
+  <xacro:property name="z_wheel_gear" value="0.278"/>
+
+  <joint name="${robot_prefix}${front_wheel_name}_gear_joint" type="fixed">
+    <parent link="${robot_prefix}${base_name}_link"/>
+    <child link="${robot_prefix}${front_wheel_name}_gear_link"/>
+    <origin rpy="0 0 0" xyz="${base_body_half_wheelbase} 0 ${z_wheel_gear}"/>
+  </joint>
 
   <xacro:set_wheel_props desc_cfg="${desc_cfg['base']['wheel']}" prop_prefix="wheel"/>
-
-  <!--
-  The front left and the rear right mecanum wheels are of the same type, left type.
-  The front right and the rear left mecanum wheels are of the same type, right type.
-  The left and right meshes for the same mecanum wheel model are supposed to be called '<side>_xxx.stl'
-  where {{side}} is either 'left' or 'right', and 'xxx' is the rest of the file name.
-  Therefore, in the property '${prop_prefix}_mesh_visual', we could have and empty value (no mesh) or a value like
-  '/path/to/meshes/{{side}}_<whatever>'.ext'
-
-  Next, we get the left and right mesh names by replacing {{side}} with 'left' and 'right', respectively, if a non-empty
-  mesh name is provided. If no mesh name is provided, the left and right mesh names are also empty.
-  -->
-
-  <xacro:property name="wheel_mesh_visual_left"
-                  value="${wheel_mesh_visual.replace('[side]', 'left') if wheel_mesh_visual else ''}"/>
-
-  <xacro:property name="wheel_mesh_visual_right"
-                  value="${wheel_mesh_visual.replace('[side]', 'right') if wheel_mesh_visual else ''}"/>
-
-  <xacro:property name="z_wheel" value="${-base_body_ground_clearance + wheel_radius}"/>
+  <xacro:property name="z_wheel" value="${-z_wheel_gear - base_body_ground_clearance + wheel_radius}"/>
 
   <xacro:wheel
-    name="${front_left_wheel_name}"
+    name="${front_wheel_name}"
     prefix="${robot_prefix}"
-    parent_frame="${robot_prefix}${base_name}_link"
+    parent_frame="${robot_prefix}${front_wheel_name}_gear_link"
     mass="${wheel_mass}"
     shape="${wheel_shape}"
+    joint_type="${wheel_joint_type}"
     velocity_limit="${wheel_velocity_limit}"
     effort_limit="${wheel_effort_limit}"
     max_contacts="${wheel_max_contacts}"
@@ -183,41 +166,31 @@ which is the company that manufactures the forklift robot.
     mu2="${wheel_mu2}"
     slip1="${wheel_slip1}"
     slip2="${wheel_slip2}"
-    mesh_visual="${wheel_mesh_visual_left}"
+    mesh_visual="${wheel_mesh_visual}"
     mesh_visual_has_color="${wheel_mesh_visual_has_color}"
     color="${wheel_color}"
     scale="${wheel_scale}"
-    joint_parent_fr_wheel_fr="${base_body_half_wheelbase} ${base_body_half_track_width} ${z_wheel} 0 0 0"
-    base_root_fr="${robot_prefix}${base_name}_footprint_link"
-    fdir1_base_root_fr="${cos(radians(45))} ${sin(radians(45))} 0"/>
+    joint_parent_fr_wheel_fr="0 0 ${z_wheel} 0 0 0"
+    fdir1_fr="${robot_prefix}${front_wheel_name}_gear_link"
+    fdir1="1 0 0"/>
 
-  <xacro:wheel
-    name="${front_right_wheel_name}"
-    prefix="${robot_prefix}"
-    parent_frame="${robot_prefix}${base_name}_link"
-    mass="${wheel_mass}"
-    shape="${wheel_shape}"
-    velocity_limit="${wheel_velocity_limit}"
-    effort_limit="${wheel_effort_limit}"
-    max_contacts="${wheel_max_contacts}"
-    mu="${wheel_mu}"
-    mu2="${wheel_mu2}"
-    slip1="${wheel_slip1}"
-    slip2="${wheel_slip2}"
-    mesh_visual="${wheel_mesh_visual_right}"
-    mesh_visual_has_color="${wheel_mesh_visual_has_color}"
-    color="${wheel_color}"
-    scale="${wheel_scale}"
-    joint_parent_fr_wheel_fr="${base_body_half_wheelbase} ${-base_body_half_track_width} ${z_wheel} 0 0 0"
-    base_root_fr="${robot_prefix}${base_name}_footprint_link"
-    fdir1_base_root_fr="${-cos(radians(45))} ${sin(radians(45))} 0"/>
+  <link name="${robot_prefix}${rear_left_wheel_name}_gear_link">
+    <xacro:null_inertia/>
+  </link>
+
+  <joint name="${robot_prefix}${rear_left_wheel_name}_gear_joint" type="fixed">
+    <parent link="${robot_prefix}${base_name}_link"/>
+    <child link="${robot_prefix}${rear_left_wheel_name}_gear_link"/>
+    <origin rpy="0 0 0" xyz="${-base_body_half_wheelbase} ${base_body_half_track_width} ${z_wheel_gear}"/>
+  </joint>
 
   <xacro:wheel
     name="${rear_left_wheel_name}"
     prefix="${robot_prefix}"
-    parent_frame="${robot_prefix}${base_name}_link"
+    parent_frame="${robot_prefix}${rear_left_wheel_name}_gear_link"
     mass="${wheel_mass}"
     shape="${wheel_shape}"
+    joint_type="${wheel_joint_type}"
     velocity_limit="${wheel_velocity_limit}"
     effort_limit="${wheel_effort_limit}"
     max_contacts="${wheel_max_contacts}"
@@ -225,20 +198,31 @@ which is the company that manufactures the forklift robot.
     mu2="${wheel_mu2}"
     slip1="${wheel_slip1}"
     slip2="${wheel_slip2}"
-    mesh_visual="${wheel_mesh_visual_right}"
+    mesh_visual="${wheel_mesh_visual}"
     mesh_visual_has_color="${wheel_mesh_visual_has_color}"
     color="${wheel_color}"
     scale="${wheel_scale}"
-    joint_parent_fr_wheel_fr="${-base_body_half_wheelbase} ${base_body_half_track_width} ${z_wheel} 0 0 0"
-    base_root_fr="${robot_prefix}${base_name}_footprint_link"
-    fdir1_base_root_fr="${-cos(radians(45))} ${sin(radians(45))} 0"/>
+    joint_parent_fr_wheel_fr="0 0 ${z_wheel} 0 0 0"
+    fdir1_fr="${robot_prefix}${rear_left_wheel_name}_gear_link"
+    fdir1="1 0 0"/>
+
+  <link name="${robot_prefix}${rear_right_wheel_name}_gear_link">
+    <xacro:null_inertia/>
+  </link>
+
+  <joint name="${robot_prefix}${rear_right_wheel_name}_gear_joint" type="fixed">
+    <parent link="${robot_prefix}${base_name}_link"/>
+    <child link="${robot_prefix}${rear_right_wheel_name}_gear_link"/>
+    <origin rpy="0 0 0" xyz="${-base_body_half_wheelbase} ${-base_body_half_track_width} ${z_wheel_gear}"/>
+  </joint>
 
   <xacro:wheel
     name="${rear_right_wheel_name}"
     prefix="${robot_prefix}"
-    parent_frame="${robot_prefix}${base_name}_link"
+    parent_frame="${robot_prefix}${rear_right_wheel_name}_gear_link"
     mass="${wheel_mass}"
     shape="${wheel_shape}"
+    joint_type="${wheel_joint_type}"
     velocity_limit="${wheel_velocity_limit}"
     effort_limit="${wheel_effort_limit}"
     max_contacts="${wheel_max_contacts}"
@@ -246,13 +230,13 @@ which is the company that manufactures the forklift robot.
     mu2="${wheel_mu2}"
     slip1="${wheel_slip1}"
     slip2="${wheel_slip2}"
-    mesh_visual="${wheel_mesh_visual_left}"
+    mesh_visual="${wheel_mesh_visual}"
     mesh_visual_has_color="${wheel_mesh_visual_has_color}"
     color="${wheel_color}"
     scale="${wheel_scale}"
-    joint_parent_fr_wheel_fr="${-base_body_half_wheelbase} ${-base_body_half_track_width} ${z_wheel} 0 0 0"
-    base_root_fr="${robot_prefix}${base_name}_footprint_link"
-    fdir1_base_root_fr="${cos(radians(45))} ${sin(radians(45))} 0"/>
+    joint_parent_fr_wheel_fr="0 0 ${z_wheel} 0 0 0"
+    fdir1_fr="${robot_prefix}${rear_right_wheel_name}_gear_link"
+    fdir1="1 0 0"/>
 
   <!-- ===================================================================== -->
   <!-- FORK -->
@@ -498,7 +482,7 @@ which is the company that manufactures the forklift robot.
           <!--
           Custom topic on which this system will publish the transform from odom_frame to robot_base_frame.
           -->
-          <tf_topic>/tf</tf_topic>
+          <tf_topic>${robot_namespace}/tf_odom_fr_robot_root_fr</tf_topic>
           <dimensions>2</dimensions> <!-- 2D (x, y, yaw) -->
           <!--
           Position offset relative to the body fixed frame, the default value is 0 0 0.
