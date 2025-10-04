@@ -46,7 +46,13 @@
     Either if you use the cylinder or the sphere shape for the wheel, the radius can be obtained from size_x:
     size_x = 2*radius, radius = 0.5*size_x
     -->
-    <xacro:property name="${prop_prefix}_radius"         value="${0.5 * _wheel_size_x}"        scope="parent"/>
+    <xacro:property name="${prop_prefix}_radius"
+                    value="${0.5 * _wheel_size_x}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_joint_type"
+                    value="${desc_cfg.get('joint_type', 'continuous')}"
+                    scope="parent"/>
 
     <!--
     Regarding the default value for the paramters 'velocity_limit' and 'effor_limit'.

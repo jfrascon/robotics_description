@@ -12,6 +12,32 @@ In the case of a sphere:
 size_x = size_y = size_z = 2*radius
 
 shape='s 2*radius  2*radius  2*radius'  -> sphere.
+
+'joint_type' must be either 'continuous' or 'fixed'.
+'effort_limit' and 'velocity_limit' are considered only if 'joint_type' is 'continuous'.
+
+Explanation of the default values for the fields 'effort_limit' and 'velocity_limit'
+================================================================================================
+The 'effort' and 'velocity' limits for this joint are intentionally set to extremely high, non-physical values.
+This is a common and deliberate practice in simulation for the specific reason of modeling an 'ideal' actuator.
+By setting virtually infinite limits, we ensure that the simulator's physics engine will never be the limiting
+factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
+trajectory following) without being constrained by the physical limitations of real-world motors.
+In essence, we are testing the software logic in isolation.
+
+effort_limit = "100000" (Newton-meters).
+This represents the maximum torque the joint can apply. To put this into perspective, a high-performance
+passenger car engine produces between 200-500 N·m of torque. A value of 100000 N·m is more in the realm of
+industrial cranes or ship engines. It is an astronomically high value for a robot wheel.
+
+velocity_limit = "100" (radians/second).
+This translates to approximately 955 rpm. For context, a typical educational robot wheel (like a TurtleBot) spins
+at around 70-100 rpm. So, 955 rpm is extremely fast.
+
+If you need a realistic simulation of a physical robot, you should replace these values with the specifications
+from your wheel. For a typical medium-sized wheel, realistic values would be in the range of:
+Effort:   10 to 100 N·m
+Velocity: 10 to 30 rad/s
 -->
 <robot name="wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="wheel"
@@ -20,6 +46,7 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
                        parent_frame
                        mass:=0.1
                        shape
+                       joint_type:=continuous
                        velocity_limit:=100
                        effort_limit:=100000
                        max_contacts:=10
@@ -32,32 +59,9 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
                        color:='0 0 0 1'
                        scale:='1 1 1'
                        joint_parent_fr_wheel_fr
-                       base_root_fr
-                       fdir1_base_root_fr">
+                       fdir1_fr
+                       fdir1">
     <!--
-    ================================================================================================
-    Explanation of the default values for the fields 'effort_limit' and 'velocity_limit'
-    ================================================================================================
-    The 'effort' and 'velocity' limits for this joint are intentionally set to extremely high, non-physical values.
-    This is a common and deliberate practice in simulation for the specific reason of modeling an 'ideal' actuator.
-    By setting virtually infinite limits, we ensure that the simulator's physics engine will never be the limiting
-    factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
-    trajectory following) without being constrained by the physical limitations of real-world motors.
-    In essence, we are testing the software logic in isolation.
-
-    effort_limit = "100000" (Newton-meters).
-    This represents the maximum torque the joint can apply. To put this into perspective, a high-performance
-    passenger car engine produces between 200-500 N·m of torque. A value of 100000 N·m is more in the realm of
-    industrial cranes or ship engines. It is an astronomically high value for a robot wheel.
-
-    velocity_limit = "100" (radians/second).
-    This translates to approximately 955 rpm. For context, a typical educational robot wheel (like a TurtleBot) spins
-    at around 70-100 rpm. So, 955 rpm is extremely fast.
-
-    If you need a realistic simulation of a physical robot, you should replace these values with the specifications
-    from your wheel. For a typical medium-sized wheel, realistic values would be in the range of:
-    Effort:   10 to 100 N·m
-    Velocity: 10 to 30 rad/s
     -->
 
     <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
@@ -126,12 +130,18 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
 
     <xacro:property name="j_wheel" value="${joint_parent_fr_wheel_fr.split()}"/>
 
-    <joint name="${prefix}${name}_joint" type="continuous">
+    <xacro:if value="${joint_type not in ('continuous', 'fixed')}">
+      ${xacro.fatal("The field 'joint_type' must be either 'continuous' or 'fixed'")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_joint" type="${joint_type}">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_link"/>
       <origin rpy="${j_wheel[3]} ${j_wheel[4]} ${j_wheel[5]}" xyz="${j_wheel[0]} ${j_wheel[1]} ${j_wheel[2]}"/>
-      <axis xyz="0 1 0"/>
-      <limit effort="${effort_limit}" velocity="${velocity_limit}"/>
+      <xacro:if value="${joint_type == 'continuous'}">
+        <axis xyz="0 1 0"/>
+        <limit effort="${effort_limit}" velocity="${velocity_limit}"/>
+      </xacro:if>
     </joint>
 
     <gazebo reference="${prefix}${name}_link">
@@ -143,7 +153,7 @@ shape='s 2*radius  2*radius  2*radius'  -> sphere.
               <!--
               Read the explanation at the end of this file about how to set fdir1 for mecanum wheels.
               -->
-              <fdir1 gz:expressed_in="${base_root_fr}">${fdir1_base_root_fr}</fdir1>
+              <fdir1 gz:expressed_in="${fdir1_fr}">${fdir1}</fdir1>
               <!--
               Reference 'http://sdformat.org/tutorials?tut=sdformat_urdf_extensions&cat=specification#gazebo-elements-for-links'
               Friction coefficient in the direction of the wheel rolling, along the contact surface.
