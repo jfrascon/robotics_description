@@ -24,6 +24,7 @@ def generate_launch_description():
     ldes = [
         DeclareLaunchArgument('robot_name', default_value='flart', description='The unique name for the robot'),
         DeclareLaunchArgument('namespace', default_value='', description='Namespace for all resources'),
+        SetLaunchConfiguration('robot_namespace', robot_namespace),
         DeclareLaunchArgument(
             'sim_cfg_file',
             default_value=os.path.join(
@@ -60,27 +61,8 @@ def generate_launch_description():
             choices=['debug', 'info', 'warn', 'error'],
             description='Log level for the bridge node (default: info)',
         ),
-        # When working in simulation, the topics used by the sensors installed in the 'flart' robot are defined in the
-        # xacro macro files for these sensors.
-        # Consequently, the topics used in simulation are fixed and cannot be changed from the launch file.
-        # This is a convention we have adopted to standardize the topic names for the sensors used in our robots.
-        # These topics do really make sense since they have the form:
-        # <robot_namespace>/<sensor_name>/<base_topic_for_sensor>
-        # Therefore, the topics in real conditions, do must match the topics used in simulation.
-        SetLaunchConfiguration('front_lidar_topic', [robot_namespace, '/front_lidar/scan/points']),
-        SetLaunchConfiguration('front_imu_topic', [robot_namespace, '/front_imu/data']),
-        LogInfo(
-            msg=[
-                "Launching simulated sensors for the robot '",
-                robot_namespace,
-                "' (namespace: ",
-                namespace,
-                ', robot_name: ',
-                robot_name,
-                ')',
-            ]
-        ),
-        LogInfo(msg=['use_composition: ', LaunchConfiguration('use_composition')]),
+        LogInfo(msg=['[', robot_namespace, '] Launching rosgz bridge']),
+        LogInfo(msg=['[', robot_namespace, '] use_composition: ', LaunchConfiguration('use_composition')]),
         # Launch the bridge; the function will no-op if no sensors are enabled.
         OpaqueFunction(function=launch_rosgz_bridge),
     ]
@@ -130,12 +112,14 @@ def create_composable_bridge(
         # Once we are sure no trailing '/' is present, we can concatenate the namespace, a '/' and the container name.
         target_container = namespace + '/' + container_name
 
+    robot_namespace = LaunchConfiguration('robot_namespace').perform(ctx)
+
     # Load composable nodes into the target container. Note: when 'create_own_container' is False, the container must
     # already exist in 'target_container'; otherwise this action will fail to find it.
     ldes.extend(
         [
-            LogInfo(msg=['create_own_container: ', str(create_own_container)]),
-            LogInfo(msg=['target_container: ', target_container]),
+            LogInfo(msg=['[', robot_namespace, '] create_own_container: ', str(create_own_container)]),
+            LogInfo(msg=['[', robot_namespace, '] target_container: ', target_container]),
             LoadComposableNodes(
                 target_container=target_container,
                 composable_node_descriptions=[
@@ -215,17 +199,52 @@ def launch_rosgz_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
     if not data:
         raise RuntimeError(f"Parameters file '{sim_cfg_file}' has no nodes (empty mapping).")
 
+    # When working in simulation, the topics used by GZ plugins installed in the 'flart' robot description (xacro
+    # file) are fixed, they do not admit to be passed as parameters to the plugins.
+    # Consequently, the topics used in this rosgz bridge to transfer messages to/from the GZ and ROS must match
+    # those used in the robot description.
+    # This is a convention adopted that has several advanteges:
+    # 1. Reduce the mental burden of deciding where a topic must be defined, the rule is simple: if the topic is
+    #    robot-related it must be defined in the robot description (xacro file).
+    # 2. Other launch files needing to us those topics should use the same topics, so consistency is enforced.
+    #    This is specially important when working with multiple robots, since the topics are automatically
+    #    namespaced under the robot namespace.
+    # 3. Avoids the need to pass many parameters around to configure topics, since they are fixed.
+    # 4. For some reason the topics must be changed, do the changes in the robot description (xacro file)
+    #    and in those launch files needing to use those topics.
+    # These topics do really make sense since they have the form:
+    # <robot_namespace>/<sensor_or_controller_or_plugin>/<topic_base_name>
+
+    robot_namespace = LaunchConfiguration('robot_namespace').perform(ctx)
+
+    # Obtain the plugins configuration for the simulation.
+    vel_ctrl_plugin_sim_cfg = data.get('gz_sim_systems_VelocityControl', {})
+    use_vel_ctrl_plugin = vel_ctrl_plugin_sim_cfg.get('enabled', False)
+    vel_ctrl_plugin_topic = f'{robot_namespace}/cmd_vel'
+
+    ldes.append(LogInfo(msg=['[', robot_namespace, '] Simulate velocity control: ', str(use_vel_ctrl_plugin)]))
+
+    odom_pub_plugin_sim_cfg = data.get('gz_sim_systems_OdometryPublisher', {})
+    use_odom_pub_plugin = odom_pub_plugin_sim_cfg.get('enabled', False)
+    odom_pub_plugin_topic = f'{robot_namespace}/odom'
+
+    ldes.append(LogInfo(msg=['[', robot_namespace, '] Simulate odometry publisher: ', str(use_odom_pub_plugin)]))
+
     front_lidar_sim_cfg = data.get('front_lidar', {})
     use_front_lidar = front_lidar_sim_cfg.get('enabled', False)
+    front_lidar_topic = f'{robot_namespace}/front_lidar/scan/points'
 
-    ldes.append(LogInfo(msg=['Simulate front_lidar: ', str(use_front_lidar)]))
+    ldes.append(LogInfo(msg=['[', robot_namespace, '] Simulate front LiDAR: ', str(use_front_lidar)]))
 
     front_imu_sim_cfg = data.get('front_imu', {})
     use_front_imu = front_imu_sim_cfg.get('enabled', False)
+    front_imu_topic = f'{robot_namespace}/front_imu/data'
 
-    ldes.append(LogInfo(msg=['Simulate front_imu: ', str(use_front_imu)]))
+    ldes.append(LogInfo(msg=['[', robot_namespace, '] Simulate front IMU: ', str(use_front_imu)]))
 
-    bridge_name = f'rosgz_bridge_{LaunchConfiguration("robot_name").perform(ctx)}'
+    robot_name = LaunchConfiguration('robot_name').perform(ctx)
+
+    bridge_name = f'rosgz_bridge_{robot_name}'
 
     bridge_cfg: dict[str, Any] = {
         'subscription_heartbeat': 1000,  # default value in 'ros_gz_bridge.cpp'
@@ -233,9 +252,80 @@ def launch_rosgz_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         'bridge_names': [],  # Add the names of the individual channels here.
     }
 
+    if use_vel_ctrl_plugin:
+        # One channel in the bridge for the velocity control commands.
+        vel_ctrl_channel = f'{bridge_name}_vel_ctrl'
+
+        bridge_cfg['bridge_names'].append(vel_ctrl_channel)
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.ros_topic_name'] = vel_ctrl_plugin_topic
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.gz_topic_name'] = vel_ctrl_plugin_topic
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.ros_type_name'] = 'geometry_msgs/msg/TwistStamped'
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.gz_type_name'] = 'gz.msgs.Twist'
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.direction'] = 'ROS_TO_GZ'
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.qos_profile'] = 'SENSOR_DATA'
+        # Lazy subscription policy
+        # Many bridges default to 'lazy: true' to avoid spinning up internal publishers/subscribers unless a
+        # real client appears on the opposite side.
+        # lazy = true  -> the bridge activates only when at least one ROS-side or GZ-side subscriber/publisher
+        #                 exists, saving CPU/bandwidth.
+        # lazy = false -> the bridge stays permanently connected, forwarding every message even if no node is
+        #                 currently listening.
+        # For /clock in simulation we normally force 'lazy: false' so the time source is always available as
+        # soon as any ROS node starts.
+        bridge_cfg[f'bridges.{vel_ctrl_channel}.lazy'] = True
+
+    ldes.append(LogInfo(msg=['[', robot_namespace, '] Velocity control plugin topic: ', vel_ctrl_plugin_topic]))
+
+    if use_odom_pub_plugin:
+        # One channel in the bridge for the odometry publisher.
+        odom_pub_channel = f'{bridge_name}_odom_pub'
+
+        bridge_cfg['bridge_names'].append(odom_pub_channel)
+        bridge_cfg[f'bridges.{odom_pub_channel}.ros_topic_name'] = odom_pub_plugin_topic
+        bridge_cfg[f'bridges.{odom_pub_channel}.gz_topic_name'] = odom_pub_plugin_topic
+        bridge_cfg[f'bridges.{odom_pub_channel}.ros_type_name'] = 'nav_msgs/msg/Odometry'
+        bridge_cfg[f'bridges.{odom_pub_channel}.gz_type_name'] = 'gz.msgs.OdometryWithCovariance'
+        bridge_cfg[f'bridges.{odom_pub_channel}.direction'] = 'GZ_TO_ROS'
+        bridge_cfg[f'bridges.{odom_pub_channel}.qos_profile'] = 'SENSOR_DATA'
+        # Lazy subscription policy
+        # Many bridges default to 'lazy: true' to avoid spinning up internal publishers/subscribers unless a
+        # real client appears on the opposite side.
+        # lazy = true  -> the bridge activates only when at least one ROS-side or GZ-side subscriber/publisher
+        #                 exists, saving CPU/bandwidth.
+        # lazy = false -> the bridge stays permanently connected, forwarding every message even if no node is
+        #                 currently listening.
+        # For /clock in simulation we normally force 'lazy: false' so the time source is always available as
+        # soon as any ROS node starts.
+        bridge_cfg[f'bridges.{odom_pub_channel}.lazy'] = True
+
+        ldes.append(LogInfo(msg=['[', robot_namespace, '] Odometry publisher plugin topic: ', odom_pub_plugin_topic]))
+
+        # Bridge the tf message from GZ to ROS, joining the odometry frame and the robot root frame.
+        odom_tf_broadcast_channel = f'{bridge_name}_odom_tf_broadcast'
+        bridge_cfg['bridge_names'].append(odom_tf_broadcast_channel)
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.ros_topic_name'] = '/tf'
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.gz_topic_name'] = (
+            f'{LaunchConfiguration("robot_namespace").perform(ctx)}/tf_odom_fr_robot_root_fr'
+        )
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.ros_type_name'] = 'tf2_msgs/msg/TFMessage'
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.gz_type_name'] = 'gz.msgs.Pose_V'
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.direction'] = 'GZ_TO_ROS'
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.qos_profile'] = 'SENSOR_DATA'
+        # Lazy subscription policy
+        # Many bridges default to 'lazy: true' to avoid spinning up internal publishers/subscribers unless a
+        # real client appears on the opposite side.
+        # lazy = true  -> the bridge activates only when at least one ROS-side or GZ-side subscriber/publisher
+        #                 exists, saving CPU/bandwidth.
+        # lazy = false -> the bridge stays permanently connected, forwarding every message even if no node is
+        #                 currently listening.
+        # For /tf in simulation we normally force 'lazy: false' so the tf source is always broadcasted as soon as any
+        # ROS node starts.
+        bridge_cfg[f'bridges.{odom_tf_broadcast_channel}.lazy'] = False
+
+        ldes.append(LogInfo(msg=['[', robot_namespace, "] tf odom fr -> robot's root fr published in topic /tf"]))
+
     if use_front_lidar:
         front_lidar_channel = f'{bridge_name}_front_lidar'  # One channel in the bridge for the front lidar.
-        front_lidar_topic = LaunchConfiguration('front_lidar_topic').perform(ctx)
 
         bridge_cfg['bridge_names'].append(front_lidar_channel)
         bridge_cfg[f'bridges.{front_lidar_channel}.ros_topic_name'] = front_lidar_topic
@@ -252,15 +342,14 @@ def launch_rosgz_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         # lazy = false -> the bridge stays permanently connected, forwarding every message even if no node is
         #                 currently listening.
         # For /clock in simulation we normally force 'lazy: false' so the time source is always available as
-        # soon as any ROS node starts.  For secondary topics,
+        # soon as any ROS node starts.
         bridge_cfg[f'bridges.{front_lidar_channel}.lazy'] = True
 
-        ldes.append(LogInfo(msg=['front_lidar_topic: ', front_lidar_topic]))
+        ldes.append(LogInfo(msg=['[', robot_namespace, '] Front LiDAR topic: ', front_lidar_topic]))
 
     if use_front_imu:
         # One channel in the bridge for the front imu.
         front_imu_channel = f'{bridge_name}_front_imu'
-        front_imu_topic = LaunchConfiguration('front_imu_topic').perform(ctx)
 
         bridge_cfg['bridge_names'].append(front_imu_channel)
         bridge_cfg[f'bridges.{front_imu_channel}.ros_topic_name'] = front_imu_topic
@@ -277,10 +366,10 @@ def launch_rosgz_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         # lazy = false -> the bridge stays permanently connected, forwarding every message even if no node is
         #                 currently listening.
         # For /clock in simulation we normally force 'lazy: false' so the time source is always available as
-        # soon as any ROS node starts.  For secondary topics,
+        # soon as any ROS node starts.
         bridge_cfg[f'bridges.{front_imu_channel}.lazy'] = True
 
-        ldes.append(LogInfo(msg=['front_imu_topic: ', front_imu_topic]))
+        ldes.append(LogInfo(msg=['[', robot_namespace, '] Front IMU topic: ', front_imu_topic]))
 
     # If no sensors are enabled, do nothing, i.e., return an empty list, so no bridge node is launched.
     if not bridge_cfg['bridge_names']:
@@ -290,7 +379,7 @@ def launch_rosgz_bridge(ctx: LaunchContext) -> list[LaunchDescriptionEntity]:
         ctx, normalize_typed_substitution(LaunchConfiguration('use_composition'), bool), bool
     )
 
-    ldes.append(LogInfo(msg=['use_composition: ', str(use_composition)]))
+    ldes.append(LogInfo(msg=['[', robot_namespace, '] use_composition: ', str(use_composition)]))
 
     if use_composition:
         ldes.append(OpaqueFunction(function=create_composable_bridge, args=[bridge_name, bridge_cfg]))
