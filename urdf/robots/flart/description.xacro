@@ -95,19 +95,22 @@ which is the company that manufactures the forklift robot.
   <xacro:property name="robot_size_z" value="${desc_cfg['size']['z']}"/>
 
   <!-- ===================================================================== -->
-  <!-- MECANUM RECTANGULAR BASE -->
+  <!-- RECTANGULAR BASE -->
   <!-- ===================================================================== -->
   <!--
-  A base is composed of a body and wheels.
-  In this case, the base is rectangular with mecanum wheels.
+  base = body + wheels.
+  In this case, the base is rectangular with 3 wheels, one in the front and two in the back.
 
   The rectangular_body macro defines the following links and joints:
   - Links:
     * ${prefix}${name}_footprint_link = ${robot_prefix}${base_name}_footprint_link
     * ${prefix}${name}_link = ${robot_prefix}${base_name}_link
+    * ${prefix}${name}_ballast_link = ${robot_prefix}${base_name}_ballast_link
   - Joints:
     * ${prefix}${name}_joint = ${robot_prefix}${base_name}_joint, joining the links
       ${robot_prefix}${base_name}_footprint_link and ${robot_prefix}${base_name}_link.
+    * ${prefix}${name}_ballast_joint = ${robot_prefix}${base_name}_ballast_joint, joining the links
+      ${robot_prefix}${base_name}_link and ${robot_prefix}${base_name}_ballast_link.
 
   THE LINK '${robot_prefix}${base_name}_link' IS LOCATED AT THE CENTER OF THE BOTTOM FACE OF THE BASE BODY.
 
@@ -133,6 +136,8 @@ which is the company that manufactures the forklift robot.
     mass="${base_body_mass}"
     size="${base_body_size_x} ${base_body_size_y} ${base_body_size_z}"
     ground_clearance="${base_body_ground_clearance}"
+    ballast_mass_ratio="0.95"
+    ballast_height_ratio="0.1"
     mesh_visual="${base_body_mesh_visual if use_visual_meshes else ''}"
     mesh_visual_has_color="${base_body_mesh_visual_has_color}"
     color="${base_body_color}"

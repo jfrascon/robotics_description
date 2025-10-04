@@ -14,16 +14,9 @@ base:
     ground_clearance: 0.06 # Distance from the ground to the bottom face of the base.
     mesh_visual: bases/flart/mesh_low_res.stl
     mesh_visual_has_color: False
-    color:
-      r: 0
-      g: 0
-      b: 1
-      a: 1
+    color: { "r": 0, "g": 0, "b": 1, "a": 1 }
     mesh_collision: null
-    scale:
-      x: 1
-      y: 1
-      z: 1
+    scale: { "x": 1, "y": 1, "z": 1 }
   # mecanum wheel
   wheel:
     mass: 6.5  # optional, default is 0.1 Kg

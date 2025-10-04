@@ -43,12 +43,13 @@ IF A MESHES IS PROVIDED.
                         mass
                         size
                         ground_clearance
+                        ballast_mass_ratio:=0.95
+                        ballast_height_ratio:=0.1
                         mesh_visual:=''
                         mesh_visual_has_color:=False
                         mesh_collision:=''
                         scale:='1 1 1'
                         color='0 0 0 1'">
-
 
     <!-- INCLUDES -->
 
@@ -58,13 +59,12 @@ IF A MESHES IS PROVIDED.
     RECTANGULAR BASE
 
     Base = Body + wheels
-
     -->
 
     <xacro:property name="body_size_lst" value="${size.split()}"/>
-    <xacro:property name="body_size_x"   value="${body_size_lst[0]}"/>
-    <xacro:property name="body_size_y"   value="${body_size_lst[1]}"/>
-    <xacro:property name="body_size_z"   value="${body_size_lst[2]}"/>
+    <xacro:property name="body_size_x"   value="${float(body_size_lst[0])}"/>
+    <xacro:property name="body_size_y"   value="${float(body_size_lst[1])}"/>
+    <xacro:property name="body_size_z"   value="${float(body_size_lst[2])}"/>
 
     <!--
     Definition of the link ${prefix}${name}_footprint_link.
@@ -74,6 +74,7 @@ IF A MESHES IS PROVIDED.
 
     <!--
     Definition of the link '${prefix}${name}_link'.
+    The proportion of the mass that is not ballast is considered to be uniformly distributed in the box.
     -->
 
     <xacro:link_r
@@ -82,7 +83,7 @@ IF A MESHES IS PROVIDED.
       use_visual="True"
       use_collision="True"
       use_inertia="True"
-      mass="${mass}"
+      mass="${(1.0 - ballast_mass_ratio) * mass}"
       size="${size}"
       mesh_visual="${mesh_visual}"
       mesh_visual_has_color="${mesh_visual_has_color}"
@@ -90,7 +91,6 @@ IF A MESHES IS PROVIDED.
       mesh_collision="${mesh_collision}"
       scale="${scale}"
       vci_pose="0 0 ${body_size_z * 0.5} 0 0 0"/>
-
 
     <!--
     Joint '${prefix}${name}_joint' connects the link '${prefix}${name}_footprint_link'
@@ -101,6 +101,54 @@ IF A MESHES IS PROVIDED.
       <parent link="${prefix}${name}_footprint_link"/>
       <child link="${prefix}${name}_link"/>
       <origin rpy="0 0 0" xyz="0 0 ${ground_clearance}"/>
+    </joint>
+
+    <!--
+    Ballast to adjust the center of mass of the base.
+    The ballast is modeled as a box of the same size as the base in the X and Y directions, but with a height equal to
+    'ballast_height_ratio * body_size_z'.
+    'ballast_height_ratio' must be in the range [0, 1], and represents the proportion of the base height that the
+    ballast occupies. It should be a small value, e.g., 0.1 (10% of the base height), so that the center of mass of the
+    base is lowered.
+    The ballast mass is equal to 'ballast_mass_ratio * mass'.
+    'ballast_mass_ratio' must be in the range [0, 1], and represents the proportion of the total mass of the base that
+    the ballast occupies. It should be a large value, e.g., 0.9 (90% of the total mass), so that the center of mass of
+    the base is lowered.
+    The ballast is positioned at the bottom of the base, so its center is at a height of
+    '0.5 * ballast_height_ratio * body_size_z'.
+    -->
+    <!--
+    The value of attribute 'value' must not contain the '<' character.
+    &lt; is equivalent to '<'.
+    -->
+    <xacro:if value="${ballast_mass_ratio &lt; 0.0 or ballast_mass_ratio > 1.0}">
+      ${xacro.fatal("The 'ballast_mass_ratio' parameter must be in the range [0, 1].")}
+    </xacro:if>
+
+    <xacro:if value="${ballast_height_ratio &lt; 0.0 or ballast_height_ratio > 1.0}">
+      ${xacro.fatal("The 'ballast_height_ratio' parameter must be in the range [0, 1].")}
+    </xacro:if>
+
+    <xacro:property name="ballast_size_z" value="${ballast_height_ratio * body_size_z}"/>
+
+    <xacro:link_r
+      name="${name}_ballast"
+      prefix="${prefix}"
+      use_visual="False"
+      use_collision="False"
+      use_inertia="True"
+      mass="${ballast_mass_ratio * mass}"
+      size="${body_size_x} ${body_size_y} ${ballast_size_z}"
+      vci_pose="0 0 0 0 0 0"/>
+
+    <!--
+    Joint '${prefix}${name}_ballast_joint' connects the link '${prefix}${name}_link'
+    with the link '${prefix}${name}_ballast_link'.
+    -->
+    <joint name="${prefix}${name}_ballast_joint" type="fixed">
+      <parent link="${prefix}${name}_link"/>
+      <child link="${prefix}${name}_ballast_link"/>
+      <origin rpy="0 0 0" xyz="0 0 ${0.5 * ballast_size_z}"/>
     </joint>
   </xacro:macro>
 </robot>
