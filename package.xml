@@ -18,7 +18,9 @@
 
   <!-- Runtime dependencies (launch/*.py and tools rely on launch*, launch_ros, ament_index_python, PyYAML, Jinja2). -->
   <exec_depend>ament_index_python</exec_depend>
+  <!--
   <exec_depend>gz_ros2_control</exec_depend>
+  -->
   <exec_depend>joint_state_broadcaster</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>

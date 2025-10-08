@@ -135,7 +135,8 @@ which is the company that manufactures the forklift robot.
   Definition of the wheel blocks:
   wheel_block = rotation_gear + wheel
 
-  Front and rear wheels can rotate, so this way the omnidirectional motion is achieved.
+  Front and rear wheels can rotate around an axis to get the proper orientation, so this way the omnidirectional motion
+  is achieved.
   -->
   <link name="${robot_prefix}${front_wheel_name}_gear_link">
     <xacro:null_inertia/>
@@ -355,7 +356,6 @@ which is the company that manufactures the forklift robot.
     ${xacro.fatal("The 'front_imu' model detected in the robot's configuration file is not a 'um7'")}
   </xacro:if>
 
-
   <!--
   Position and orientation of the frame '${robot_prefix}front_imu_root_link' with respect to the frame
   '${robot_prefix}front_lidar_root_link'.
@@ -376,6 +376,9 @@ which is the company that manufactures the forklift robot.
     use_mesh_visual="${use_visual_meshes}"
     use_mesh_collision="${use_collision_meshes}"/>
 
+  <!--
+  The plugin 'gz_ros2_control' is not used.
+  -->
   <xacro:if value="${use_sim_mode}">
     <!--
     <xacro:include filename="${urdf_dir}/robots/flart/ros2_control_sim.xacro"/>
@@ -385,13 +388,19 @@ which is the company that manufactures the forklift robot.
                front_right_wheel_joint_name="${robot_prefix}front_right_wheel_joint"
                rear_left_wheel_joint_name="${robot_prefix}rear_left_wheel_joint"
                rear_right_wheel_joint_name="${robot_prefix}rear_right_wheel_joint"/>
-  -->
+    -->
 
-    <xacro:property name="velocity_control_sim_cfg"
-                    value="${sim_cfg.get('gz_sim_systems_VelocityControl', dict())}"/>
+    <xacro:property name="base_vel_ctrl_sim_cfg"
+                    value="${sim_cfg.get('base_velocity_controller', dict())}"/>
 
-    <xacro:property name="odometry_publisher_sim_cfg"
-                    value="${sim_cfg.get('gz_sim_systems_OdometryPublisher', dict())}"/>
+    <xacro:property name="base_odom_pub_sim_cfg"
+                    value="${sim_cfg.get('base_odometry_publisher', dict())}"/>
+
+    <xacro:property name="fork_pos_ctrl_sim_cfg"
+                    value="${sim_cfg.get('fork_position_controller', dict())}"/>
+
+    <xacro:property name="fork_pos_pub_sim_cfg"
+                    value="${sim_cfg.get('fork_position_publisher', dict())}"/>
 
     <gazebo>
       <!--
@@ -399,12 +408,16 @@ which is the company that manufactures the forklift robot.
       https://gazebosim.org/api/gazebo/6/namespaceignition_1_1gazebo_1_1systems.html
       -->
 
-      <xacro:if value="${velocity_control_sim_cfg.get('enabled', False)}">
+      <!--
+      Plugin VelocityControl to control the robot's motion by publishing a twist message (command message) that
+      is subscribed by the plugin.
+      -->
+      <xacro:if value="${base_vel_ctrl_sim_cfg.get('enabled', False)}">
         <xacro:property name="initial_linear"
-                        value="${velocity_control_sim_cfg.get('initial_linear', dict(x=0, y=0, z=0))}"/>
+                        value="${base_vel_ctrl_sim_cfg.get('initial_linear', dict(x=0, y=0, z=0))}"/>
 
         <xacro:property name="initial_angular"
-                        value="${velocity_control_sim_cfg.get('initial_angular', dict(x=0, y=0, z=0))}"/>
+                        value="${base_vel_ctrl_sim_cfg.get('initial_angular', dict(x=0, y=0, z=0))}"/>
 
         <!--
         Reference: https://gazebosim.org/api/gazebo/6/classignition_1_1gazebo_1_1systems_1_1VelocityControl.html
@@ -417,7 +430,11 @@ which is the company that manufactures the forklift robot.
         </plugin>
       </xacro:if>
 
-      <xacro:if value="${odometry_publisher_sim_cfg.get('enabled', False)}">
+      <!--
+      Plugin 'OdometryPublisher' to publish the robot's pose on the GZ's world frame.
+      -->
+
+      <xacro:if value="${base_odom_pub_sim_cfg.get('enabled', False)}">
         <!--
         Reference: https://gazebosim.org/api/gazebo/6/classignition_1_1gazebo_1_1systems_1_1OdometryPublisher.html
         This plugin publishes the absolute pose (position and orientation) and velocities of the robot with respect to
@@ -458,13 +475,13 @@ which is the company that manufactures the forklift robot.
 
         -->
         <xacro:property name="odom_publish_frequency"
-                        value="${odometry_publisher_sim_cfg.get('odom_publish_frequency', 50)}"/>
+                        value="${base_odom_pub_sim_cfg.get('odom_publish_frequency', 50)}"/>
 
         <xacro:property name="offset"
-                        value="${odometry_publisher_sim_cfg.get('offset', dict(x=0, y=0, z=0, R=0, P=0, Y=0))}"/>
+                        value="${base_odom_pub_sim_cfg.get('offset', dict(x=0, y=0, z=0, R=0, P=0, Y=0))}"/>
 
         <xacro:property name="gaussian_noise"
-                        value="${odometry_publisher_sim_cfg.get('gaussian_noise', 0)}"/>
+                        value="${base_odom_pub_sim_cfg.get('gaussian_noise', 0)}"/>
 
         <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
           <odom_frame>${robot_prefix}${odom_frame}</odom_frame>
@@ -499,6 +516,50 @@ which is the company that manufactures the forklift robot.
           This element is optional, and the default value is 0.
           -->
           <gaussian_noise>${gaussian_noise}</gaussian_noise>
+        </plugin>
+      </xacro:if>
+      <xacro:if value="${fork_pos_ctrl_sim_cfg.get('enabled', False)}">
+        <!--
+        Reference: https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1JointPositionController.html
+        -->
+        <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+          <joint_name>${robot_prefix}fork_root_joint</joint_name>
+          <joint_index>0</joint_index>
+          <!--
+          The following tags are NOT USED HERE, but are left commented for reference.
+          - <use_actuator_msg>: True to enable the use of actutor message for position command. Relies on
+          <actuator_number> for the index of the position actuator and defaults to topic "/actuators".
+          Used with <use_actuator_commands> to set the index of the position actuator.
+          - <actuator_number>
+          - <p_gain>: The proportional gain of the PID. Default value is 1.
+          - <i_gain>: The integral gain of the PID. Default value is 0.1.
+          - <d_gain>: The derivative gain of the PID. Default value is 0.001.
+          - <i_max>: The integral upper limit of the PID. Default value is 1.
+          - <i_min>: The integral lower limit of the PID. Default value is -1.
+          - <cmd_min>: The command minimum value of the PID. Default value is -1000.
+          - <cmd_offset>: Command offset (feed-forward) of the PID. Default value is 0.
+          -->
+          <!--
+          Bypasses the PID and creates a perfect position.
+          The maximum speed on the joint can be set using the <cmd_max> tag.
+          -->
+          <use_velocity_commands>true</use_velocity_commands>
+          <cmd_max>${fork_pos_ctrl_sim_cfg.get('v_max', 0.5)}</cmd_max>
+          <topic>${robot_namespace}/robot_description/fork_root_joint/cmd_pos</topic>
+          <!--
+          Initial position of a joint.
+          -->
+          <initial_position>0</initial_position>
+        </plugin>
+      </xacro:if>
+      <xacro:if value="${fork_pos_pub_sim_cfg.get('enabled', False)}">
+        <!--
+        Plugin 'JointStatePublisher' to publish the position of the fork joint.
+        Reference: https://gazebosim.org/api/sim/7/classgz_1_1sim_1_1systems_1_1JointStatePublisher.html#details
+        -->
+        <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+          <topic>${robot_namespace}/robot_description/fork_root_joint/pos</topic>
+          <joint_name>flart1_fork_root_joint</joint_name>
         </plugin>
       </xacro:if>
     </gazebo>
