@@ -1,17 +1,25 @@
-gz_sim_systems_VelocityControl:
-  enabled: true
+# Plugin to control the mobile base in velocity.
+base_velocity_controller:
+  enabled: True
   initial_linear: { "x": 0.0, "y": 0.0, "z": 0.0 }
   initial_angular: { "x": 0.0, "y": 0.0, "z": 0.0 }
 
-gz_sim_systems_OdometryPublisher:
-  enabled: true
+base_odometry_publisher:
+  enabled: True
   odom_publish_frequency: 50.0
   offset: { "x": 0.0, "y": 0.0, "z": 0.0, "R": 0.0, "P": 0.0, "Y": 0.0 }
   gaussian_noise: 0
 
+fork_position_controller:
+  enabled: True
+  v_max: 0.3
+
+fork_position_publisher:
+  enabled: True
+
 # Front lidar is a RoboSense Helios 16P
 front_lidar:
-  enabled: true
+  enabled: True
   use_gpu_sensor: True
   always_on: True
   visualize: False
@@ -25,7 +33,7 @@ front_lidar:
 
 # Front imu is an UM7
 front_imu:
-  enabled: true
+  enabled: True
   always_on: True
   update_rate: 75.0
   ang_vel_gaussian_noise:
