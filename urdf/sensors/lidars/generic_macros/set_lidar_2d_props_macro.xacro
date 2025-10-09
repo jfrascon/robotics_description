@@ -50,41 +50,47 @@
                                         str(desc_cfg['shape']['size']['z'])])}"
                     scope="parent"/>
 
-    <!--
-    The property 'mesh' is local to this macro, so no need to use scope="parent". This property is used to set
-    another property in the parent scope, which is '${prop_prefix}_mesh'.
-    -->
-    <xacro:property name="mesh_dir" value="$(find eut_robotics_description)/meshes"/>
+    <xacro:property name="_lidar_mesh_visual"    value="${desc_cfg.get('mesh_visual', '')}"/>
+    <xacro:property name="_lidar_mesh_collision" value="${desc_cfg.get('mesh_collision', '')}"/>
 
-    <xacro:property name="${prop_prefix}_mesh_visual"
-                    value="${mesh_dir + '/' + desc_cfg['mesh_visual'] if desc_cfg['mesh_visual'] else ''}"
-                    scope="parent"/>
+    <xacro:if value="${_lidar_mesh_visual is not None and _lidar_mesh_visual != ''}">
+      <xacro:property name="${prop_prefix}_mesh_visual"
+                      value="${_lidar_mesh_visual}"
+                      scope="parent"/>
+    </xacro:if>
+
+    <xacro:if value="${_lidar_mesh_visual is None or _lidar_mesh_visual == ''}">
+      <xacro:property name="${prop_prefix}_mesh_visual"
+                      value=""
+                      scope="parent"/>
+    </xacro:if>
 
     <xacro:property name="${prop_prefix}_mesh_visual_has_color"
                     value="${desc_cfg['mesh_visual_has_color']}"
                     scope="parent"/>
 
-    <xacro:property name="${prop_prefix}_mesh_collision"
-                    value="${mesh_dir + '/' + desc_cfg['mesh_collision'] if desc_cfg['mesh_collision'] else ''}"
-                    scope="parent"/>
-
-    <!--
-    To be able to do the comparion and the assignment of the resulting string in a single line, being the string
-    a concatenation of several values, you have to combine those values in a list, and then use 'join' to create the
-    string.
-    -->
-    <xacro:property name="${prop_prefix}_scale"
-                    value="${' '.join([str(desc_cfg['scale']['x']),
-                                       str(desc_cfg['scale']['y']),
-                                       str(desc_cfg['scale']['z'])])
-                            if desc_cfg['scale'] else ''}"
-                    scope="parent"/>
+    <xacro:property name="_lidar_color" value="${desc_cfg['color']}"/>
 
     <xacro:property name="${prop_prefix}_color"
-                    value="${' '.join([str(desc_cfg['color']['r']),
-                                       str(desc_cfg['color']['g']),
-                                       str(desc_cfg['color']['b']),
-                                       str(desc_cfg['color']['a'])])}"
+                    value="${_lidar_color['r']} ${_lidar_color['g']} ${_lidar_color['b']} ${_lidar_color['a']}"
+                    scope="parent"/>
+
+    <xacro:if value="${_lidar_mesh_collision is not None and _lidar_mesh_collision != ''}">
+      <xacro:property name="${prop_prefix}_mesh_collision"
+                      value="${_lidar_mesh_collision}"
+                      scope="parent"/>
+    </xacro:if>
+
+    <xacro:unless value="${_lidar_mesh_collision is None or _lidar_mesh_collision == ''}">
+      <xacro:property name="${prop_prefix}_mesh_collision"
+                      value=""
+                      scope="parent"/>
+    </xacro:unless>
+
+    <xacro:property name="_lidar_scale" value="${desc_cfg['scale']}"/>
+
+    <xacro:property name="${prop_prefix}_scale"
+                    value="${_lidar_scale['x']} ${_lidar_scale['y']} ${_lidar_scale['z']}"
                     scope="parent"/>
 
     <xacro:property name="${prop_prefix}_joint_root_fr_data_fr"

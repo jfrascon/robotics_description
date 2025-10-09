@@ -8,7 +8,7 @@ shape: { "type": "cz", "size": { "x": 0.06, "y": 0.06, "z": 0.063 } }
 # IMPORTANT
 # The inner frame for 'mesh_visual' and 'mesh_collision' must be located at the center of the mesh.
 # Both meshes musth have the same shape and dimensiones.
-mesh_visual: sensors/lidars/robosense_airy/mesh_low_res.dae
+mesh_visual: eut_robotics_description/meshes/sensors/lidars/robosense_airy/mesh_low_res.dae
 mesh_visual_has_color: True
 mesh_collision: null # Not avaiable, cylinder-z is used for collision instead.
 scale: { "x": 1.0, "y": 1.0, "z": 1.0 }

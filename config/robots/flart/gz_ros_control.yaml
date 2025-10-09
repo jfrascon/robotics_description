@@ -1,9 +1,0 @@
-gz_ros_control:
-  # If hold_joints: true (default) and no controller has claimed a joint’s interface (e.g., the controller isn’t
-  # activated yet), the plugin keeps that joint at its current position so it doesn’t drift under simulation physics.
-  # In practice: at Gazebo startup, before any controller is activated, a joint (prismatic or revolute) will neither
-  # drop due to gravity nor oscillate; it remains held at its current position. Once a controller activates and claims
-  # the interface, the hold no longer applies and the controller takes over.
-  hold_joints: true
-  # joint_velocity = position_proportional_gain * (joint_position_command - joint_position)
-  position_proportional_gain: 1.0 # (use a floating point value not an integer)

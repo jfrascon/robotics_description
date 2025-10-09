@@ -8,7 +8,7 @@ shape: { "type": "r", "size": { "x": 0.0285, "y": 0.0285, "z": 0.0128 } }
 # IMPORTANT
 # The inner frame for 'mesh_visual' and 'mesh_collision' must be located at the center of the mesh.
 # Both meshes musth have the same shape and dimensiones.
-mesh_visual: sensors/imus/um7/mesh.dae
+mesh_visual: eut_robotics_description/meshes/sensors/imus/um7/mesh.dae
 # mesh_visual: null
 mesh_visual_has_color: True
 mesh_collision: null # Not available, box is used for collision instead.

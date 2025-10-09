@@ -41,10 +41,7 @@
           </xacro:if>
           <xacro:if value="${mesh_visual != ''}"> <!-- There is mesh for visual -->
             <geometry>
-              <!--
               <mesh filename="package://${mesh_visual}" scale="${scale}"/>
-              -->
-              <mesh filename="file://${mesh_visual}" scale="${scale}"/>
             </geometry>
             <xacro:unless value="${mesh_visual_has_color}"> <!-- Check if mesh_visual must be colored -->
               <material name="${name}_color">
@@ -64,10 +61,7 @@
           </xacro:if>
           <xacro:if value="${mesh_collision != ''}"> <!-- There is mesh for collision -->
             <geometry>
-              <!--
               <mesh filename="package://${mesh_collision}" scale="${scale}"/>
-              -->
-              <mesh filename="file://${mesh_collision}" scale="${scale}"/>
             </geometry>
           </xacro:if>
           <origin rpy="${vci_rpy}" xyz="${vci_xyz}"/>

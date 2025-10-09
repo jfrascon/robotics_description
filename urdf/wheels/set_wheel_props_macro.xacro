@@ -21,8 +21,7 @@
     avoid multiple searches in the dictionary, which is more efficient.
     This property is not needed in the parent scope, so no scope="parent" is used.
 
-    Same for _wheel_shape_type and _wheel_size, _wheel_size_x, _wheel_size_y, _wheel_size_z, _wheel_mesh_visual and
-    mesh_dir
+    Same for _wheel_shape_type and _wheel_size, _wheel_size_x, _wheel_size_y, _wheel_size_z, _wheel_mesh_visual.
     -->
     <xacro:property name="_wheel_shape_dict"  value="${desc_cfg['shape']}"/>
     <xacro:property name="_wheel_shape_type"  value="${_wheel_shape_dict['type']}"/>
@@ -30,8 +29,7 @@
     <xacro:property name="_wheel_size_x"      value="${_wheel_size['x']}"/>
     <xacro:property name="_wheel_size_y"      value="${_wheel_size['y']}"/>
     <xacro:property name="_wheel_size_z"      value="${_wheel_size['z']}"/>
-    <xacro:property name="_wheel_mesh_visual" value="${desc_cfg['mesh_visual']}"/>
-    <xacro:property name="mesh_dir"           value="$(find eut_robotics_description)/meshes"/>
+    <xacro:property name="_wheel_mesh_visual" value="${desc_cfg.get('mesh_visual', '')}"/>
 
     <xacro:property name="${prop_prefix}_shape_type"     value="${_wheel_shape_type}"          scope="parent"/>
     <xacro:property name="${prop_prefix}_size_x"         value="${_wheel_size_x}"              scope="parent"/>
@@ -88,9 +86,6 @@
                     value="${desc_cfg.get('max_contacts', 10)}"
                     scope="parent"/>
 
-    <!--
-    -->
-
     <xacro:property name="${prop_prefix}_mu"
                     value="${desc_cfg.get('mu', 1)}"
                     scope="parent"/>
@@ -107,9 +102,17 @@
                     value="${desc_cfg.get('slip2', 0)}"
                     scope="parent"/>
 
-    <xacro:property name="${prop_prefix}_mesh_visual"
-                    value="${mesh_dir + '/' + _wheel_mesh_visual if _wheel_mesh_visual else ''}"
-                    scope="parent"/>
+    <xacro:if value="${_wheel_mesh_visual is not None and _wheel_mesh_visual != ''}">
+      <xacro:property name="${prop_prefix}_mesh_visual"
+                      value="${_wheel_mesh_visual}"
+                      scope="parent"/>
+    </xacro:if>
+
+    <xacro:if value="${_wheel_mesh_visual is None or _wheel_mesh_visual == ''}">
+      <xacro:property name="${prop_prefix}_mesh_visual"
+                      value=""
+                      scope="parent"/>
+    </xacro:if>
 
     <xacro:property name="${prop_prefix}_mesh_visual_has_color"
                     value="${desc_cfg['mesh_visual_has_color']}"

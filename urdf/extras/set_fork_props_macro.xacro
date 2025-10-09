@@ -13,61 +13,92 @@
                     value="${tine_cfg['size']['x']} ${tine_cfg['size']['y']} ${tine_cfg['size']['z']}"
                     scope="parent"/>
 
-    <!--
-    The property 'mesh' is local to this macro, so no need to use scope="parent". This property is used to set
-    another property in the parent scope, which is '${prop_prefix}_mesh'.
-    -->
-    <!--
-    The property 'mesh' is local to this macro, so no need to use scope="parent". This property is used to set
-    another property in the parent scope, which is '${prop_prefix}_mesh'.
-    -->
-    <xacro:property name="mesh_dir" value="$(find eut_robotics_description)/meshes"/>
+    <xacro:property name="_tine_mesh_visual"    value="${tine_cfg.get('mesh_visual', '')}"/>
+    <xacro:property name="_tine_mesh_collision" value="${tine_cfg.get('mesh_collision', '')}"/>
 
-    <xacro:property name="${prop_prefix}_tine_mesh_visual"
-                    value="${mesh_dir + '/' + tine_cfg['mesh_visual'] if tine_cfg['mesh_visual'] else ''}"
-                    scope="parent"/>
+    <xacro:if value="${_tine_mesh_visual is not None and _tine_mesh_visual != ''}">
+      <xacro:property name="${prop_prefix}_tine_mesh_visual"
+                      value="${_tine_mesh_visual}"
+                      scope="parent"/>
+    </xacro:if>
+
+    <xacro:if value="${_tine_mesh_visual is None or _tine_mesh_visual == ''}">
+      <xacro:property name="${prop_prefix}_mesh_visual"
+                      value=""
+                      scope="parent"/>
+    </xacro:if>
 
     <xacro:property name="${prop_prefix}_tine_mesh_visual_has_color"
                     value="${tine_cfg['mesh_visual_has_color']}"
                     scope="parent"/>
 
-    <xacro:property name="${prop_prefix}_tine_mesh_collision"
-                    value="${mesh_dir + '/' + tine_cfg['mesh_collision'] if tine_cfg['mesh_collision'] else ''}"
+    <xacro:property name="_fork_color" value="${desc_cfg.get('color', dict(r = 0, g = 0, b = 0, a = 1))}"/>
+
+    <xacro:property name="${prop_prefix}_color"
+                    value="${_fork_color['r']} ${_fork_color['g']} ${_fork_color['b']} ${_fork_color['a']}"
                     scope="parent"/>
-      <!--
-      If you can accommodate all the values that constitute the string in a single line in the 'value' field, you can do
-      it directly as:
-      <xacro:property name="${prop_prefix}_tine_mass"
-                      value="${tine_cfg['mass']}"
+
+    <xacro:if value="${_tine_mesh_collision is not None and _tine_mesh_collision != ''}">
+      <xacro:property name="${prop_prefix}_mesh_collision"
+                      value="${_tine_mesh_collision}"
                       scope="parent"/>
-      But if you need to split the line that you assign to the 'value' field, because the line is too long to fit in a
-      single with a resonable length, then you have to use the 'join' method as done below to avoid sevaral whitespaces
-      in the resulting string separating the values when the macro is expanded.
-      -->
+    </xacro:if>
+
+    <xacro:unless value="${_tine_mesh_collision is None or _tine_mesh_collision == ''}">
+      <xacro:property name="${prop_prefix}_mesh_collision"
+                      value=""
+                      scope="parent"/>
+    </xacro:unless>
+
+    <xacro:property name="_tine_scale" value="${tine_cfg['scale']}"/>
 
     <xacro:property name="${prop_prefix}_tine_scale"
-                    value="${' '.join([str(tine_cfg['scale']['x']),
-                                       str(tine_cfg['scale']['y']),
-                                       str(tine_cfg['scale']['z'])])
-                            if tine_cfg['scale'] else ''}"
+                    value="${_tine_scale['x']} ${_tine_scale['y']} ${_tine_scale['z']}"
                     scope="parent"/>
 
-    <xacro:property name="${prop_prefix}_base_mass"   value="${base_cfg['mass']}"      scope="parent"/>
+    <xacro:property name="${prop_prefix}_base_mass"
+                    value="${base_cfg['mass']}"
+                    scope="parent"/>
 
-    <xacro:property name="${prop_prefix}_base_size_x" value="${base_cfg['size']['x']}" scope="parent"/>
-    <xacro:property name="${prop_prefix}_base_size_y" value="${base_cfg['size']['y']}" scope="parent"/>
-    <xacro:property name="${prop_prefix}_base_size_z" value="${base_cfg['size']['z']}" scope="parent"/>
+    <xacro:property name="${prop_prefix}_base_size_x"
+                    value="${base_cfg['size']['x']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_base_size_y"
+                    value="${base_cfg['size']['y']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_base_size_z"
+                    value="${base_cfg['size']['z']}"
+                    scope="parent"/>
 
     <xacro:property name="${prop_prefix}_base_size"
                     value="${base_cfg['size']['x']} ${base_cfg['size']['y']} ${base_cfg['size']['z']}"
                     scope="parent"/>
 
-    <xacro:property name="${prop_prefix}_use_inertia"     value="${desc_cfg['use_inertia']}"      scope="parent"/>
-    <xacro:property name="${prop_prefix}_tine_separation" value="${desc_cfg['tine_separation']}"  scope="parent"/>
-    <xacro:property name="${prop_prefix}_lower_limit"     value="${desc_cfg['lower_limit']}"      scope="parent"/>
-    <xacro:property name="${prop_prefix}_upper_limit"     value="${desc_cfg['upper_limit']}"      scope="parent"/>
-    <xacro:property name="${prop_prefix}_brake_distance"  value="${desc_cfg['brake_distance']}"   scope="parent"/>
-    <xacro:property name="${prop_prefix}_velocity_limit"  value="${desc_cfg['velocity_limit']}"   scope="parent"/>
+    <xacro:property name="${prop_prefix}_use_inertia"
+                    value="${desc_cfg['use_inertia']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_tine_separation"
+                    value="${desc_cfg['tine_separation']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_lower_limit"
+                    value="${desc_cfg['lower_limit']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_upper_limit"
+                    value="${desc_cfg['upper_limit']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_brake_distance"
+                    value="${desc_cfg['brake_distance']}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_velocity_limit"
+                    value="${desc_cfg['velocity_limit']}"
+                    scope="parent"/>
 
     <xacro:property name="${prop_prefix}_velocity_limit_full_effort"
                     value="${desc_cfg['velocity_limit_full_effort']}"
@@ -91,13 +122,6 @@
 
     <xacro:property name="${prop_prefix}_clearance_under_fork"
                     value="${desc_cfg['clearance_under_fork']}"
-                    scope="parent"/>
-
-    <xacro:property name="${prop_prefix}_color"
-                    value="${' '.join([str(desc_cfg['color']['r']),
-                                       str(desc_cfg['color']['g']),
-                                       str(desc_cfg['color']['b']),
-                                       str(desc_cfg['color']['a'])])}"
                     scope="parent"/>
   </xacro:macro>
 </robot>
