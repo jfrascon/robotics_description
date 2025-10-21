@@ -23,7 +23,7 @@
     </xacro:if>
 
     <xacro:if value="${_tine_mesh_visual is None or _tine_mesh_visual == ''}">
-      <xacro:property name="${prop_prefix}_mesh_visual"
+      <xacro:property name="${prop_prefix}_tine_mesh_visual"
                       value=""
                       scope="parent"/>
     </xacro:if>
@@ -39,16 +39,16 @@
                     scope="parent"/>
 
     <xacro:if value="${_tine_mesh_collision is not None and _tine_mesh_collision != ''}">
-      <xacro:property name="${prop_prefix}_mesh_collision"
+      <xacro:property name="${prop_prefix}_tine_mesh_collision"
                       value="${_tine_mesh_collision}"
                       scope="parent"/>
     </xacro:if>
 
-    <xacro:unless value="${_tine_mesh_collision is None or _tine_mesh_collision == ''}">
-      <xacro:property name="${prop_prefix}_mesh_collision"
+    <xacro:if value="${_tine_mesh_collision is None or _tine_mesh_collision == ''}">
+      <xacro:property name="${prop_prefix}_tine_mesh_collision"
                       value=""
                       scope="parent"/>
-    </xacro:unless>
+    </xacro:if>
 
     <xacro:property name="_tine_scale" value="${tine_cfg['scale']}"/>
 
