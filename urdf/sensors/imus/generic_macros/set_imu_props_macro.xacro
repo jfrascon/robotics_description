@@ -82,11 +82,11 @@
                       scope="parent"/>
     </xacro:if>
 
-    <xacro:unless value="${_imu_mesh_collision is None or _imu_mesh_collision == ''}">
+    <xacro:if value="${_imu_mesh_collision is None or _imu_mesh_collision == ''}">
       <xacro:property name="${prop_prefix}_mesh_collision"
                       value=""
                       scope="parent"/>
-    </xacro:unless>
+    </xacro:if>
 
     <xacro:property name="_imu_scale" value="${desc_cfg['scale']}"/>
 
