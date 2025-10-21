@@ -13,8 +13,14 @@ size_x = size_y = size_z = 2*radius
 
 shape='s 2*radius  2*radius  2*radius'  -> sphere.
 
+'steerable_joint_type' must be either 'revolute' or 'fixed'.
+
 'rotation_joint_type' must be either 'continuous' or 'fixed'.
-'rotation_joint_effort_limit' and 'rotation_joint_velocity_limit' are considered only if 'rotation_joint_type' is 'continuous'.
+'rotation_joint_effort_limit' and 'rotation_joint_velocity_limit' are considered only if 'rotation_joint_type' is
+'continuous'.
+
+FOR THE TIME BEING A STEERABLE WHEEL CAN'T BE MECANUM, WE HAVE TO CHECK IF THE FDIR IS IMPACTED BY THE FACT
+THAT THE WHEEL CAN BE ORIENTED WITH THE STEERABLE LINK.
 
 Explanation of the default values for the fields 'rotation_joint_effort_limit' and 'rotation_joint_velocity_limit'
 ================================================================================================
@@ -39,28 +45,31 @@ from your wheel. For a typical medium-sized wheel, realistic values would be in 
 Effort:   10 to 100 N·m
 Velocity: 10 to 30 rad/s
 -->
-<robot name="wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="wheel"
-               params="name
-                       prefix
-                       parent_frame
-                       mass:=0.1
-                       shape
-                       rotation_joint_type:=continuous
-                       rotation_joint_velocity_limit:=100
-                       rotation_joint_effort_limit:=100000
-                       max_contacts:=10
-                       mu:=1
-                       mu2:=1
-                       slip1:=0
-                       slip2:=0
-                       mesh_visual:=''
-                       mesh_visual_has_color:=False
-                       color:='0 0 0 1'
-                       scale:='1 1 1'
-                       joint_parent_fr_wheel_fr
-                       fdir1_fr
-                       fdir1">
+<robot name="steerable_wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="steerable_wheel"
+    params="name
+            prefix
+            parent_frame
+            mass:=0.1
+            shape
+            steerable_joint_type:=revolute
+            steerable_joint_lower_limit:=-3.14159265
+            steerable_joint_upper_limit:=3.14159265
+            steerable_joint_velocity_limit:=100
+            steerable_joint_effort_limit:=100000
+            rotation_joint_type:=continuous
+            rotation_joint_velocity_limit:=100
+            rotation_joint_effort_limit:=100000
+            max_contacts:=10
+            mu:=1
+            mu2:=1
+            slip1:=0
+            slip2:=0
+            mesh_visual:=''
+            mesh_visual_has_color:=False
+            color:='0 0 0 1'
+            scale:='1 1 1'
+            joint_parent_fr_wheel_fr">
     <!--
     -->
 
@@ -76,7 +85,7 @@ Velocity: 10 to 30 rad/s
     size_x = size_y = size_z = 2*radius
     -->
 
-    <xacro:property name="shape_lst"  value="${shape.split()}"/>
+    <xacro:property name="shape_lst" value="${shape.split()}"/>
     <xacro:property name="shape_type" value="${shape_lst[0]}"/>
 
     <xacro:if value="${shape_type not in ('c', 's')}">
@@ -111,6 +120,29 @@ Velocity: 10 to 30 rad/s
       <xacro:property name="final_shape_type" value="s"/> <!-- sphere -->
     </xacro:unless>
 
+    <link name="${prefix}${name}_steerable_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <xacro:if value="${steerable_joint_type not in ('revolute', 'fixed')}">
+      ${xacro.fatal("The field 'steerable_joint_type' must be either 'revolute' or 'fixed'")}
+    </xacro:if>
+
+    <xacro:property name="j_wheel" value="${joint_parent_fr_wheel_fr.split()}"/>
+
+    <joint name="${prefix}${name}_steerable_joint" type="${steerable_joint_type}">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_steerable_link"/>
+      <origin rpy="0 0 0" xyz="${j_wheel[0]} ${j_wheel[1]} ${j_wheel[2]}"/>
+      <xacro:if value="${steerable_joint_type == 'revolute'}">
+        <axis xyz="0 0 1"/>
+        <limit lower="${steerable_joint_lower_limit}"
+               upper="${steerable_joint_upper_limit}"
+               effort="${steerable_joint_effort_limit}"
+               velocity="${steerable_joint_velocity_limit}"/>
+      </xacro:if>
+    </joint>
+
     <!-- No mesh collision for the wheel, just a primitive cylinder along the y-axis or a sphere -->
 
     <xacro:link_w_shape
@@ -128,16 +160,15 @@ Velocity: 10 to 30 rad/s
       scale="${scale}"
       vci_pose="0 0 0 0 0 0"/>
 
-    <xacro:property name="j_wheel" value="${joint_parent_fr_wheel_fr.split()}"/>
 
     <xacro:if value="${rotation_joint_type not in ('continuous', 'fixed')}">
       ${xacro.fatal("The field 'rotation_joint_type' must be either 'continuous' or 'fixed'")}
     </xacro:if>
 
     <joint name="${prefix}${name}_rotation_joint" type="${rotation_joint_type}">
-      <parent link="${parent_frame}"/>
+      <parent link="${prefix}${name}_steerable_link"/>
       <child link="${prefix}${name}_rotation_link"/>
-      <origin rpy="${j_wheel[3]} ${j_wheel[4]} ${j_wheel[5]}" xyz="${j_wheel[0]} ${j_wheel[1]} ${j_wheel[2]}"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
       <xacro:if value="${rotation_joint_type == 'continuous'}">
         <axis xyz="0 1 0"/>
         <limit effort="${rotation_joint_effort_limit}" velocity="${rotation_joint_velocity_limit}"/>
@@ -151,9 +182,10 @@ Velocity: 10 to 30 rad/s
           <friction>
             <ode>
               <!--
-              Read the explanation at the end of this file about how to set fdir1 for mecanum wheels.
+              In a standard wheel, with the orientations we have use, the rolling direction is along the x-axis of the
+              steerable link.
               -->
-              <fdir1 gz:expressed_in="${fdir1_fr}">${fdir1}</fdir1>
+              <fdir1 gz:expressed_in="${prefix}${name}_steerable_link">1 0 0</fdir1>
               <!--
               Reference 'http://sdformat.org/tutorials?tut=sdformat_urdf_extensions&cat=specification#gazebo-elements-for-links'
               Friction coefficient in the direction of the wheel rolling, along the contact surface.
@@ -179,72 +211,3 @@ Velocity: 10 to 30 rad/s
     </gazebo>
   </xacro:macro>
 </robot>
-
-<!--
-====================================
-Explanation about the mecanum wheels
-====================================
-
-Geometric and contact context
-=============================
-
-* The wheel’s joint uses 'axis = (0, 1, 0)' -> the wheel rotates about y-axis.
-* The ground is horizontal -> the contact normal is Z; therefore the contact plane (tangent) is X–Y in the wheel’s local
-frame.
-* In ODE/Gazebo, 'fdir1' must lie in the contact plane (tangent) -> its Z component is 0.
-
-Conventional vs. Mecanum (the "cylinder + anisotropy" model)
-============================================================
-
-* If you set 'fdir1 = (1, 0, 0)', 'mu = 1.0', 'mu2 = 0.05', you model a conventional wheel: "high" friction aligned with
-+X (forward rolling), "low" in the orthogonal direction (Y). You get correct forward/reverse, but no pure lateral
-translation.
-
-* For a mecanum wheel, with this model you must align the high friction direction with the direction perpendicular to
-the roller’s axis in the X–Y plane:
-
-  * The roller’s axis must have low friction (it "freewheels" like a roller) -> that corresponds to 'mu2' (not to
-    'fdir1').
-  * Therefore, 'fdir1' is perpendicular to the roller’s axis (in X–Y).
-    If the roller’s axis projected onto X–Y is a=(a_x, a_y, 0), take:
-
-    fdir1 = R_{+90} a = (-a_y, a_x, 0)
-
-    and normalize if necessary.
-
-Observation: for friction, a line has no orientation; 'v' and '−v' are equivalent**. Pick one sign and be consistent across wheels.
-============
-
-"X" layout (rollers for the four wheels "pointing in an X shape" when viewed from above)
-========================================================================================
-
-In the standard "X" configuration (REP-103, wheel rotates about Y, contact plane X–Y), the 'fdir1' vectors to set per
-wheel are:
-
-* Front-Left (FL) and Rear-Right (RR) -> +45 deg, from +X toward +Y
-
-  * Symbolic: 'fdir1 = (cos 45°,  sin 45°, 0)'
-  * Numeric:  'fdir1 = (0.70710678, 0.70710678, 0)'
-
-* Front-Right (FR) and Rear-Left (RL) -> −45 deg, from +X toward −Y
-
-  * Symbolic: 'fdir1 = (cos 45°,  sin −45°, 0)'
-  * Numeric:  'fdir1 = (0.70710678, −0.70710678, 0)'
-
-With this, a Twist with 'vy != 0' (and 'vx = wz = 0') yields pure lateral translation.
-
-Recommended friction parameters
-===============================
-
-* 'mu = 1.0'  -> high friction along 'fdir1' (perpendicular to the roller’s axis).
-* 'mu2 = 0.05' -> low friction in the orthogonal in-plane direction (approx. the "roller axis").
-* 'slip1', 'slip2' as per your tuning.
-
-Operational verification
-========================
-
-1. 'vx != 0, vy = 0, wz = 0' -> correct forward/reverse.
-2. 'vx = 0, vy != 0, wz = 0' -> pure lateral (sign according to your convention).
-3. If the lateral sign does not match your convention, invert the Y component of all four 'fdir1' vectors
-(or review the FL/FR/RL/RR mapping).
--->

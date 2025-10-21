@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<robot name="set_wheel_props" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="set_wheel_props" params="desc_cfg prop_prefix">
+<robot name="set_steerable_wheel_props" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="set_steerable_wheel_props" params="desc_cfg prop_prefix">
 
     <xacro:property name="${prop_prefix}_mass"
                     value="${desc_cfg.get('mass', 0.1)}"
@@ -48,12 +48,32 @@
                     value="${0.5 * _wheel_size_x}"
                     scope="parent"/>
 
+    <xacro:property name="${prop_prefix}_steerable_joint_type"
+                    value="${desc_cfg.get('steerable_joint_type', 'revolute')}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_steerable_joint_lower_limit"
+                    value="${desc_cfg.get('steerable_joint_lower_limit', -3.14159265)}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_steerable_joint_upper_limit"
+                    value="${desc_cfg.get('steerable_joint_upper_limit', 3.14159265)}"
+                    scope="parent"/>
+
+                    <xacro:property name="${prop_prefix}_steerable_joint_velocity_limit"
+                    value="${desc_cfg.get('steerable_joint_velocity_limit', 100)}"
+                    scope="parent"/>
+
+    <xacro:property name="${prop_prefix}_steerable_joint_effort_limit"
+                    value="${desc_cfg.get('steerable_joint_effort_limit', 100000)}"
+                    scope="parent"/>
+
     <xacro:property name="${prop_prefix}_rotation_joint_type"
                     value="${desc_cfg.get('rotation_joint_type', 'continuous')}"
                     scope="parent"/>
 
     <!--
-    Regarding the default value for the paramters 'velocity_limit' and 'effor_limit'.
+    Regarding the default value for the paramters 'velocity_limit' and 'effor_limit':
 
     We use dafault values that makes the actuator ideal; i.e, it and can achieve very high torque and speeds without
     physical constraints. This is useful in simulation environments where we want to test the control algorithms
