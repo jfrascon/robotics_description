@@ -6,13 +6,8 @@ find_package(ament_cmake_python REQUIRED)
 ament_package_xml()
 
 install(
-    DIRECTORY config launch meshes urdf
-    DESTINATION share/${PROJECT_NAME})
-
-# Install Python package for reusable launch tools
-ament_python_install_package(${PROJECT_NAME})
-
-ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
+  DIRECTORY config launch meshes urdf
+  DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
