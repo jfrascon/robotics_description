@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<robot name="generic_link" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+
+  <xacro:macro name="set_basic_geometry" params="shape">
+    <!--
+    shape='b  sx      sy       sz'  -> box
+    shape='c  radius  length'       -> cylinder
+    shape='s  radius'               -> sphere
+    -->
+
+    <xacro:property name="shape_lst"  value="${shape.split()}"/>
+    <xacro:property name="shape_type" value="${shape_lst[0]}"/>
+
+    <xacro:if value="${shape_type not in ('b', 'c', 's')}">
+      ${xacro.fatal("The field 'shape' must be one of: 'b' (box), 'c' (cylinder), 's' (sphere)")}
+    </xacro:if>
+
+    <xacro:if value="${shape_type == 'b'}">
+      <!--
+      <xacro:if value="${len(shape_lst) &lt; 4}">
+        ${xacro.fatal("set_basic_geometry: invalid box shape. Expected: 'b sx sy sz'")}
+      </xacro:if>
+      -->
+      <geometry>
+        <box size="${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"/>
+      </geometry>
+    </xacro:if>
+
+    <xacro:if value="${shape_type == 'c'}">
+      <!--
+      <xacro:if value="${len(shape_lst) &lt; 3}">
+        ${xacro.fatal("set_basic_geometry: invalid cylinder shape. Expected: 'c radius length'")}
+      </xacro:if>
+      -->
+      <xacro:property name="radius" value="${shape_lst[1]}"/>
+      <xacro:property name="length" value="${shape_lst[2]}"/>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+    </xacro:if>
+
+    <xacro:if value="${shape_type == 's'}">
+      <!--
+      <xacro:if value="${len(shape_lst) &lt; 2}">
+        ${xacro.fatal("set_basic_geometry: invalid sphere shape. Expected: 's radius'")}
+      </xacro:if>
+      -->
+      <xacro:property name="radius" value="${shape_lst[1]}"/>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+    </xacro:if>
+  </xacro:macro>
+
+  <!-- glink means generic link -->
+  <xacro:macro name="glink"
+               params="name
+                       prefix:=''
+                       v_mesh:=''
+                       v_mesh_scale:='1 1 1'
+                       v_color:=''
+                       v_origin:='0 0 0 0 0 0'
+                       c_mesh:=''
+                       c_mesh_scale:='1 1 1'
+                       c_origin:='0 0 0 0 0 0'
+                       vc_shape:=''
+                       *inertial_block">
+
+    <xacro:property name="use_visual"    value="${v_mesh != '' or vc_shape != ''}"/>
+    <xacro:property name="use_collision" value="${c_mesh != '' or vc_shape != ''}"/>
+    <xacro:property name="use_inertial"  value="${inertial_block != None}"/>
+
+    <link name="${prefix}${name}">
+      <!--
+      If the v_mesh is available and the shape is not, use the v_mesh.
+      If the v_mesh is not available and the shape is, use the shape.
+      If none of them are available, no visual element is used.
+      If both of them are available, the v_mesh is used.
+      -->
+      <xacro:if value="${use_visual}">
+        <visual>
+          <xacro:if value="${v_mesh != ''}">
+            <geometry>
+              <mesh filename="package://${v_mesh}" scale="${v_mesh_scale}"/>
+            </geometry>
+          </xacro:if>
+          <xacro:if value="${v_mesh == ''}"> <!-- If no mesh is available use a basic geometry -->
+            <xacro:set_basic_geometry shape="${vc_shape}"/>
+          </xacro:if>
+          <xacro:if value="${v_color != ''}">
+            <material name="${prefix}${name}_color">
+              <color rgba="${v_color}"/>
+            </material>
+          </xacro:if>
+          <xacro:property name="v_origin_seq" value="${v_origin.split()}"/>
+          <origin rpy="${v_origin_seq[3]} ${v_origin_seq[4]} ${v_origin_seq[5]}"
+                  xyz="${v_origin_seq[0]} ${v_origin_seq[1]} ${v_origin_seq[2]}"/>
+        </visual>
+      </xacro:if>
+
+      <!--
+      If the c_mesh is available and the shape is not, use the c_mesh.
+      If the c_mesh is not available and the shape is, use the shape.
+      If none of them are available, no collision element is used.
+      If both of them are available, the c_mesh is used.
+      -->
+      <xacro:if value="${use_collision}">
+        <collision>
+          <xacro:if value="${c_mesh == ''}"> <!-- If no mesh is available use a basic geometry -->
+            <xacro:set_basic_geometry shape="${vc_shape}"/>
+          </xacro:if>
+          <xacro:if value="${c_mesh != ''}"> <!-- Use the mesh if available -->
+            <geometry>
+              <mesh filename="package://${c_mesh}" scale="${c_mesh_scale}"/>
+            </geometry>
+          </xacro:if>
+          <xacro:property name="c_origin_seq" value="${c_origin.split()}"/>
+          <origin rpy="${c_origin_seq[3]} ${c_origin_seq[4]} ${c_origin_seq[5]}"
+                  xyz="${c_origin_seq[0]} ${c_origin_seq[1]} ${c_origin_seq[2]}"/>
+        </collision>
+      </xacro:if>
+
+      <!--
+      If the inertial element is used, then insert the inertial block passed as argument.
+      -->
+      <xacro:if value="${use_inertial}">
+        <xacro:insert_block name="inertial_block"/>
+      </xacro:if>
+    </link>
+  </xacro:macro>
+</robot>

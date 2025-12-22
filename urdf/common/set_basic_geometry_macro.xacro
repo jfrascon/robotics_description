@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<robot name="set_basic_geometry" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+
+  <xacro:macro name="set_basic_geometry" params="shape">
+    <!--
+    shape='b  sx      sy       sz'  -> box
+    shape='c  radius  length'       -> cylinder
+    shape='s  radius'               -> sphere
+    -->
+
+    <xacro:property name="shape_lst"  value="${shape.split()}"/>
+    <xacro:property name="shape_type" value="${shape_lst[0]}"/>
+
+    <xacro:if value="${shape_type not in ('b', 'c', 's')}">
+      ${xacro.fatal("The field 'shape' must be one of: 'b' (box), 'c' (cylinder), 's' (sphere)")}
+    </xacro:if>
+
+    <xacro:if value="${shape_type == 'b'}">
+      <!--
+      <xacro:if value="${len(shape_lst) &lt; 4}">
+        ${xacro.fatal("set_basic_geometry: invalid box shape. Expected: 'b sx sy sz'")}
+      </xacro:if>
+      -->
+      <geometry>
+        <box size="${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"/>
+      </geometry>
+    </xacro:if>
+
+    <xacro:if value="${shape_type == 'c'}">
+      <!--
+      <xacro:if value="${len(shape_lst) &lt; 3}">
+        ${xacro.fatal("set_basic_geometry: invalid cylinder shape. Expected: 'c radius length'")}
+      </xacro:if>
+      -->
+      <xacro:property name="radius" value="${shape_lst[1]}"/>
+      <xacro:property name="length" value="${shape_lst[2]}"/>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+    </xacro:if>
+
+    <xacro:if value="${shape_type == 's'}">
+      <!--
+      <xacro:if value="${len(shape_lst) &lt; 2}">
+        ${xacro.fatal("set_basic_geometry: invalid sphere shape. Expected: 's radius'")}
+      </xacro:if>
+      -->
+      <xacro:property name="radius" value="${shape_lst[1]}"/>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+    </xacro:if>
+  </xacro:macro>
+</robot>
