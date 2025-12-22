@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <robot name="all_commons" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
   <xacro:include filename="$(find eut_robotics_description)/urdf/common/inertia_macros.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_c_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_r_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_s_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/link_w_shape_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/make_robot_namespace_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/make_robot_prefix_macro.xacro"/>
+  -->
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/generic_link_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/inertial_macros.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/make_namespace_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/make_prefix_macro.xacro"/>
+  <xacro:include filename="$(find eut_robotics_description)/urdf/common/visual_collision_macros.xacro"/>
 </robot>
