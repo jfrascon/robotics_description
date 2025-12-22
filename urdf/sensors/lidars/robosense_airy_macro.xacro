@@ -1,48 +1,177 @@
 <?xml version="1.0"?>
-<robot name="robosense_airy" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="robosense_airy" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="robosense_airy"
                params="name
-                       prefix
-                       namespace
+                       prefix:=''
+                       namespace:=''
                        parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=False
+                       use_low_res_v_mesh:=True
+                       color:=''
+                       use_c_mesh:=False
+                       use_low_res_c_mesh:=True
                        joint_parent_fr_root_fr
-                       sim_cfg:=${None}
-                       use_mesh_visual:=True
-                       use_mesh_collision:=False">
+                       use_sim:=False
+                       sim_always_on:=True
+                       sim_visualize:=False
+                       sim_update_rate
+                       sim_hor_fov_deg
+                       sim_hor_res_deg
+                       sim_ver_fov_deg
+                       sim_ver_res_deg
+                       sim_dist_span
+                       sim_gaussian_noise:='0 0'">
 
-    <xacro:property name="pkg_dir" value="$(find eut_robotics_description)"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
 
-    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/generic_macros/lidar_3d_ring_macro.xacro"/>
-    <xacro:include filename="${pkg_dir}/urdf/sensors/lidars/generic_macros/set_lidar_3d_ring_props_macro.xacro"/>
+    <xacro:property name="mass"   value="0.25"/>
 
-    <xacro:set_lidar_3d_ring_props
-        desc_cfg="${xacro.load_yaml(pkg_dir + '/config/sensors/lidars/robosense_airy.yaml')}"
-        sim_cfg="${sim_cfg}"
-        prop_prefix="robosense_airy"/>
+    <!--
+    The Robosense Airy LiDAR body is approximated as a cylinder with:
+    - radius: 0.03 m
+    - length: 0.063 m.
+    -->
+    <xacro:property name="radius" value="0.03"/>
+    <xacro:property name="length" value="0.063"/>
 
-    <xacro:lidar_3d_ring
-        name="${name}"
-        prefix="${prefix}"
-        namespace="${namespace}"
-        parent_frame="${parent_frame}"
-        mass="${robosense_airy_mass}"
-        shape="${robosense_airy_shape}"
-        mesh_visual="${robosense_airy_mesh_visual if use_mesh_visual else ''}"
-        mesh_visual_has_color="${robosense_airy_mesh_visual_has_color}"
-        mesh_collision="${robosense_airy_mesh_collision if use_mesh_collision else ''}"
-        scale="${robosense_airy_scale}"
-        color="${robosense_airy_color}"
-        joint_root_fr_data_fr="${robosense_airy_joint_root_fr_data_fr}"
-        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
-        use_sim="${robosense_airy_use_sim}"
-        sim_always_on="${robosense_airy_sim_always_on}"
-        sim_visualize="${robosense_airy_sim_visualize}"
-        sim_update_rate="${robosense_airy_sim_update_rate}"
-        sim_hor_fov_deg="${robosense_airy_sim_hor_fov_deg}"
-        sim_hor_res_deg="${robosense_airy_sim_hor_res_deg}"
-        sim_ver_fov_deg="${robosense_airy_sim_ver_fov_deg}"
-        sim_ver_res_deg="${robosense_airy_sim_ver_res_deg}"
-        sim_dist_span="${robosense_airy_sim_dist_span}"
-        sim_gaussian_noise="${robosense_airy_sim_gaussian_noise}"/>
+    <!--
+    The mesh represents a cylinder with its symmetry axis along the z-axis.
+    The frame of the mesh is located at its geometric center (See MeshLab).
+    Scale is 1 1 1.
+    The standard mesh does not have color information, so a color is encouraged.
+    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="mesh"
+                    value="eut_robotics_description/meshes/sensors/lidars/robosense_airy/mesh.stl"/>
+
+    <!--
+    The mesh represents a cylinder with its symmetry axis along the z-axis.
+    The link of the mesh is located at its geometric center (See MeshLab).
+    Scale is 1 1 1.
+    The low resolution mesh has its own color, so no color is needed.
+    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="low_res_mesh"
+                    value="eut_robotics_description/meshes/sensors/lidars/robosense_airy/mesh_low_res.dae"/>
+
+    <!-- Scale for both meshes, standard mesh and low resolition mesh -->
+    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+
+    <!--
+    Since, both, meshes, the standard and the low resolution, are cylinders with their symmetry axis along the z-axis,
+    and the frame of both meshes is located at their geometric center (see MeshLab), their frames coincide with the
+    frame of a cylinder shape, with its symmetry axis along the z-axis, so just one origin is needed no matter if
+    use_<v|c>_mesh is true or false.
+    The body frame is located at the center of the bottom face of the cylinder.
+    -->
+
+    <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * length} 0.0 0.0 0.0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_mesh"  value="${mesh if use_v_mesh else (low_res_mesh if use_low_res_v_mesh else '')}"/>
+        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_cylinder mesh="${v_mesh}"
+                               scale="${mesh_scale}"
+                               mesh_origin="${body_origin}"
+                               radius="${radius}"
+                               length="${length}"
+                               shape_origin="${body_origin}"
+                               color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:property name="c_mesh"
+                        value="${mesh if use_c_mesh else (low_res_mesh if use_low_res_c_mesh else '')}"/>
+        <xacro:collision_cylinder mesh="${v_mesh}"
+                                  scale="${mesh_scale}"
+                                  mesh_origin="${body_origin}"
+                                  radius="${radius}"
+                                  length="${length}"
+                                  shape_origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_cylinder_inertia_z mass="${mass}"
+                                        radius="${radius}"
+                                        length="${length}"
+                                        origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <!-- Definition of the joint '${prefix}${name}_root_joint', that joins the lidar root link to its parent frame. -->
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <!-- Definition of the data link '${prefix}${name}_link'. -->
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <!--
+    Definition of the joint '${prefix}${name}_joint', that joins the lidar data link to its root link.
+    This pose sets the position and orientation of the sensor frame with respect the root frame, located at the center
+    of the bottom face of the cylinder.
+    The Airy sensor is 'ackwardly' designed IMHO (jfrascon), as the light source is not located at the center of the
+    dome, at some height, it is located deviated from the center of the dome, and at some height.
+    The location of the optical center is shown in page 63 of the Airy user manual.
+    However, on page 27 it is stated that:
+    "The origin of the coordinates for the LiDAR is defined at the center of the LiDAR base."
+    Therefore, the driver is making a transformation of the data to provide each point of the point cloud, referred to
+    the center of the base of the sensor.
+    Therefore, for practical purposes, we can assume the data frame is located at the center of the base of the sensor,
+    coinciding with the root frame of the sensor.
+
+    -->
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
+
+    <xacro:if value="${use_sim}">
+
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
+      <!--
+      The behaviour of the Gazebo Sim plugin for a 3D ring LiDAR is to publish two topics:
+      - A topic with the name provided in the parameter 'topic', with message type LaserScan (2D laser scan).
+      - A topic with the name provided in the parameter 'topic' + '/points', with message type PointCloud2 (3D point
+        cloud).
+      There is no way to avoid the plugin from publishing both topics, and there is no way to change the name of the
+      topic for the PointCloud2, since the plugin always appends '/points' to the topic name provided in the parameter
+      'topic'.
+      Therefore, by defining the topic as '<lidar_namespace>/scan', the plugin will publish:
+      - '<lidar_namespace>/scan'        (2D laser scan)
+      - '<lidar_namespace>/scan/points' (3D point cloud)
+      You then decide which topic transfer from Gazebo to ROS by using the proper rosgz bridge (or both).
+      -->
+      <xacro:make_namespace prop_id="lidar_namespace" namespace="${namespace}" name="${name}"/>
+
+      <xacro:plugin_lidar_3d_ring
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        ver_fov_deg="${sim_ver_fov_deg}"
+        ver_res_deg="${sim_ver_res_deg}"
+        dist_span="${sim_dist_span}"
+        gaussian_noise="${sim_gaussian_noise}"
+        topic="${lidar_namespace}/scan"/>
+    </xacro:if>
   </xacro:macro>
 </robot>
