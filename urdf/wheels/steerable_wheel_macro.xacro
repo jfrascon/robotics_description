@@ -1,126 +1,175 @@
 <?xml version="1.0"?>
 <!--
-A wheel is either a cylinder with its rotation axis along the y-axis or a sphere, no more geometries are allowed.
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
 
-In the case of a cylinder:
-size_x = 2*radius, size_y = thickness, size_z = 2*radius
+name (S): name of the wheel, used to name the links and joints.
+prefix (S): optional prefix for the names of the links and joints.
+parent_frame (S): name of the parent frame to which the wheel's root link is attached.
+use_visual (B): if true, include visual element.
+use_inertial (B): if true, include inertial element.
+v_mesh (S): mesh filename for the visual element of the main link, '${prefix}${name}_rotation_link'. If empty string,
+            a cylinder shape is used with size defined by 'radius' and 'length'.
+            Used only if use_visual is true.
+v_mesh_scale (S): Scale of the visual mesh, if use_visual is true and v_mesh is provided.
+    v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
+v_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place the visual mesh
+                   w.r.t the frame of the wheel's link (${prefix}${name}_rotation_link).
+                   Used only if use_visual is true and v_mesh is provided.
+                   IMPORTANT: A WHEEL IS CONSIDERED TO BE A CYLINDER WITH ITS ROTATION AXIS ALONG THE Y-AXIS.
+                   THEREFORE, A PROPER ORIGIN MUST BE PROVIDED TO ALIGN THE MESH W.R.T THE WHEEL'S FRAME,
+                   '${prefix}${name}_rotation_link', SO THAT THE Y-AXIS OF THE WHEEL'S FRAME IS THE ROTATION AXIS OF THE
+                   WHEEL MESH, THE X-AXIS OF THE WHEEL'S FRAME IS ALONG THE ROLLING DIRECTION OF THE WHEEL MESH,
+                   AND THE Z-AXIS OF THE WHEEL'S FRAME POINTS UPWARDS.
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is not empty, the provided color is applied to the object used in the visual element, either
+           a mesh (even if the mesh has its own color) or cylinder shape.
+           If color is empty:
+               If a mesh is used and has its own color, the color of the mesh is displayed.
+               If a mesh is used with no color data associated or a cylinder shape is used, a whitish default color is used
+               to display the visual element.
+radius (R): radius of the wheel. Used if v_mesh is an empty string or use_inertial is true (even if a mesh is used,
+               the radius is used to compute the inertia).
+length (R): length of the wheel along its rotation axis (y-axis). Used if v_mesh is an empty string or use_inertial
+               is true (even if a mesh is used, the length is used to compute the inertia).
+mass (R): mass of the wheel. Used only if use_inertial is true.
+steerable_joint_type (S): type of the joint connecting the wheel's steerable link to the parent frame.
+    steerable_joint_type (S) = 'revolute' | 'fixed'.
+    If 'fixed' is used, the wheel will not be able to steer in simulation.
+steerable_joint_steerable_limits (S): limits of the steerable joint.
+    steerable_joint_steerable_limits (S) = 'lower_limit (R) upper_limit (R) velocity (R) effort (R)'.
+    lower_limit (R): lower position limit of the steerable joint (radians).
+    upper_limit (R): upper position limit of the steerable joint (radians).
+    velocity (R): velocity limit of the steerable joint (radians/second).
+    effort (R): effort limit of the steerable joint (newton-meters).
+    Used only if steerable_joint_type is 'revolute'.
+rotation_joint_type (S): type of the joint connecting the wheel to the parent frame.
+    rotation_joint_type (S) = 'continuous' | 'fixed'.
+    If 'fixed' is used, the wheel will not be able to rotate in simulation.
+rotation_joint_limits (S): limits of the rotation joint.
+    rotation_joint_limits (S) = 'velocity (R) effort (R)'.
+    velocity (R): velocity limit of the rotation joint (radians/second).
+    effort (R): effort limit of the rotation joint (newton-meters).
+    Used only if rotation_joint_type is 'continuous'.
+max_contacts (I): maximum number of contact points between the wheel and other objects in simulation.
+mu (R): friction coefficient along the primary direction of motion of the wheel. Having into account that this macro
+        models a wheel as a cylinder with its rotation axis along the y-axis, the primary direction of motion is
+        along the x-axis of the wheel's frame.
+        This coefficient should be low enough to allow the wheel to roll freely, typically between 0.5 and 1.5.
+mu2 (R): friction coefficient along the secondary direction of motion of the wheel. Having into account that this
+         macro models a wheel as a cylinder with its rotation axis along the y-axis, the secondary direction of motion
+         is along the y-axis of the wheel's frame.
+         This coefficient should be high enough to prevent the wheel from slipping sideways, typically between 5 and 10.
+slip1 (R): slip parameter along the primary direction of motion of the wheel (x-axis of the wheel's frame).
+           This parameter models the small amount of slip that occurs even when a wheel is rolling without slipping.
+           typical values are between 0 and 0.1.
+slip2 (R): slip parameter along the secondary direction of motion of the wheel (y-axis of the wheel's frame).
+           This parameter should be very low, typically between 0 and 0.01, to prevent the wheel from slipping sideways.
+joint_parent_fr_wheel_fr (S): Pose of the wheel's steerable link frame w.r.t the parent's frame
+    joint_parent_fr_wheel_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
-which is represented as:
-shape='c 2*radius  thickness  2*radius'
-
-In the case of a sphere:
-size_x = size_y = size_z = 2*radius
-
-shape='s 2*radius  2*radius  2*radius'  -> sphere.
-
-'steerable_joint_type' must be either 'revolute' or 'fixed'.
-
-'rotation_joint_type' must be either 'continuous' or 'fixed'.
-'rotation_joint_effort_limit' and 'rotation_joint_velocity_limit' are considered only if 'rotation_joint_type' is
-'continuous'.
-
-FOR THE TIME BEING A STEERABLE WHEEL CAN'T BE MECANUM, WE HAVE TO CHECK IF THE FDIR IS IMPACTED BY THE FACT
-THAT THE WHEEL CAN BE ORIENTED WITH THE STEERABLE LINK.
-
-Explanation of the default values for the fields 'rotation_joint_effort_limit' and 'rotation_joint_velocity_limit'
-================================================================================================
-The 'effort' and 'velocity' limits for this joint are intentionally set to extremely high, non-physical values.
+Explanation of the default values for the field 'steerable_joint_steerable_limits: "-3.14159265 3.14159265 100 100000"'
+and 'rotation_joint_limits: "100 100000"':
+======================================================================================================================
+The 'effort' and 'velocity' limits for these joints are intentionally set to extremely high, non-physical values.
 This is a common and deliberate practice in simulation for the specific reason of modeling an 'ideal' actuator.
 By setting virtually infinite limits, we ensure that the simulator's physics engine will never be the limiting
 factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
 trajectory following) without being constrained by the physical limitations of real-world motors.
-In essence, we are testing the software logic in isolation.
+in essence, we are testing the software logic in isolation.
 
-rotation_joint_effort_limit = "100000" (Newton-meters).
-This represents the maximum torque the joint can apply. To put this into perspective, a high-performance
-passenger car engine produces between 200-500 N·m of torque. A value of 100000 N·m is more in the realm of
-industrial cranes or ship engines. It is an astronomically high value for a robot wheel.
+steerable_joint_steerable_limits.lower_limit = "-3.14159265" (radians).
+This allows the wheel to steer a full -180 degrees.
 
-rotation_joint_velocity_limit = "100" (radians/second).
-This translates to approximately 955 rpm. For context, a typical educational robot wheel (like a TurtleBot) spins
-at around 70-100 rpm. So, 955 rpm is extremely fast.
+steerable_joint_steerable_limits.upper_limit = "3.14159265" (radians).
+This allows the wheel to steer a full +180 degrees.
+
+steerable_joint_steerable_limits.velocity = "100" (radians/second).
+This means the wheel can orient itself extremely quickly.
+
+steerable_joint_steerable_limits.effort = "100000" (newton-meters).
+For a steerable joint, this represents the maximum torque the joint can apply to change its orientation. It is not
+an important value for most robot applications, as steering usually requires much less torque than driving. However,
+setting it to a very high value ensures that the steering action is not limited by the simulator.
+
+rotation_joint_limits.velocity = "100" (radians/second).
+This translates to approximately 955 rpm. for context, a typical educational robot wheel (like a turtlebot) spins
+at around 70-100 rpm. so, 955 rpm is extremely fast.
+
+rotation_joint_limits.effort = "100000" (newton-meters).
+This represents the maximum torque the joint can apply. to put this into perspective, a high-performance
+passenger car engine produces between 200-500 n·m of torque. a value of 100000 n·m is more in the realm of
+industrial cranes or ship engines. it is an astronomically high value for a robot wheel.
 
 If you need a realistic simulation of a physical robot, you should replace these values with the specifications
-from your wheel. For a typical medium-sized wheel, realistic values would be in the range of:
-Effort:   10 to 100 N·m
-Velocity: 10 to 30 rad/s
+from your wheel. for a typical medium-sized wheel, realistic values would be in the range of:
+effort:   10 to 100 n·m
+velocity: 10 to 30 rad/s
 -->
-<robot name="steerable_wheel" xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="steerable_wheel" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="steerable_wheel"
-    params="name
-            prefix
-            parent_frame
-            mass:=0.1
-            shape
-            steerable_joint_type:=revolute
-            steerable_joint_lower_limit:=-3.14159265
-            steerable_joint_upper_limit:=3.14159265
-            steerable_joint_velocity_limit:=100
-            steerable_joint_effort_limit:=100000
-            rotation_joint_type:=continuous
-            rotation_joint_velocity_limit:=100
-            rotation_joint_effort_limit:=100000
-            max_contacts:=10
-            mu:=1
-            mu2:=1
-            slip1:=0
-            slip2:=0
-            mesh_visual:=''
-            mesh_visual_has_color:=False
-            color:='0 0 0 1'
-            scale:='1 1 1'
-            joint_parent_fr_wheel_fr">
-    <!--
-    -->
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=true
+                       use_inertial:=true
+                       v_mesh:=''
+                       v_mesh_scale:='1.0 1.0 1.0'
+                       v_mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       color:=''
+                       radius
+                       length
+                       mass
+                       steerable_joint_type:=revolute
+                       steerable_joint_steerable_limits:='-3.14159265 3.14159265 100.0 100000.0'
+                       rotation_joint_type:=continuous
+                       rotation_joint_limits:='100.0 100000.0'
+                       max_contacts:=10
+                       mu:=0.5
+                       mu2:=5.0
+                       slip1:=0.05
+                       slip2:=0.005
+                       joint_parent_fr_wheel_fr">
+
+    <!-- A steerable wheel is cylinder with its rotation axis along the y-axis that can change its orientation. -->
 
     <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
-    A wheel is either a cylinder with its rotation axis along the y-axis or a sphere.
+    When the v_mesh_origin parameter was explained above, it was mentioned:
+    IMPORTANT: A WHEEL IS CONSIDERED TO BE A CYLINDER WITH ITS ROTATION AXIS ALONG THE Y-AXIS.
+    THEREFORE, A PROPER ORIGIN MUST BE PROVIDED TO ALIGN THE MESH W.R.T THE WHEEL'S FRAME,
+    '${prefix}${name}_rotation_link', SO THAT THE Y-AXIS OF THE WHEEL'S FRAME IS THE ROTATION AXIS OF THE WHEEL MESH,
+    THE X-AXIS OF THE WHEEL'S FRAME IS ALONG THE ROLLING DIRECTION OF THE WHEEL MESH, AND THE Z-AXIS OF THE WHEEL'S
+    FRAME POINTS UPWARDS.
 
-    In the case of a cylinder:
-    size_x = 2*radius, size_y = thickness, size_z = 2*radius
+    If v_mesh is an empty string, a cylinder shape is used for the visual element. A cylinder shape has its symmetry
+    axis along the z-axis by default. Therefore, the cylinder shape must be rotated along its x-axis (roll = 0.5 * pi),
+    so that its symmetry axis aligns with the y-axis of the wheel's frame.
 
-    In the case of a sphere:
-    size_x = size_y = size_z = 2*radius
+    Besides, we need to model some friction properties for the wheel, because the wheel will interact with the ground.
+    therefore, a wheel always uses a collision element.
+    The collision element is always a cylinder shape (no mesh), also with its symmetry axis (rotation axis) along the
+    y-axis, regardless if the visual element is a mesh or a cylinder shape.
+    The use a basic cylinder shape for the collision element improves the simulation performance.
+
+    Therefore, we create a property 'shape_origin = "0.0 0.0 0.0 0.5*pi 0.0 0.0"', which is used as the origin
+    for a cylinder shape, that could be used for the visual element, if no mesh is provided, and is always used for the
+    collision element and for the inertia computation.
     -->
-
-    <xacro:property name="shape_lst" value="${shape.split()}"/>
-    <xacro:property name="shape_type" value="${shape_lst[0]}"/>
-
-    <xacro:if value="${shape_type not in ('c', 's')}">
-      ${xacro.fatal("The field 'shape' must be either 'c', cylinder or 's', sphere, for a wheel")}
-    </xacro:if>
-
-    <xacro:property name="radius_from_size_x" value="${0.5 * float(shape_lst[1])}"/>
-    <xacro:property name="radius_from_size_z" value="${0.5 * float(shape_lst[3])}"/>
-    <!--
-    By using such a small epsilon, basically we are forcing the user to provide exactly the same value for size_x and
-    size_z (2*radius) in the case of a cylinder with its axis along y or to provide exactly the same value for size_x,
-    size_y and size_z (2*radius) in the case of a sphere.
-    -->
-    <xacro:property name="epsilon" value="0.0005"/> <!-- 0.5 mm -->
-
-    <xacro:if value="${shape_type == 'c'}">
-      <!--
-      If the difference between the radius computed from size_x and size_z is greater than epsilon, we consider that the
-      user made a mistake and we stop the processing with an error message.
-      -->
-      <xacro:if value="${math.fabs(radius_from_size_x - radius_from_size_z) > epsilon}">
-        ${xacro.fatal("For a cylindrical wheel, the size_x and size_z (2*radius) must be equal")}
-      </xacro:if>
-      <xacro:property name="final_shape_type" value="cy"/> <!-- cylinder along y axis -->
-    </xacro:if>
-
-    <xacro:unless value="${shape_type == 'c'}"> <!-- if not a cylinder, it must be a sphere -->
-      <xacro:property name="radius_from_size_y" value="${0.5 * float(shape_lst[2])}"/>
-      <xacro:if value="${math.fabs(radius_from_size_x - radius_from_size_z) > epsilon or math.fabs(radius_from_size_x - radius_from_size_y) > epsilon}">
-        ${xacro.fatal("For a spherical wheel, the size_x, size_y and size_z (2*radius) must be equal")}
-      </xacro:if>
-      <xacro:property name="final_shape_type" value="s"/> <!-- sphere -->
-    </xacro:unless>
+    <xacro:property name="shape_origin" value="0.0 0.0 0.0 ${0.5 * pi} 0.0 0.0"/>
 
     <link name="${prefix}${name}_steerable_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color" value="${(prefix + name + '_color_steer 1.0 0.0 0.0 1.0')}"/>
+        <xacro:visual_cylinder radius="0.025"
+                               length="${radius}"
+                               shape_origin="${0.5 * radius} 0.0 0.0 0.0 ${pi * 0.5} 0.0"
+                               color="${v_color}"/>
+      </xacro:if>
       <xacro:null_inertia/>
     </link>
 
@@ -128,38 +177,69 @@ Velocity: 10 to 30 rad/s
       ${xacro.fatal("The field 'steerable_joint_type' must be either 'revolute' or 'fixed'")}
     </xacro:if>
 
-    <xacro:property name="j_wheel" value="${joint_parent_fr_wheel_fr.split()}"/>
+    <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
 
     <joint name="${prefix}${name}_steerable_joint" type="${steerable_joint_type}">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_steerable_link"/>
-      <origin rpy="0 0 0" xyz="${j_wheel[0]} ${j_wheel[1]} ${j_wheel[2]}"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+
       <xacro:if value="${steerable_joint_type == 'revolute'}">
+        <xacro:property name="sj_limits_seq" value="${steerable_joint_steerable_limits.split()}"/>
+
+        <xacro:if value="${len(sj_limits_seq) != 4}">
+            ${xacro.fatal("steerable_wheel: steerable_joint_steerable_limits must have 4 elements: 'lower_limit (R) upper_limit (R) velocity (R) effort (R)'")}
+        </xacro:if>
+
         <axis xyz="0 0 1"/>
-        <limit lower="${steerable_joint_lower_limit}"
-               upper="${steerable_joint_upper_limit}"
-               effort="${steerable_joint_effort_limit}"
-               velocity="${steerable_joint_velocity_limit}"/>
+        <limit lower="${sj_limits_seq[0]}"
+               upper="${sj_limits_seq[1]}"
+               velocity="${sj_limits_seq[2]}"
+               effort="${sj_limits_seq[3]}"/>
       </xacro:if>
     </joint>
 
-    <!-- No mesh collision for the wheel, just a primitive cylinder along the y-axis or a sphere -->
+    <link name="${prefix}${name}_rotation_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_cylinder mesh="${v_mesh}"
+                               scale="${v_mesh_scale}"
+                               mesh_origin="${v_mesh_origin}"
+                               radius="${radius}"
+                               length="${length}"
+                               shape_origin="${shape_origin}"
+                               color="${v_color}"/>
+      </xacro:if>
 
-    <xacro:link_w_shape
-      name="${name}_rotation"
-      prefix="${prefix}"
-      use_visual="True"
-      use_collision="True"
-      use_inertia="True"
-      mass="${mass}"
-      shape="${final_shape_type} ${shape_lst[1]} ${shape_lst[2]} ${shape_lst[3]}"
-      mesh_visual="${mesh_visual}"
-      mesh_visual_has_color="${mesh_visual_has_color}"
-      color="${color}"
-      mesh_collision=""
-      scale="${scale}"
-      vci_pose="0 0 0 0 0 0"/>
+      <!-- The collision element is always used -->
+      <xacro:visual_cylinder mesh="${v_mesh}"
+                             scale="${v_mesh_scale}"
+                             mesh_origin="${v_mesh_origin}"
+                             radius="${radius}"
+                             length="${length}"
+                             shape_origin="${shape_origin}"/>
 
+      <xacro:if value="${use_inertial}">
+      <!--
+      We use the inertia of a solid cylinder with uniform mass distribution, radius and length, whose symmetry axis
+      is the y-axis and center of mass is at the origin of the wheel's frame.
+      For that reason, the origin used is "0 0 0 0 0 0", unlinke the shape_origin used for visual and collision
+      elements.
+      In other words, the solid_cylinder_inertia_y computes the same inertia as if we used solid_cylinder_inertia_z
+      (assuming the cylinder's symmetry axis is along the z-axis, which is the default for a cylinder shape) but using
+      origin "0 0 0 0.5*pi 0 0" to rotate the inertia tensor accordingly.
+      -->
+        <xacro:solid_cylinder_inertia_y mass="${mass}"
+                                        radius="${radius}"
+                                        length="${length}"
+                                        origin="0.0 0.0 0.0 0.0 0.0 0.0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
 
     <xacro:if value="${rotation_joint_type not in ('continuous', 'fixed')}">
       ${xacro.fatal("The field 'rotation_joint_type' must be either 'continuous' or 'fixed'")}
@@ -168,10 +248,22 @@ Velocity: 10 to 30 rad/s
     <joint name="${prefix}${name}_rotation_joint" type="${rotation_joint_type}">
       <parent link="${prefix}${name}_steerable_link"/>
       <child link="${prefix}${name}_rotation_link"/>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <!--
+      The rotation link frame coincides with the steerable link frame.
+      Initially, there is no rotation between both frames.
+      Once the wheel starts rotating its frame will rotate around the y-axis of the steerable link.
+      -->
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+
       <xacro:if value="${rotation_joint_type == 'continuous'}">
+        <xacro:property name="rj_limits_seq" value="${rotation_joint_limits.split()}"/>
+
+        <xacro:if value="${len(rj_limits_seq) != 2}">
+            ${xacro.fatal("steerable_wheel: rotation_joint_limits must have 2 elements: 'velocity (R) effort (R)'")}
+        </xacro:if>
+
         <axis xyz="0 1 0"/>
-        <limit effort="${rotation_joint_effort_limit}" velocity="${rotation_joint_velocity_limit}"/>
+        <limit velocity="${rj_limits_seq[0]}" effort="${rj_limits_seq[1]}"/>
       </xacro:if>
     </joint>
 
