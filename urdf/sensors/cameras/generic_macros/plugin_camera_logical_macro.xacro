@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<robot name="plugin_camera_logical" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
+  This macro implements a logical camera sensor for Gazebo (type = 'logical_camera').
+  A logical camera does not render pixels; it reports the poses of visible models within its frustum.
+  The <topic> you set is the prefix used by Gazebo to publish detections.
+
+  Parameters near_clip / far_clip define the sensing range (meters).
+  horizontal_fov is given in degrees; aspect_ratio sets width/height of the frustum.
+  Frame id for messages is forced via <gz_frame_id> using optical_frame.
+
+  This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
+  (officially bonded with ROS2 Humble) and later versions of Gazebo.
+
+  The sdformat specifications for a camera sensor found at:
+  http://sdformat.org/spec?ver=1.11&elem=sensor#sensor_camera (for version 1.11)
+
+  sdformat specification 1.11 is parsed by the library libsdformat14, available since Gazebo Harmonic.
+
+  Convention for parameter types:
+  R means real number (float or double)
+  I means integer
+  S means string
+  B means boolean
+
+  Parameter formats:
+  name (S): A unique name for the camera.
+
+  reference_frame(S): Name of the frame where the camera plugin is attached.
+
+  optical_frame (S): Name of the optical frame of the camera. It will be used in the camera_info message header.
+
+  use_gravity (B): If true, the camera will be affected by gravity.
+
+  always_on (B): If True the sensor will always be updated according to the update rate.
+
+  enable_metrics (B): If True, the sensor will publish performance metrics.
+
+  update_rate (R): The frequency at which the sensor data is generated. If left unspecified, the sensor will generate
+                   data every cycle.
+
+  hor_fov_deg (R): Horizontal field of view in degrees.
+
+  clip (S): The near and far clip planes. Objects closer or farther than these planes are not rendered
+      clip (S) = 'near (R) far (R)'
+      near (R): Near clipping distance of the view frustum.
+      far (R): Far clipping distance of the view frustum.
+
+  aspect_ratio_deg (R): Horizontal field of view of the frustum, in degrees. This is the angle between the frustum's
+                        vertex and the edges of the near or far plane.
+  -->
+  <xacro:macro name="plugin_camera_logical"
+               params="name
+                       reference_frame
+                       optical_frame
+                       use_gravity:=True
+                       always_on:=True
+                       enable_metrics:=False
+                       update_rate:=30.0
+                       hor_fov_deg:=60.0
+                       clip:='0.0 1.0'
+                       aspect_ratio_deg:=57.296
+                       topic" >
+
+    <xacro:property name="clip_seq"                 value="${clip.split()}"/>
+
+    <xacro:if value="${len(clip_seq) != 2}">
+      ${xacro.fatal("Invalid clip parameter format. Expected format: 'near (R) far (R)'")}
+    </xacro:if>
+
+    <xacro:property name="near_clip"                value="${clip_seq[0]}"/>
+    <xacro:property name="far_clip"                 value="${clip_seq[1]}"/>
+
+
+    <gazebo reference="${reference_frame}">
+      <gravity>${use_gravity}</gravity>
+      <sensor type="logical_camera" name="${name}_gz_sensor">
+        <always_on>${always_on}</always_on>
+        <enable_metrics>${enable_metrics}</enable_metrics>
+        <update_rate>${update_rate}</update_rate>
+        <topic>${topic}</topic>
+
+        <!--
+        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
+        '<model>::<parent_frame>::${reference_frame}', which is probably what you do not want.
+        -->
+        <gz_frame_id>${optical_frame}</gz_frame_id>
+
+        <logical_camera>
+          <near_clip>${near_clip}</near_clip>
+          <far_clip>${far_clip}</far_clip>
+          <horizontal_fov>${radians(float(hor_fov_deg))}</horizontal_fov>
+          <aspect_ratio>${radians(float(aspect_ratio_deg))}</aspect_ratio>
+        </logical_camera>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</robot>

@@ -1,0 +1,518 @@
+<?xml version="1.0"?>
+<robot name="plugin_camera_common" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
+  THIS MACRO IMPLEMENTS THE COMMON PART OF ANY CAMERA ELEMENT FOR GAZEBO.
+  THIS MACRO IS INTENDED TO BE USED INSIDE OTHER CAMERA MACROS, FOR EXAMPLE (PLUGIN_DEPTH_CAMERA_MACRO.XACRO, ETC.,),
+  NOT ON ITS OWN.
+
+  This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
+  (officially bonded with ROS2 Humble) and later versions of Gazebo.
+
+  The sdformat specifications for a camera sensor found at:
+  http://sdformat.org/spec?ver=1.11&elem=sensor#sensor_camera (for version 1.11)
+
+  sdformat specification 1.11 is parsed by the library libsdformat14, available since Gazebo Harmonic.
+
+  Check the version of libsdformat installed on your system with the commands:
+  ❯ gz sdf \-\-versions
+    14.8.0
+
+  or
+
+  ❯ dpkg -l | grep sdformat
+    ii  libsdformat12:amd64        12.8.0-1~jammy                 amd64   Simulation Description Format ...
+    ii  libsdformat12-dev:amd64    12.8.0-1~jammy                 amd64   Simulation Description Format ...
+    ii  libsdformat14:amd64        14.8.0-1~jammy                 amd64   Simulation Description Format ...
+    ii  libsdformat14-dev:amd64    14.8.0-1~jammy                 amd64   Simulation Description Format ...
+    ii  python3-sdformat14         14.8.0-1~jammy                 amd64   Simulation Description Format ...
+    ii  ros-humble-sdformat-urdf   1.0.1-1jammy.20250823.081540   amd64   URDF plugin to parse SDFormat ...
+    ii  sdformat12-sdf             12.8.0-1~jammy                 all     Simulation Description Format ...
+    ii  sdformat14-sdf             14.8.0-1~jammy                 all     Simulation Description Format ...
+
+  If you execute in the terminal:
+  ❯ gz sdf -h
+    Utilities for SDF files.
+
+    gz sdf [options]
+
+    Options:
+
+      -k [ \-\-check ] arg                Check if an SDFormat file is valid.
+      -d [ \-\-describe ] [SPEC VERSION]  Print the aggregated SDFormat spec description. Default version (1.11).
+                                                                                                          ******
+
+  Default version is 1.11, which means you can write sdf files with sdformat 1.11 and lower versions.
+
+  Finally, if you execute in a terminal:
+  ❯ gz sdf -d 1.11 | head
+
+  you will see the beginning of the sdformat 1.11 specification in XML format, starting with:
+  <element name ='sdf' required ='1'>
+    <description><![CDATA[SDFormat base element that can include one model, actor, light, or worlds. A user of multiple worlds could run parallel instances of simulation, or offer selection of a world at runtime.]]></description>
+    <attribute name ='version' type ='string' default ='1.10' required ='1'>
+      <description><![CDATA[Version number of the SDFormat specification, consisting of major and minor versions delimited by a `.` character. A major version bump is required if older versions cannot be automatically converted to this version. A minor version bump is required when there are breaking changes that can be handled by the automatic conversion functionality encoded in the `*.convert` files.]]></description>
+    </attribute>
+  ....
+
+  You can repeat the same for other versions like 1.10, 1.9, etc.
+
+  At the moment of writing this macro (November 2025), where sdformat 1.12 is not yet available in Gazebo, if you
+  execute:
+
+  ❯ gz sdf -d 1.12 | head
+
+   Error [Utils.cc:176] Unable to find SDF filename[root.sdf] with version 1.12Error [Utils.cc:176] Could not find the
+   'element' element in the xml fileError: SDF schema initialization failed.
+
+  With this macro plugin you can create any type of camera sensor in GZ.
+
+  Depending on the values of some parameters, some fields will be omitted when expanding the macro.
+
+  Convention for parameter types:
+  R means real number (float or double)
+  I means integer
+  S means string
+  B means boolean
+  When no unit suffix is specified, the proper units assumed by ROS/Gazebo are used.
+  When a different unit from what ROS/Gazebo assumes is used, it will be indicated properly with a suffix, like, _deg,
+  to indicate degrees instead of radians (which is the default unit for angles in ROS/Gazebo).
+
+  Parameter formats:
+  name (S): A unique name for the camera.
+
+  optical_frame (S): Name of the optical frame of the camera. It will be used in the camera_info message header
+                     For example: color_optical_frame.
+
+  save (S): Enable or disable saving of camera frames.
+      save = 'enabled (B) path (S)'
+      enabled (B): If true, saving of camera frames is enabled.
+      path (S): The path name which will hold the frame data. If path name is relative, then directory is relative to
+                current working directory.
+
+  triggered (B): If true, the camera is triggered by a topic.
+
+  trigger_topic (S): Name of the topic that will trigger the camera if enabled.
+
+  info_topic (aka camera_info_topic) (S): Name of the camera info topic.
+
+  visible_mask (I): Visibility mask of a camera. Bitmask filter that controls which visuals this camera will render.
+                    A visual is visible if (visibility_mask & visual.visibility_flags) != 0.
+                    A mask 0xFFFFFFFF typically means 'see everything'
+
+  clip (S): The near and far clip planes used in simulation. Objects closer or farther than these planes are not
+            rendered (captured by Gazebo in the image).
+      clip = 'near (R) far (R)'
+      near (R): Near clipping distance of the view frustum.
+      far (R): Far clipping distance of the view frustum.
+
+HOW TO CHOOSE OPTICAL PARAMETERS FOR STANDARD GNOMONICAL (PINHOLE) CAMERAS:
+===========================================================================
+For best realism, set lens intrinsics and distortion from your camera calibration (or manufacturer specs), so simulation
+matches the real sensor.
+
+If you only need a simple, ideal camera, you can assume a gnomonic (aka pinhole) lens, and in this case choosing
+image_width_in_pixels, image_height_in_pixels, and horizontal_fov is enough to derive other optical parameters as
+follows:
+  - Choose image_width_in_pixels and image_height_in_pixels to be passed to the macro in the 'image' parameter.
+
+  - Consider a horizontal_fov (ideal, undistorted) and compute:
+      fx = (image_width_in_pixels * 0.5) / tan(horizontal_fov * 0.5)
+
+  - Pass fx in the lens_intrinsics.fx parameter.
+
+  - If you consider square pixels, which is the common case, then fy = fx.
+    FYI, when pixels are square the following equality holds true:
+      image_width_in_pixels/image_height_in_pixels = tan(0.5 * horizontal_fov)/tan(0.5 * vertical_fov).
+
+    Therefore, it is easy to derive that fy = fx and the vertical_fov can be computed as:
+      vertical_fov = 2 * atan( (image_height_in_pixels / image_width_in_pixels) * tan(0.5 * horizontal_fov) )
+
+  - If you do not consider square pixels for some reason, then you first consider a vertical_fov independently and
+    compute:
+      fy = (image_height_in_pixels * 0.5) / tan(vertical_fov * 0.5)
+
+    In this case:
+      image_width_in_pixels/image_height_in_pixels != tan(0.5 * horizontal_fov)/tan(0.5 * vertical_fov)
+
+    and fx and fy are computed independently and can be different.
+
+  - Pass fy in the lens_intrinsics.fy parameter.
+
+  - Compute cx (aka ppx: principal point x) and cy (aka ppy: principal point y) as:
+      cx (ppx) = (image_width_in_pixels - 1) * 0.5
+      cy (ppy) = (image_height_in_pixels - 1) * 0.5
+
+      Why -1 in the formulas? Because pixel indices start at 0.
+      Consider an image of width 640 pixels; pixels are indexed from 0 to 639. The first half of the image width
+      contains pixels 0 to 319, and the second half contains pixels 320 to 639. Therefore, the center is at position
+      319.5 in pixels, which is (640-1)/2 = 319.5
+
+  - Pass cx and cy in the lens_intrinsics.cx and lens_intrinsics.cy parameters.
+
+  - Compute center_x_norm and center_y_norm as:
+      center_x_norm = (cx + 0.5) / image_width_in_pixels
+      center_y_norm = (cy + 0.5) / image_height_in_pixels
+
+      Why +0.5 in the formulas?
+      We normalize distortion center in edge coordinates where the left border is 0 and right border is W, hence the
+      +0.5 shift from pixel-center coordinates.
+
+  - Pass center_x_norm and center_y_norm in the distortion.center_x and distortion.center_y parameters.
+
+  - If you know the distortion coefficients of your camera lens (k1, k2, k3, p1, p2) set them in the distortion
+    parameters. If you want an ideal pinhole camera without distortion, set all distortion coefficients to zero.
+
+  image (S): The image size in pixels and format
+      image = 'width (I) height (I) format (S) anti_aliasing (I)'
+      width (I): Width of the image in pixels.
+      height (I): Height of the image in pixels.
+      format (S) = L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8 | BAYER_GRBG8 |
+                   | R_FLOAT16 | R_FLOAT32 (These last two formats are hardly used)
+          The <format> field describes the format used for the data published in the color image message
+          ${topic}/image.
+          It is also the format Gazebo uses to render the color image in the GUI when <visualize> is enabled in the
+          sensor.
+          If you choose R8G8B8 you publish an RGB image, if you choose L8 you publish a monochrome image, etc.
+          Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
+          where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
+          intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
+          <image><format> is problably limited, but they are supported if you have a specific use case.
+
+      anti_aliasing (I): Value used for anti-aliasing.
+
+  lens_single_elements (S): Single element lens (Single in the sense that these element are not composed by multiple
+                            sub-elements as in lens_intrinsics, for example).
+      lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
+      type (S): Type of the lens mapping. Supported values are: gnomonical, stereographic, equidistant, equisolid_angle,
+                orthographic, custom.
+                - gnomonical (pinhole): Standard perspective projection. Straight lines in space are projected as
+                  straight lines in the image. Used in conventional cameras.
+                  For gnomonical type it is recommended to specify a horizontal_fov <= 90°.
+                - stereographic: Projection that preserves angles, common in fisheye lenses. Areas are distorted, but
+                  angles remain unchanged.
+                - equidistant: The radial distance in the image is proportional to the angle of incidence. Used in some
+                  fisheye lenses.
+                - equisolid_angle: Projection where the area in the image is proportional to the solid angle. Used in
+                  fisheye lenses for scientific applications.
+                - orthographic: Orthographic projection, without perspective. Objects retain their size regardless of
+                  distance.
+                - custom: Allows defining a custom angular mapping function using the custom_function field.
+                  If custom is selected, you must also define the 'lens_custom_function' parameter with the appropriate
+                  mapping function and constants (c1, c2, c3, f, fun).
+      scale_to_hfov (B): If true the image will be scaled to fit horizontal FOV, otherwise it will be shown according to
+                         projection type parameters.
+      cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default.
+      env_texture_size (I): Resolution of the environment cube map used to draw the world.
+                            The highter it is, the sharper is your image.
+
+  lens_custom_function (S): Definition of custom mapping function in a form of r=c1*f*fun(theta/c2 + c3).
+                            See https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function
+                            THE VALUES IN LENS_CUSTOM_FUNCTION ARE ONLY CONSIDERED IF 'TYPE' IN LENS_SINGLE_ELEMENTS IS
+                            SET TO 'CUSTOM', OTHERWISE THEY ARE IGNORED.
+      lens_custom_function (S) = 'c1 (R) c2 (R) c3 (R) f (R) fun (S)'
+      c1 (R): Linear scaling constant.
+      c2 (R): Angle scaling constant.
+      c3 (R): Angle offset constant.
+      f (R): Focal length of the optical system. Note: It's not a focal length of the lens in a common sense!
+             This value is ignored if 'scale_to_fov' is set to true
+      fun (S): Mapping function. Supported values are: 'tan', 'sin' and 'id'.
+
+  lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix.
+      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+      fx (R): X focal length in pixels. A decimal part is allowed.
+      fy (R): Y focal length in pixels. A decimal part is allowed.
+      cx (R): principal point x in pixels. A decimal part is allowed.
+      cy (R): principal point y in pixels. A decimal part is allowed.
+
+    The intrinsic parameters above form the camera matrix K:
+
+        K = | fx  s  cx |
+            |  0 fy  cy |
+            |  0  0   1 |
+    where s is the 'lens_xy_skew' parameter.
+
+  lens_xy_skew (R): Parameter in the camera intrinsic matrix that represents the tilt between the X and Y axes of the
+                    image sensor. In an ideal sensor, pixels are perfectly aligned in rows and columns, and the X and Y
+                    axes are perpendicular, so lens_xy_skew = 0.0. If the sensor is slightly deformed or the pixels are
+                    not perfectly aligned, there may be a small tilt between the axes, and s would have a nonzero value.
+                    In practice, almost all modern cameras have lens_xy_skew = 0.0, and only in special cases or
+                    defective sensors is a different value used.
+
+  lens_projection (S): Camera projection matrix P for overriding camera intrinsic matrix K values so that users can
+                       configure P independently of K. This is useful when working with stereo cameras where P may be
+                       different from K due to the transform between the two cameras.
+      lens_projection (S) = 'p_fx p_fy p_cx p_cy tx ty'
+      p_fx (R): X focal length for projection matrix, in pixels. It overrides fx. A decimal part is allowed.
+      p_fy (R): Y focal length for projection matrix, in pixels. It overrides fy. A decimal part is allowed.
+      p_cx (R): X principal point for projection matrix, in pixels. It overrides cx. A decimal part is allowed.
+      p_cy (R): Y principal point for projection matrix, in pixels. It overrides cy. A decimal part is allowed.
+      tx (R): X translation for projection matrix, in pixels. A decimal part is allowed.
+      ty (R): Y translation for projection matrix, in pixels. A decimal part is allowed.
+
+  distortion_k_p (S): Lens distortion to be applied to camera images.
+                  See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
+      distortion (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
+      k1 (R): The radial distortion coefficient k1 (Default: 0.0).
+      k2 (R): The radial distortion coefficient k2 (Default: 0.0).
+      k3 (R): The radial distortion coefficient k3 (Default: 0.0).
+      p1 (R): The tangential distortion coefficient p1 (Default: 0.0).
+      p2 (R): The tangential distortion coefficient p2 (Default: 0.0).
+
+    If the distortion parameters k1, k2, k3 (radial) and p1, p2 (tangential) are set to zero (their default values),
+    no optical distortion will be applied to the camera image. The result is an ideal image, free from radial or
+    tangential deformation, as if the lens were a perfect pinhole model without imperfections. This is the standard
+    setting for most simulations where realistic lens distortion is not required.
+
+  distortion_center (S): The normalized coordinates of the distortion center or principal point.
+      distortion_center (S) = 'center_x_norm (R) center_y_norm (R)'
+      center_x_norm (R): The normalized x coordinate of the distortion center or principal point, in the range
+                         [0.0, 1.0].
+      center_y_norm (R): The normalized y coordinate of the distortion center or principal point, in the range
+                         [0.0, 1.0].
+
+  gaussian_noise (S): The properties of the noise model that should be applied to generated images.
+      gaussian_noise = 'mean (R) stddev (R)'
+      mean (R): Mean of the Gaussian noise.
+      stddev (R): Standard deviation of the Gaussian noise.
+  -->
+  <xacro:macro name="plugin_camera_common"
+               params="name
+                       optical_frame
+                       save:='False /tmp'
+                       triggered:=False
+                       trigger_topic:=''
+                       info_topic
+                       visible_mask:=4294967295
+                       clip:='0.1 100.0'
+                       image
+                       lens_single_elements:='gnomonical true 90.0 256'
+                       lens_custom_function:=''
+                       lens_intrinsics:=''
+                       lens_projection:=''
+                       lens_xy_skew:=0.0
+                       distortion_k_p:=''
+                       distortion_center:='0.5 0.5'
+                       gaussian_noise:='0.0 0.0'">
+
+    <!-- <topic>
+          ${node_namespace}/${node_name}/color/image_raw
+          <camera_info_topic>${node_namespace}/${node_name}/color/camera_info</camera_info_topic>
+        </topic> -->
+
+    <xacro:property name="save_seq"                 value="${save.split()}"/>
+
+    <xacro:if value="${len(save_seq) != 2}">
+      ${xacro.fatal("Invalid save parameter format. Expected format: 'enabled (B) path (S)'")}
+    </xacro:if>
+
+    <xacro:property name="save_enabled"             value="${save_seq[0]}"/>
+    <xacro:property name="save_path"                value="${save_seq[1]}"/>
+
+    <xacro:property name="clip_seq"                 value="${clip.split()}"/>
+
+    <xacro:if value="${len(clip_seq) != 2}">
+      ${xacro.fatal("Invalid clip parameter format. Expected format: 'near (R) far (R)'")}
+    </xacro:if>
+
+    <xacro:property name="near_clip"                value="${clip_seq[0]}"/>
+    <xacro:property name="far_clip"                 value="${clip_seq[1]}"/>
+    <xacro:property name="image_seq"                value="${image.split()}"/>
+
+    <xacro:if value="${len(image_seq) != 4}">
+      ${xacro.fatal("Invalid image parameter format. Expected format: 'width (I) height (I) format (S) anti_aliasing (I)'")}
+    </xacro:if>
+
+    <xacro:property name="image_width_px"           value="${image_seq[0]}"/>
+    <xacro:property name="image_height_px"          value="${image_seq[1]}"/>
+    <xacro:property name="image_format"             value="${image_seq[2]}"/>
+    <xacro:property name="image_anti_aliasing"      value="${image_seq[3]}"/>
+
+    <xacro:property name="lens_single_elements_seq" value="${lens_single_elements.split()}"/>
+
+    <xacro:if value="${len(lens_single_elements_seq) != 4}">
+      ${xacro.fatal("Invalid lens_single_elements parameter format. Expected format: 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'")}
+    </xacro:if>
+
+    <xacro:property name="lens_type"                value="${lens_single_elements_seq[0]}"/>
+    <xacro:property name="lens_scale_to_hfov"       value="${lens_single_elements_seq[1]}"/>
+    <xacro:property name="lens_cutoff_angle_deg"    value="${lens_single_elements_seq[2]}"/>
+    <xacro:property name="lens_env_texture_size"    value="${lens_single_elements_seq[3]}"/>
+
+    <xacro:property name="distortion_k_p_seq"       value="${distortion_k_p.split()}"/>
+
+    <xacro:if value="${len(distortion_k_p_seq) != 5}">
+      ${xacro.fatal("Invalid distortion_k_p parameter format. Expected format: 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R)'")}
+    </xacro:if>
+
+    <xacro:property name="k1"                       value="${distortion_k_p_seq[0]}"/>
+    <xacro:property name="k2"                       value="${distortion_k_p_seq[1]}"/>
+    <xacro:property name="k3"                       value="${distortion_k_p_seq[2]}"/>
+    <xacro:property name="p1"                       value="${distortion_k_p_seq[3]}"/>
+    <xacro:property name="p2"                       value="${distortion_k_p_seq[4]}"/>
+
+    <xacro:property name="distortion_center_seq"    value="${distortion_center.split()}"/>
+
+    <xacro:if value="${len(distortion_center_seq) != 2}">
+      ${xacro.fatal("Invalid distortion_center parameter format. Expected format: 'center_x_norm (R) center_y_norm (R)'")}
+    </xacro:if>
+
+    <xacro:property name="center_norm"              value="${distortion_center_seq[0]} ${distortion_center_seq[1]}"/>
+
+    <xacro:property name="gaussian_noise_seq"       value="${gaussian_noise.split()}"/>
+
+    <xacro:if value="${len(gaussian_noise_seq) != 2}">
+      ${xacro.fatal("Invalid gaussian_noise parameter format. Expected format: 'mean (R) stddev (R)'")}
+    </xacro:if>
+
+    <xacro:property name="gaussian_noise_mean"      value="${gaussian_noise_seq[0]}"/>
+    <xacro:property name="gaussian_noise_stddev"    value="${gaussian_noise_seq[1]}"/>
+
+    <save enabled="${save_enabled}">
+      <path>${save_path}</path>
+    </save>
+
+    <triggered>${triggered}</triggered>
+
+    <xacro:if value="${triggered}">
+      <trigger_topic>${trigger_topic}</trigger_topic>
+    </xacro:if>
+
+    <camera_info_topic>${info_topic}</camera_info_topic>
+
+    <visibility_mask>${visible_mask}</visibility_mask>
+
+    <optical_frame_id>${optical_frame}</optical_frame_id>
+
+    <image>
+      <width>${image_width_px}</width>
+      <height>${image_height_px}</height>
+      <format>${image_format}</format>
+      <anti_aliasing>${image_anti_aliasing}</anti_aliasing>
+    </image>
+
+    <clip>
+      <near>${near_clip}</near>
+      <far>${far_clip}</far>
+    </clip>
+
+    <distortion>
+      <k1>${k1}</k1>
+      <k2>${k2}</k2>
+      <k3>${k3}</k3>
+      <p1>${p1}</p1>
+      <p2>${p2}</p2>
+      <center>${center_norm}</center>
+    </distortion>
+
+    <lens>
+      <type>${lens_type}</type>
+      <scale_to_hfov>${lens_scale_to_hfov}</scale_to_hfov>
+      <cutoff_angle>${radians(float(lens_cutoff_angle_deg))}</cutoff_angle>
+      <env_texture_size>${lens_env_texture_size}</env_texture_size>
+
+      <!--
+      If lens_type is 'custom', use the 'lens_custom_function' parameter to define the 'custom_function' element.
+      -->
+      <xacro:if value="${lens_type == 'custom'}">
+        <xacro:property name="lens_custom_function_seq" value="${lens_custom_function.split()}"/>
+
+        <xacro:if value="${len(lens_custom_function_seq) != 5}">
+          ${xacro.fatal("Invalid lens_custom_function parameter format. Expected format: 'c1 (R) c2 (R) c3 (R) f (R) fun (S)'")}
+        </xacro:if>
+
+        <xacro:property name="c1"  value="${lens_custom_function_seq[0]}"/>
+        <xacro:property name="c2"  value="${lens_custom_function_seq[1]}"/>
+        <xacro:property name="c3"  value="${lens_custom_function_seq[2]}"/>
+        <xacro:property name="f"   value="${lens_custom_function_seq[3]}"/>
+        <xacro:property name="fun" value="${lens_custom_function_seq[4]}"/>
+
+        <custom_function>
+          <c1>${c1}</c1>
+          <c2>${c2}</c2>
+          <c3>${c3}</c3>
+          <f>${f}</f>
+          <fun>${fun}</fun>
+        </custom_function>
+      </xacro:if>
+
+      <!--
+      According to the sdformat documentation, if lens_projection is defined, it overrides the intrinsics parameters
+      fx, fy, cx, cy.
+      Therefore, if lens_projection is defined, we use it.
+      -->
+      <xacro:if value="${lens_projection != ''}">
+        <xacro:property name="lens_projection_seq" value="${lens_projection.split()}"/>
+
+        <xacro:if value="${len(lens_projection_seq) != 6}">
+          ${xacro.fatal("Invalid lens_projection parameter format. Expected format: 'p_fx p_fy p_cx p_cy tx ty'")}
+        </xacro:if>
+
+        <xacro:property name="p_fx" value="${lens_projection_seq[0]}"/>
+        <xacro:property name="p_fy" value="${lens_projection_seq[1]}"/>
+        <xacro:property name="p_cx" value="${lens_projection_seq[2]}"/>
+        <xacro:property name="p_cy" value="${lens_projection_seq[3]}"/>
+        <xacro:property name="tx"   value="${lens_projection_seq[4]}"/>
+        <xacro:property name="ty"   value="${lens_projection_seq[5]}"/>
+
+        <projection>
+          <p_fx>${p_fx}</p_fx>
+          <p_fy>${p_fy}</p_fy>
+          <p_cx>${p_cx}</p_cx>
+          <p_cy>${p_cy}</p_cy>
+          <tx>${tx}</tx>
+          <ty>${ty}</ty>
+        </projection>
+
+        <!--
+        When 'lens_projection' is used, still set the 'lens_xy_skew' in the intrinsics element since there is no other
+        way to set it.
+        Since the rest of the element in intrinsics are required (see sdformat documentation), we must set them,
+        otherwise sdf parser will raise an error. However, in practical terms, no matter the values we give to fx, fy,
+        cx, cy here, they will be overridden by the values in projection (p_fx, p_fy, p_cx, p_cy), as we can read in the
+        sdformat documentation.
+        Therefore, we set the parameters fx, fy, cx, cy to p_fx, p_fy, p_cx, p_cy respectively, just to avoid errors
+        in sdf parsing, knowing that these values will be overridden later by the projection values.
+        -->
+        <intrinsics>
+          <fx>${p_fx}</fx>
+          <fy>${p_fy}</fy>
+          <cx>${p_cx}</cx>
+          <cy>${p_cy}</cy>
+          <s>${lens_xy_skew}</s>
+        </intrinsics>
+      </xacro:if>
+
+      <!--
+      If no custom function is defined and no lens_projection is defined, use lens_intrinsics to set the intrinsics
+      element.
+      -->
+      <xacro:if value="${lens_projection == ''}">
+        <xacro:property name="lens_intrinsics_seq" value="${lens_intrinsics.split()}"/>
+
+        <xacro:if value="${len(lens_intrinsics_seq) != 4}">
+          ${xacro.fatal("Invalid lens_intrinsics parameter format. Expected format: 'fx (R) fy (R) cx (R) cy (R)'")}
+        </xacro:if>
+
+        <xacro:property name="fx"  value="${lens_intrinsics_seq[0]}"/>
+        <xacro:property name="fy"  value="${lens_intrinsics_seq[1]}"/>
+        <xacro:property name="cx"  value="${lens_intrinsics_seq[2]}"/>
+        <xacro:property name="cy"  value="${lens_intrinsics_seq[3]}"/>
+
+        <intrinsics>
+          <fx>${fx}</fx>
+          <fy>${fy}</fy>
+          <cx>${cx}</cx>
+          <cy>${cy}</cy>
+          <s>${lens_xy_skew}</s>
+        </intrinsics>
+      </xacro:if>
+    </lens>
+
+    <noise>
+      <type>gaussian</type>
+      <mean>${gaussian_noise_mean}</mean>
+      <stddev>${gaussian_noise_stddev}</stddev>
+    </noise>
+
+  </xacro:macro>
+</robot>

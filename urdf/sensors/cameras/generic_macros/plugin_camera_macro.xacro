@@ -1,0 +1,319 @@
+<?xml version="1.0"?>
+<!--
+This macro implements a standard camera sensor for Gazebo (hardcoded type = 'camera').
+It is intended for REGULAR RGB, MONO, BAYER CAMERAS ONLY.
+This macro CAN'T be used to create a 'depth_camera' (also 'depth') or 'rgbd_camera' ('rgbd') or 'semantic_camera'
+('semantic') or 'bounding_box_camera' ('bounding_box') sensor types, since those cameras have an explicit macro
+implementation in other files.
+This macro can be used to create an rgb camera or an irred camera, for example, by using formats like 'R8G8B8' or 'L8'
+respectively in the image parameter.
+
+The base <topic> you provide is used as the main image prefix. The camera publishes:
+${topic}/image -> visual image stream, encoded according to <image><format>
+${info_topic}  -> camera_info stream (intrinsics / metadata)
+
+If <visualize> is enabled, the Gazebo GUI renders the same visual stream using the chosen <image><format>.
+Therefore, for a standard camera <image><format> always defines the real visual data:
+R8G8B8 / B8G8R8 produce RGB images, L8 / L16 produce monochrome images, and BAYER_*8 produce raw Bayer mosaics.
+Float formats (R_FLOAT16 / R_FLOAT32) represent a single floating-point scalar per pixel and are rarely used for
+standard cameras. In these formats each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical
+magnitude maps (e.g., intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore,
+their use in <image><format> is problably limited, but they are supported if you have a specific use case.
+
+This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
+(officially bonded with ROS2 Humble) and later versions of Gazebo.
+
+The sdformat specifications for a camera sensor found at:
+http://sdformat.org/spec?ver=1.11&elem=sensor#sensor_camera (for version 1.11)
+
+sdformat specification 1.11 is parsed by the library libsdformat14, available since Gazebo Harmonic.
+
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
+When no unit suffix is specified, the proper units assumed by ROS/Gazebo are used.
+When a different unit from what ROS/Gazebo assumes is used, it will be indicated properly with a suffix, like, _deg,
+to indicate degrees instead of radians (which is the default unit for angles in ROS/Gazebo).
+
+Parameter formats:
+name (S): A unique name for the camera.
+
+reference_frame(S): Name of the frame where the camera plugin is attached. For example: color_frame.
+
+optical_frame (S): Name of the optical frame of the camera. It will be used in the camera_info message header
+                  For example: color_optical_frame.
+
+use_gravity (B): If true, the camera will be affected by gravity.
+
+always_on (B): If True the sensor will always be updated according to the update rate.
+
+visualize (B): If True the sensor is visualized in the GUI.
+
+enable_metrics (B): If True, the sensor will publish performance metrics.
+
+save (S): Enable or disable saving of camera frames.
+  save = 'enabled (B) path (S)'
+  enabled (B): If true, saving of camera frames is enabled.
+  path (S): The path name which will hold the frame data. If path name is relative, then directory is relative to
+            current working directory.
+
+triggered (B): If true, the camera is triggered by a topic.
+
+trigger_topic (S): Name of the topic that will trigger the camera if enabled.
+
+info_topic (aka camera_info_topic) (S): Name of the camera info topic.
+
+topic (S): Name of the topic on which data is published. This is necessary for visualization.
+
+visible_mask (I): Visibility mask of a camera. Bitmask filter that controls which visuals this camera will render.
+                A visual is visible if (visibility_mask & visual.visibility_flags) != 0.
+                A mask 0xFFFFFFFF typically means 'see everything'
+
+clip (S): The near and far clip planes used in simulation. Objects closer or farther than these planes are not
+        rendered (captured by Gazebo in the image).
+  clip = 'near (R) far (R)'
+  near (R): Near clipping distance of the view frustum.
+  far (R): Far clipping distance of the view frustum.
+
+update_rate (R): The frequency at which the sensor data is generated. If left unspecified, the sensor will generate
+                data every cycle.
+
+HOW TO CHOOSE OPTICAL PARAMETERS FOR STANDARD GNOMONICAL (PINHOLE) CAMERAS:
+===========================================================================
+For best realism, set lens intrinsics and distortion from your camera calibration (or manufacturer specs), so simulation
+matches the real sensor.
+
+If you only need a simple, ideal camera, you can assume a gnomonic (aka pinhole) lens, and in this case choosing
+image_width_in_pixels, image_height_in_pixels, and horizontal_fov is enough to derive other optical parameters as
+follows:
+- Choose image_width_in_pixels and image_height_in_pixels to be passed to the macro in the 'image' parameter.
+
+- Consider a horizontal_fov (ideal, undistorted) and compute:
+  fx = (image_width_in_pixels * 0.5) / tan(horizontal_fov * 0.5)
+
+- Pass fx in the lens_intrinsics.fx parameter.
+
+- If you consider square pixels, which is the common case, then fy = fx.
+FYI, when pixels are square the following equality holds true:
+  image_width_in_pixels/image_height_in_pixels = tan(0.5 * horizontal_fov)/tan(0.5 * vertical_fov).
+
+Therefore, it is easy to derive that fy = fx and the vertical_fov can be computed as:
+  vertical_fov = 2 * atan( (image_height_in_pixels / image_width_in_pixels) * tan(0.5 * horizontal_fov) )
+
+- If you do not consider square pixels for some reason, then you first consider a vertical_fov independently and
+compute:
+  fy = (image_height_in_pixels * 0.5) / tan(vertical_fov * 0.5)
+
+In this case:
+  image_width_in_pixels/image_height_in_pixels != tan(0.5 * horizontal_fov)/tan(0.5 * vertical_fov)
+
+and fx and fy are computed independently and can be different.
+
+- Pass fy in the lens_intrinsics.fy parameter.
+
+- Compute cx (aka ppx: principal point x) and cy (aka ppy: principal point y) as:
+  cx (ppx) = (image_width_in_pixels - 1) * 0.5
+  cy (ppy) = (image_height_in_pixels - 1) * 0.5
+
+  Why -1 in the formulas? Because pixel indices start at 0.
+  Consider an image of width 640 pixels; pixels are indexed from 0 to 639. The first half of the image width
+  contains pixels 0 to 319, and the second half contains pixels 320 to 639. Therefore, the center is at position
+  319.5 in pixels, which is (640-1)/2 = 319.5
+
+- Pass cx and cy in the lens_intrinsics.cx and lens_intrinsics.cy parameters.
+
+- Compute center_x_norm and center_y_norm as:
+  center_x_norm = (cx + 0.5) / image_width_in_pixels
+  center_y_norm = (cy + 0.5) / image_height_in_pixels
+
+  Why +0.5 in the formulas?
+  We normalize distortion center in edge coordinates where the left border is 0 and right border is W, hence the
+  +0.5 shift from pixel-center coordinates.
+
+- Pass center_x_norm and center_y_norm in the distortion.center_x and distortion.center_y parameters.
+
+- If you know the distortion coefficients of your camera lens (k1, k2, k3, p1, p2) set them in the distortion
+parameters. If you want an ideal pinhole camera without distortion, set all distortion coefficients to zero.
+
+image (S): The image size in pixels and format
+  image = 'width (I) height (I) format (S) anti_aliasing (I)'
+  width (I): Width of the image in pixels.
+  height (I): Height of the image in pixels.
+  format (S) = L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8 | BAYER_GRBG8 |
+                | R_FLOAT16 | R_FLOAT32 (These last two formats are hardly used)
+      The <format> field describes the format used for the data published in the color image message
+      ${topic}/image.
+      It is also the format Gazebo uses to render the color image in the GUI when <visualize> is enabled in the
+      sensor.
+      If you choose R8G8B8 you publish an RGB image, if you choose L8 you publish a monochrome image, etc.
+      Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
+      where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
+      intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
+      <image><format> is problably limited, but they are supported if you have a specific use case.
+
+  anti_aliasing (I): Value used for anti-aliasing.
+
+lens_single_elements (S): Single element lens (Single in the sense that these element are not composed by multiple
+                        sub-elements as in lens_intrinsics, for example).
+  lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
+  type (S): Type of the lens mapping. Supported values are: gnomonical, stereographic, equidistant, equisolid_angle,
+            orthographic, custom.
+            - gnomonical (pinhole): Standard perspective projection. Straight lines in space are projected as
+              straight lines in the image. Used in conventional cameras.
+              For gnomonical type it is recommended to specify a horizontal_fov <= 90°.
+            - stereographic: Projection that preserves angles, common in fisheye lenses. Areas are distorted, but
+              angles remain unchanged.
+            - equidistant: The radial distance in the image is proportional to the angle of incidence. Used in some
+              fisheye lenses.
+            - equisolid_angle: Projection where the area in the image is proportional to the solid angle. Used in
+              fisheye lenses for scientific applications.
+            - orthographic: Orthographic projection, without perspective. Objects retain their size regardless of
+              distance.
+            - custom: Allows defining a custom angular mapping function using the custom_function field.
+              If custom is selected, you must also define the 'lens_custom_function' parameter with the appropriate
+              mapping function and constants (c1, c2, c3, f, fun).
+  scale_to_hfov (B): If true the image will be scaled to fit horizontal FOV, otherwise it will be shown according to
+                      projection type parameters.
+  cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default.
+  env_texture_size (I): Resolution of the environment cube map used to draw the world.
+                        The highter it is, the sharper is your image.
+
+lens_custom_function (S): Definition of custom mapping function in a form of r=c1*f*fun(theta/c2 + c3).
+                        See https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function
+                        THE VALUES IN LENS_CUSTOM_FUNCTION ARE ONLY CONSIDERED IF 'TYPE' IN LENS_SINGLE_ELEMENTS IS
+                        SET TO 'CUSTOM', OTHERWISE THEY ARE IGNORED.
+  lens_custom_function (S) = 'c1 (R) c2 (R) c3 (R) f (R) fun (S)'
+  c1 (R): Linear scaling constant.
+  c2 (R): Angle scaling constant.
+  c3 (R): Angle offset constant.
+  f (R): Focal length of the optical system. Note: It's not a focal length of the lens in a common sense!
+          This value is ignored if 'scale_to_fov' is set to true
+  fun (S): Mapping function. Supported values are: 'tan', 'sin' and 'id'.
+
+lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix.
+  lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+  fx (R): X focal length in pixels. A decimal part is allowed.
+  fy (R): Y focal length in pixels. A decimal part is allowed.
+  cx (R): principal point x in pixels. A decimal part is allowed.
+  cy (R): principal point y in pixels. A decimal part is allowed.
+
+The intrinsic parameters above form the camera matrix K:
+
+    K = | fx  s  cx |
+        |  0 fy  cy |
+        |  0  0   1 |
+where s is the 'lens_xy_skew' parameter.
+
+lens_xy_skew (R): Parameter in the camera intrinsic matrix that represents the tilt between the X and Y axes of the
+                image sensor. In an ideal sensor, pixels are perfectly aligned in rows and columns, and the X and Y
+                axes are perpendicular, so lens_xy_skew = 0.0. If the sensor is slightly deformed or the pixels are
+                not perfectly aligned, there may be a small tilt between the axes, and s would have a nonzero value.
+                In practice, almost all modern cameras have lens_xy_skew = 0.0, and only in special cases or
+                defective sensors is a different value used.
+
+lens_projection (S): Camera projection matrix P for overriding camera intrinsic matrix K values so that users can
+                    configure P independently of K. This is useful when working with stereo cameras where P may be
+                    different from K due to the transform between the two cameras.
+  lens_projection (S) = 'p_fx p_fy p_cx p_cy tx ty'
+  p_fx (R): X focal length for projection matrix, in pixels. It overrides fx. A decimal part is allowed.
+  p_fy (R): Y focal length for projection matrix, in pixels. It overrides fy. A decimal part is allowed.
+  p_cx (R): X principal point for projection matrix, in pixels. It overrides cx. A decimal part is allowed.
+  p_cy (R): Y principal point for projection matrix, in pixels. It overrides cy. A decimal part is allowed.
+  tx (R): X translation for projection matrix, in pixels. A decimal part is allowed.
+  ty (R): Y translation for projection matrix, in pixels. A decimal part is allowed.
+
+distortion_k_p (S): Lens distortion to be applied to camera images.
+              See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
+  distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
+  k1 (R): The radial distortion coefficient k1 (Default: 0.0).
+  k2 (R): The radial distortion coefficient k2 (Default: 0.0).
+  k3 (R): The radial distortion coefficient k3 (Default: 0.0).
+  p1 (R): The tangential distortion coefficient p1 (Default: 0.0).
+  p2 (R): The tangential distortion coefficient p2 (Default: 0.0).
+
+If the distortion parameters k1, k2, k3 (radial) and p1, p2 (tangential) are set to zero (their default values),
+no optical distortion will be applied to the camera image. The result is an ideal image, free from radial or
+tangential deformation, as if the lens were a perfect pinhole model without imperfections. This is the standard
+setting for most simulations where realistic lens distortion is not required.
+
+distortion_center (S): The normalized coordinates of the distortion center or principal point.
+  distortion_center (S) = 'center_x_norm (R) center_y_norm (R)'
+  center_x_norm (R): The normalized x coordinate of the distortion center or principal point, in the range
+                      [0.0, 1.0].
+  center_y_norm (R): The normalized y coordinate of the distortion center or principal point, in the range
+                      [0.0, 1.0].
+
+gaussian_noise (S): The properties of the noise model that should be applied to generated images.
+  gaussian_noise = 'mean (R) stddev (R)'
+  mean (R): Mean of the Gaussian noise.
+  stddev (R): Standard deviation of the Gaussian noise.
+-->
+<robot name="plugin_camera" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_camera"
+               params="name
+                       reference_frame
+                       optical_frame
+                       use_gravity:=True
+                       always_on:=True
+                       visualize:=False
+                       enable_metrics:=False
+                       save:='False /tmp'
+                       triggered:=False
+                       trigger_topic:=''
+                       info_topic
+                       topic
+                       visible_mask:=4294967295
+                       clip:='0.1 100.0'
+                       update_rate:=30.0
+                       image
+                       lens_single_elements:='gnomonical true 90.0 256'
+                       lens_custom_function:=''
+                       lens_intrinsics:=''
+                       lens_xy_skew:=0.0
+                       lens_projection:=''
+                       distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       distortion_center:='0.5 0.5'
+                       gaussian_noise:='0.0 0.0'">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
+
+    <gazebo reference="${reference_frame}">
+      <gravity>${use_gravity}</gravity>
+      <sensor type="camera" name="${name}_gz_sensor">
+        <always_on>${always_on}</always_on>
+        <visualize>${visualize}</visualize>
+        <enable_metrics>${enable_metrics}</enable_metrics>
+        <update_rate>${update_rate}</update_rate>
+        <topic>${topic}</topic>
+
+        <!--
+        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
+        '<model>::<parent_frame>::${reference_frame}', which is probably what you do not want.
+        -->
+        <gz_frame_id>${optical_frame}</gz_frame_id>
+
+        <camera name="${name}">
+            <xacro:plugin_camera_common name="${name}"
+                                        optical_frame="${optical_frame}"
+                                        save="${save}"
+                                        triggered="${triggered}"
+                                        trigger_topic="${trigger_topic}"
+                                        info_topic="${info_topic}"
+                                        visible_mask="${visible_mask}"
+                                        clip="${clip}"
+                                        image="${image}"
+                                        lens_single_elements="${lens_single_elements}"
+                                        lens_custom_function="${lens_custom_function}"
+                                        lens_intrinsics="${lens_intrinsics}"
+                                        lens_projection="${lens_projection}"
+                                        lens_xy_skew="${lens_xy_skew}"
+                                        distortion_k_p="${distortion_k_p}"
+                                        distortion_center="${distortion_center}"
+                                        gaussian_noise="${gaussian_noise}"/>
+        </camera>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</robot>

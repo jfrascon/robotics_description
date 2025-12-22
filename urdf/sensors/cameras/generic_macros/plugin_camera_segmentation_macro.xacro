@@ -1,0 +1,264 @@
+<?xml version="1.0"?>
+<robot name="plugin_camera_segmentation" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
+  This macro implements segmentation camera sensor for Gazebo (type = 'segmentation_camera' or 'segmentation').
+
+  In Gazebo Sim, a segmentation_camera publishes two images under the “base topic” you set in <topic>.
+  For example:
+  If a sensor has <topic>segementation</topic>, it will publish: segmentation/labels_map and segmentation/colored_map.
+
+  In segmentation_type='semantic':
+  - ${topic}/labels_map: each pixel stores the semantic label ID of the object seen at that pixel. Think of it as a
+  grayscale (single-channel) label image: the numeric pixel value is not brightness, it is the class / category index
+  (e.g., “floor=1, pallet=2, person=3”, etc.). So two pixels with the same value belong to the same semantic class.
+  - ${topic}/colored_map: a visualization image where each semantic label is mapped to a unique RGB color. All pixels
+  with the same label ID share the same color. This image is meant for humans to look at quickly; the "real data" is in
+  labels_map.
+
+  In segmentation_type='panoptic | instance':
+  - ${topic}/labels_map: each pixel encodes both (a) the semantic label ID and (b) the instance ID of that label.
+  This comes as a 3-channel 8-bit image: typically one channel carries the label value, and the other two channels
+  together encode the instance number. The important idea is: two pixels can have the same label but different instance
+  IDs (e.g., two different pallets both labeled “pallet”, but with different instance numbers).
+  - ${topic}/colored_map: a visualization image where each *instance* (not just each label) gets its own unique RGB
+  color. So two objects of the same class will appear in different colors if they are different instances.
+
+  Additionally, in a segmentation_camera the <image><format> field does NOT control the segmentation products
+  (labels_map and colored_map). Those two streams are produced with a fixed pixel layout defined by the Gazebo
+  implementation: they are 8-bit-per-channel images, usually 3 channels. In semantic mode the label is carried in one
+  channel; in panoptic/instance mode all three channels are used to carry label + instance information (the official
+  docs show how to decode them byte-by-byte).
+
+  So what does <image><format> do in segmentation?
+  It only configures the 'base rendered image' of the camera (the normal image window in the Gazebo GUI, and the regular
+  image stream if you consume it).
+  The official tutorial makes this clear; a segmentation camera still has a regular camera image besides the
+  segmentation maps, and it even provides an overlay view (colored_image) that blends the base image with colored_map.
+
+  Changing <image><format> does not change either the encoding or the content of labels_map / colored_map.
+
+  What format makes sense to use, then?
+
+  If you also want a 'real' color image (for a nice overlay, debugging, or to run standard RGB algorithms alongside
+  segmentation): use R8G8B8. That is the most intuitive choice.
+
+  If you do not care about the base image and only want segmentation: L8 or L16 are fine to reduce bandwidth / visual
+  clutter. You will see a grayscale base image in the GUI, but the segmentation maps are unaffected.
+
+  Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats, where
+  each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g., intensity,
+  radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in <image><format> of a
+  segmentation camera is not very meaningful, but they are supported if you have a specific use case.
+
+  This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
+  (officially bonded with ROS2 Humble) and later versions of Gazebo.
+
+  The sdformat specifications for a camera sensor found at:
+  http://sdformat.org/spec?ver=1.11&elem=sensor#sensor_camera (for version 1.11)
+
+  sdformat specification 1.11 is parsed by the library libsdformat14, available since Gazebo Harmonic.
+
+  Convention for parameter types:
+  R means real number (float or double)
+  I means integer
+  S means string
+  B means boolean
+
+  Parameter formats:
+
+  name (S): A unique name for the camera.
+
+  reference_frame(S): Name of the frame where the camera plugin is attached.
+
+  optical_frame (S): Name of the optical frame of the camera. It will be used in the camera_info message header.
+
+  use_gravity (B): If true, the camera will be affected by gravity.
+
+  always_on (B): If True the sensor will always be updated according to the update rate.
+
+  visualize (B): If True the sensor is visualized in the GUI.
+
+  enable_metrics (B): If True, the sensor will publish performance metrics.
+
+  update_rate (R): The frequency at which the sensor data is generated. If left unspecified, the sensor will generate
+                   data every cycle.
+
+  triggered (B): If true, the camera is triggered by a topic.
+
+  segmentation_type (S):  The segmentation type of the segmentation camera. Valid options are:
+      - semantic: Semantic segmentation, which provides 2 images:
+                  1. A grayscale image, with the pixel values representing the label of an object.
+                  2. A colored image, with the pixel values being a unique color for each label.
+
+      - panoptic | instance: Panoptic segmentation, which provides an image where each pixel has 1 channel for label
+                             value of the object and 2 channels for the number of the instances of that label, and a
+                             colored image which its pixels have a unique color for each instance.
+
+  visible_mask (I): Visibility mask of a camera. When (camera's visibility_mask & visual's visibility_flags) evaluates
+                    to non-zero, the visual will be visible to the camera.
+
+  image (S): The image size in pixels and format
+      image = 'width (I) height (I) format (S) anti_aliasing (I)'
+      width (I): Width of the image in pixels.
+      height (I): Height of the image in pixels.
+      format (S) = L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8  | BAYER_GRBG8 |
+                   | R_FLOAT16 | R_FLOAT32 (these last two formats are hardly used)
+          The <format> field describes the format used for the data published in the color image message ${topic}/image.
+          It is also the format Gazebo uses to render the color image in the GUI when <visualize> is enabled in the
+          sensor.
+          If you choose R8G8B8 you publish an RGB image, if you choose L8 you publish a monochrome image, etc.
+          Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
+          where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
+          intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
+          <image><format> is probably limited for segmentation cameras, but they are supported if you have a specific
+          use case.
+
+      anti_aliasing (I): Value used for anti-aliasing.
+
+  clip (S): The near and far clip planes. Objects closer or farther than these planes are not rendered
+      clip = 'near (R) far (R)'
+      near (R): Near clipping distance of the view frustum.
+      far (R): Far clipping distance of the view frustum.
+
+  save (S): Enable or disable saving of camera frames.
+      save = 'enable (B) path (S)'
+      enable (B): If true, saving of camera frames is enabled.
+      path (S): The path name which will hold the frame data. If path name is relative, then directory is relative to
+                current working directory.
+
+  gaussian_noise (S): The properties of the noise model that should be applied to generated images.
+      gaussian_noise = 'mean (R) stddev (R)'
+      mean (R): Mean of the Gaussian noise.
+      stddev (R): Standard deviation of the Gaussian noise.
+
+  distortion (S): Lens distortion to be applied to camera images.
+                  See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
+      distortion (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
+      k1 (R): The radial distortion coefficient k1.
+      k2 (R): The radial distortion coefficient k2.
+      k3 (R): The radial distortion coefficient k3.
+      p1 (R): The tangential distortion coefficient p1.
+      p2 (R): The tangential distortion coefficient p2.
+      center_x (R): The x coordinate of the distortion center or principal point.
+      center_y (R): The y coordinate of the distortion center or principal point.
+
+  lens_single_elements (S): Single element lens.
+      lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
+      type (S): Type of the lens mapping. Supported values are: gnomonical, stereographic, equidistant, equisolid_angle,
+                orthographic, custom.
+                For gnomonical (perspective) projection, it is recommended to specify a horizontal_fov <= 90°.
+      scale_to_hfov (B): If true the image will be scaled to fit horizontal FOV, otherwise it will be shown according to
+                         projection type parameters.
+      cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default. (In degrees)
+      env_texture_size (I): Resolution of the environment cube map used to draw the world.
+
+  lens_custom_function (S): Definition of custom mapping function in a form of r=c1*f*fun(theta/c2 + c3).
+                            See https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function
+      lens_custom_function (S) = 'c1 (R) c2 (R) c3 (R) f (R) fun (S)'
+      c1 (R): Linear scaling constant.
+      c2 (R): Angle scaling constant.
+      c3 (R): Angle offset constant.
+      f (R): Focal length of the optical system. Note: It's not a focal length of the lens in a common sense!
+             This value is ignored if 'scale_to_fov' is set to true
+      fun (S): Mapping function. Supported values are: 'tan', 'sin' and 'id'.
+
+  lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix (cannot be used
+                       with WideAngleCamera since this class uses image stitching from 6 different cameras for achieving
+                       a wide field of view).
+                       The focal lengths can be computed using
+                       focal_length_in_pixels = (img_width_pixels * 0.5) / tan(field_of_view_in_degrees * 0.5 * PI/180)
+      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+      fx (R): X focal length (in pixels, overrides horizontal_fov). fx = fy = width / ( 2 * tan (hfov / 2 ) )
+      fy (R): Y focal length (in pixels, overrides horizontal_fov).
+      cx (R): X principal point (in pixels). cx = ( width - 1 ) / 2
+      cy (R): Y principal point (in pixels). cy = ( height - 1 ) / 2
+      s (R): XY axis skew.
+
+  lens_projection (S): Camera projection matrix P for overriding camera intrinsic matrix K values so that users can
+                       configure P independently of K. This is useful when working with stereo cameras where P may be
+                       different from K due to the transform between the two cameras.
+      lens_projection (S) = 'p_fx p_fy p_cx p_cy tx ty'
+      p_fx (R): X focal length for projection matrix(in pixels, overrides fx)
+      p_fy (R): Y focal length for projection matrix(in pixels, overrides fy)
+      p_cx (R): X principal point for projection matrix(in pixels, overrides cx)
+      p_cy (R): Y principal point for projection matrix(in pixels, overrides cy)
+      tx (R): X translation for projection matrix (in pixels)
+      ty (R): Y translation for projection matrix (in pixels)
+
+  topic (S): Name of the topic on which data is published. This is necessary for visualization.
+
+  info_topic (aka camera_info_topic) (S): Name of the camera info topic.
+
+  trigger_topic (S): Name of the topic that will trigger the camera if enabled.
+  -->
+  <xacro:macro name="plugin_camera_segmentation"
+               params="name
+                       reference_frame
+                       optical_frame
+                       use_gravity:=True
+                       always_on:=True
+                       visualize:=False
+                       enable_metrics:=False
+                       update_rate:=30.0
+                       triggered:=False
+                       hor_fov_deg:=60.0
+                       segmentation_type:='semantic'
+                       visible_mask:=4294967295
+                       image:='320 240 R8G8B8 4'
+                       clip:='0.1 100.0'
+                       save:='False /tmp'
+                       gaussian_noise:='0.0 0.0'
+                       distortion:='0.0 0.0 0.0 0.0 0.0 0.5 0.5'
+                       lens_single_elements:='stereographic true 90.0 256'
+                       lens_custom_function:='1.0 1.0 0.0 1.0 tan'
+                       lens_intrinsics:='277.0 277.0 160.0 120.0 0.0'
+                       lens_projection:='277.0 277.0 160.0 120.0 0.0 0.0'
+                       topic
+                       info_topic
+                       trigger_topic:=''" >
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
+
+    <xacro:if value="${segmentation_type != 'semantic' and segmentation_type != 'panoptic' and segmentation_type != 'instance'}">
+      ${xacro.fatal("Invalid segmentation_type. Valid: semantic | panoptic | instance")}
+    </xacro:if>
+
+    <gazebo reference="${reference_frame}">
+      <gravity>${use_gravity}</gravity>
+      <sensor type="segmentation_camera" name="${name}_gz_sensor">
+        <always_on>${always_on}</always_on>
+        <visualize>${visualize}</visualize>
+        <enable_metrics>${enable_metrics}</enable_metrics>
+        <update_rate>${update_rate}</update_rate>
+        <topic>${topic}</topic>
+
+        <!--
+        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
+        '<model>::<parent_frame>::${reference_frame}', which is probably what you do not want.
+        -->
+        <gz_frame_id>${optical_frame}</gz_frame_id>
+
+        <camera name="${name}">
+          <xacro:plugin_camera_common name="${name}"
+                                      optical_frame="${optical_frame}"
+                                      triggered="${triggered}"
+                                      hor_fov_deg="${hor_fov_deg}"
+                                      visible_mask="${visible_mask}"
+                                      image="${image}"
+                                      clip="${clip}"
+                                      save="${save}"
+                                      gaussian_noise="${gaussian_noise}"
+                                      distortion="${distortion}"
+                                      lens_single_elements="${lens_single_elements}"
+                                      lens_custom_function="${lens_custom_function}"
+                                      lens_intrinsics="${lens_intrinsics}"
+                                      lens_projection="${lens_projection}"
+                                      info_topic="${info_topic}"
+                                      trigger_topic="${trigger_topic}" />
+
+          <segmentation_type>${segmentation_type}</segmentation_type>
+        </camera>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</robot>

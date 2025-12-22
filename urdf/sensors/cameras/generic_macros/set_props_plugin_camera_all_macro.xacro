@@ -1,0 +1,311 @@
+<?xml version="1.0"?>
+<robot name="set_props_plugin_camera_all" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="set_props_plugin_camera_all"
+               params="prop_prefix
+                       camera_sim_cfg:=dict()
+                       default_sim_camera_type:='camera'
+                       default_sim_use_gravity:=True
+                       default_sim_always_on:=True
+                       default_sim_visualize:=False
+                       default_sim_enable_metrics:=False
+                       default_sim_save:='False /tmp'
+                       default_sim_triggered:=False
+                       default_sim_visible_mask:=4294967295
+                       default_sim_clip:='0.1 100.0'
+                       default_sim_update_rate:=30.0
+                       default_sim_image:='320 240 R8G8B8 4'
+                       default_sim_lens_single_elements:='gnomonical true 90.0 256'
+                       default_sim_lens_custom_function:=''
+                       default_sim_lens_intrinsics:=''
+                       default_sim_lens_xy_skew:=0.0
+                       default_sim_lens_projection:=''
+                       default_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       default_sim_distortion_center:='0.5 0.5'
+                       default_sim_gaussian_noise:='0.0 0.0'
+                       default_sim_depth_clip:='0.1 10.0'
+                       default_sim_segmentation_type:='semantic'
+                       default_sim_box_type:='2d'
+                       default_sim_thermal_data:='253.15 673.15 3.0'" >
+
+    <xacro:property name="camera_type"
+                    value="${camera_sim_cfg.get('type', default_sim_camera_type)}"/>
+
+    <!-- If camera_sim_cfg['enabled'] is missing/False, disable simulation for the camera. -->
+    <xacro:unless value="${camera_sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_sim_enabled"              value="False"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_camera_type"          value="${camera_type}"          scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_use_gravity"          value="False"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_always_on"            value="False"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_visualize"            value="False"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_enable_metrics"       value="False"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_save"                 value="false /tmp"              scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_triggered"            value="False"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_visible_mask"         value="0"                       scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_clip"                 value="0 0"                     scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_update_rate"          value="0"                       scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_image"                value="0 0 L8 0"                scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_lens_single_elements" value="unknown false 0 0"       scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_lens_custom_function" value="0.0 0.0 0.0 0.0 unknown" scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_lens_intrinsics"      value="0.0 0.0 0.0 0.0"         scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_lens_xy_skew"         value="0.0"                     scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_lens_projection"      value="0.0 0.0 0.0 0.0 0.0 0.0" scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_distortion_k_p"       value="0.0 0.0 0.0 0.0 0.0"     scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_distortion_center"    value="0.5 0.5"                 scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_gaussian_noise"       value="0.0 0.0"                 scope="parent"/>
+
+      <xacro:if value="${camera_type == 'depth' or camera_type == 'depth_camera' or camera_type == 'rgbd' or camera_type == 'rgbd_camera'}">
+        <xacro:property name="${prop_prefix}_sim_depth_clip"         value="0.0 0.0"                 scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'segmentation' or camera_type == 'segmentation_camera'}">
+        <xacro:property name="${prop_prefix}_sim_segmentation_type"  value="unknown"                 scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'boundingbox' or camera_type == 'boundingbox_camera'}">
+        <xacro:property name="${prop_prefix}_sim_box_type"           value="unknown"                 scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'thermal' or camera_type == 'thermal_camera'}">
+        <xacro:property name="${prop_prefix}_sim_thermal_data"       value="0.0 0.0 0.0"             scope="parent"/>
+      </xacro:if>
+    </xacro:unless>
+
+    <xacro:if value="${camera_sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_sim_enabled"
+                      value="True"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_camera_type"
+                      value="${camera_type}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_use_gravity"
+                      value="${camera_sim_cfg.get('use_gravity', default_sim_use_gravity)}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_always_on"
+                      value="${camera_sim_cfg.get('always_on', default_sim_always_on)}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_visualize"
+                      value="${camera_sim_cfg.get('visualize', default_sim_visualize)}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_enable_metrics"
+                      value="${camera_sim_cfg.get('enable_metrics', default_sim_enable_metrics)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_save"
+                      value="${camera_sim_cfg.get('save', dict())}"/>
+
+      <xacro:if value="${sim_save == dict()}">
+        <xacro:property name="${prop_prefix}_sim_save"
+                        value="${default_sim_save}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_save != dict()}">
+        <xacro:property name="${prop_prefix}_sim_save"
+                        value="${sim_save['enabled']} ${sim_save['path']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="${prop_prefix}_sim_triggered"
+                      value="${camera_sim_cfg.get('triggered', default_sim_triggered)}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_visible_mask"
+                      value="${camera_sim_cfg.get('visible_mask', default_sim_visible_mask)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_clip"
+                      value="${camera_sim_cfg.get('clip', dict())}"/>
+
+      <xacro:if value="${sim_clip == dict()}">
+        <xacro:property name="${prop_prefix}_sim_clip"
+                        value="${default_sim_clip}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_clip != dict()}">
+        <xacro:property name="${prop_prefix}_sim_clip"
+                        value="${sim_clip['near']} ${sim_clip['far']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="${prop_prefix}_sim_update_rate"
+                      value="${camera_sim_cfg.get('update_rate', default_sim_update_rate)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_image"
+                      value="${camera_sim_cfg.get('image', dict())}"/>
+
+      <xacro:if value="${sim_image == dict()}">
+        <xacro:property name="${prop_prefix}_sim_image"
+                        value="${default_sim_image}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_image != dict()}">
+        <xacro:property name="${prop_prefix}_sim_image"
+                        value="${sim_image['width']} ${sim_image['height']} ${sim_image['format']} ${sim_image['anti_aliasing']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_lens_single_elements"
+                      value="${camera_sim_cfg.get('lens_single_elements', dict())}"/>
+
+      <xacro:if value="${sim_lens_single_elements == dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_single_elements"
+                        value="${default_sim_lens_single_elements}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_lens_single_elements != dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_single_elements"
+                        value="${sim_lens_single_elements['type']} ${sim_lens_single_elements['scale_to_hfov']} ${sim_lens_single_elements['cutoff_angle_deg']} ${sim_lens_single_elements['env_texture_size']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_lens_custom_function"
+                      value="${camera_sim_cfg.get('lens_custom_function', dict())}"/>
+
+      <xacro:if value="${sim_lens_custom_function == dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_custom_function"
+                        value="${default_sim_lens_custom_function}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_lens_custom_function != dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_custom_function"
+                        value="${sim_lens_custom_function['c1']} ${sim_lens_custom_function['c2']} ${sim_lens_custom_function['c3']} ${sim_lens_custom_function['f']} ${sim_lens_custom_function['fun']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_lens_intrinsics"
+                      value="${camera_sim_cfg.get('lens_intrinsics', dict())}"/>
+
+      <xacro:if value="${sim_lens_intrinsics == dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_intrinsics"
+                        value="${default_sim_lens_intrinsics}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_lens_intrinsics != dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_intrinsics"
+                        value="${sim_lens_intrinsics['fx']} ${sim_lens_intrinsics['fy']} ${sim_lens_intrinsics['cx']} ${sim_lens_intrinsics['cy']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="${prop_prefix}_sim_lens_xy_skew"
+                      value="${camera_sim_cfg.get('lens_xy_skew', default_sim_lens_xy_skew)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_lens_projection"
+                      value="${camera_sim_cfg.get('lens_projection', dict())}"/>
+
+      <xacro:if value="${sim_lens_projection == dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_projection"
+                        value="${default_sim_lens_projection}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_lens_projection != dict()}">
+        <xacro:property name="${prop_prefix}_sim_lens_projection"
+                        value="${sim_lens_projection['p_fx']} ${sim_lens_projection['p_fy']} ${sim_lens_projection['p_cx']} ${sim_lens_projection['p_cy']} ${sim_lens_projection['tx']} ${sim_lens_projection['ty']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_distortion_k_p"
+                      value="${camera_sim_cfg.get('distortion_k_p', dict())}"/>
+
+      <xacro:if value="${sim_distortion_k_p == dict()}">
+        <xacro:property name="${prop_prefix}_sim_distortion_k_p"
+                        value="${default_sim_distortion_k_p}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_distortion_k_p != dict()}">
+        <xacro:property name="${prop_prefix}_sim_distortion_k_p"
+                        value="${sim_distortion_k_p['k1']} ${sim_distortion_k_p['k2']} ${sim_distortion_k_p['k3']} ${sim_distortion_k_p['p1']} ${sim_distortion_k_p['p2']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_distortion_center"
+                      value="${camera_sim_cfg.get('distortion_center', dict())}"/>
+
+      <xacro:if value="${sim_distortion_center == dict()}">
+        <xacro:property name="${prop_prefix}_sim_distortion_center"
+                        value="${default_sim_distortion_center}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_distortion_center != dict()}">
+        <xacro:property name="${prop_prefix}_sim_distortion_center"
+                        value="${sim_distortion_center['center_x_norm']} ${sim_distortion_center['center_y_norm']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_gaussian_noise"
+                      value="${camera_sim_cfg.get('gaussian_noise', dict())}"/>
+
+      <xacro:if value="${sim_gaussian_noise == dict()}">
+        <xacro:property name="${prop_prefix}_sim_gaussian_noise"
+                        value="${default_sim_gaussian_noise}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_gaussian_noise != dict()}">
+        <xacro:property name="${prop_prefix}_sim_gaussian_noise"
+                        value="${sim_gaussian_noise['mean']} ${sim_gaussian_noise['stddev']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'depth' or camera_type == 'depth_camera' or camera_type == 'rgbd' or camera_type == 'rgbd_camera'}">
+        <xacro:property name="sim_depth_clip"
+                        value="${camera_sim_cfg.get('depth_clip', dict())}"/>
+
+        <xacro:if value="${sim_depth_clip == dict()}">
+          <xacro:property name="${prop_prefix}_sim_depth_clip"
+                          value="${default_sim_depth_clip}"
+                          scope="parent"/>
+        </xacro:if>
+
+        <xacro:if value="${sim_depth_clip != dict()}">
+          <xacro:property name="${prop_prefix}_sim_depth_clip"
+                          value="${sim_depth_clip['near']} ${sim_depth_clip['far']}"
+                          scope="parent"/>
+        </xacro:if>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'segmentation' or camera_type == 'segmentation_camera'}">
+        <xacro:property name="${prop_prefix}_sim_segmentation_type"
+                        value="${camera_sim_cfg.get('segmentation_type', default_sim_segmentation_type)}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'boundingbox' or camera_type == 'boundingbox_camera'}">
+        <xacro:property name="${prop_prefix}_sim_box_type"
+                        value="${camera_sim_cfg.get('box_type', default_sim_box_type)}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${camera_type == 'thermal' or camera_type == 'thermal_camera'}">
+        <xacro:property name="sim_thermal_data"
+                        value="${camera_sim_cfg.get('thermal_data', dict())}"/>
+
+        <xacro:if value="${sim_thermal_data == dict()}">
+            <xacro:property name="${prop_prefix}_sim_thermal_data"
+                            value="${default_sim_thermal_data}"
+                            scope="parent"/>
+        </xacro:if>
+
+        <xacro:if value="${sim_thermal_data != dict()}">
+            <xacro:property name="${prop_prefix}_sim_thermal_data"
+                            value="${sim_thermal_data['min_temp']} ${sim_thermal_data['max_temp']} ${sim_thermal_data['resolution']}"
+                            scope="parent"/>
+        </xacro:if>
+      </xacro:if>
+    </xacro:if>
+  </xacro:macro>
+</robot>
