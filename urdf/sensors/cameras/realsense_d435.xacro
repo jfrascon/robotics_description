@@ -1,0 +1,533 @@
+<?xml version="1.0"?>
+
+<!--
+This is the URDF model for the Intel RealSense 435 camera.
+Base file used to create this file:
+https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/realsense2_description/urdf/_d435.urdf.xacro
+
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
+
+name (S): name of the realsense, used to name the links and joints.
+
+prefix (S): optional prefix for the names of the links and joints.
+
+parent_frame (S): name of the parent frame to which the cameras's root frame is attached.
+
+use_visual (B): if true, include visual element..
+
+use_collision (B): if true, include collision element.
+
+use_inertial (B): if true, include inertial element.
+
+use_v_mesh (B): if true, use the camera's mesh for the visual element. If false, use a box shape.
+
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is not empty, the provided color is applied to the object used in the visual element, either
+           a mesh (even if the mesh has its own color) or box shape.
+           If color is empty:
+               If a mesh is used and has its own color, the color of the mesh is displayed.
+               If a mesh is used with no color data associated or a box shape is used, a whitish default color is used
+               to display the visual element.
+
+use_c_mesh (B): if true, use the camera's mesh for the collision element. If false, use a box shape.
+
+joint_parent_fr_root_fr (S): Pose of the camera's root frame w.r.t the parent's frame.
+    joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+use_sim (B): if true, include gazebo camera plugins.
+
+use_gravity (B): if true, the camera is affected by gravity in simulation.
+
+color_cam_sim_enabled (B): if true, the color camera is included in simulation.
+
+color_cam_sim_use_gravity (B): if true, the color camera is affected by gravity in simulation.
+
+color_cam_sim_always_on (B): if true, the color camera is always on in simulation.
+
+color_cam_sim_visualize (B): if true, the color camera image is visualized in simulation.
+
+color_cam_sim_enable_metrics (B): if true, the color camera performance metrics are enabled in simulation.
+
+color_cam_sim_save (S): Enable or disable saving of camera frames.
+    color_cam_sim_save = 'enable (B) path (S)'
+    enable (B): If true, saving of camera frames is enabled.
+    path (S): The path name which will hold the frame data. If path name is relative, then directory is relative to
+              current working directory.
+
+color_cam_sim_triggered (B): If true, the camera is triggered by a topic.
+
+color_cam_sim_visible_mask (I): Visibility mask of a camera. Bitmask filter that controls which visuals this camera will
+                                render.
+                                A visual is visible if (visibility_mask & visual.visibility_flags) != 0.
+                                A mask 0xFFFFFFFF typically means 'see everything'
+
+color_cam_sim_clip (S): The near and far clip planes used in simulation. Objects closer or farther than these planes are
+                        not rendered (captured by Gazebo in the image).
+    color_cam_sim_clip = 'near (R) far (R)'
+    near (R): Near clipping distance of the view frustum.
+    far (R): Far clipping distance of the view frustum.
+
+color_cam_sim_update_rate (R): The frequency at which the sensor data is generated. If left unspecified, the sensor will
+                               generate data every cycle.
+
+color_cam_sim_image (S): The image size in pixels and format
+    color_cam_sim_image = 'width (I) height (I) format (S) anti_aliasing (I)'
+    width (I): Width of the image in pixels.
+    height (I): Height of the image in pixels.
+    format (S) = L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8 | BAYER_GRBG8 |
+                  | R_FLOAT16 | R_FLOAT32 (These last two formats are hardly used)
+        The <format> field describes the format used for the data published in the color image message
+        ${topic}/image.
+        It is also the format Gazebo uses to render the color image in the GUI when <visualize> is enabled in the
+        sensor.
+        If you choose R8G8B8 you publish an RGB image, if you choose L8 you publish a monochrome image, etc.
+        Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
+        where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
+        intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
+        <image><format> is problably limited, but they are supported if you have a specific use case.
+
+    anti_aliasing (I): Value used for anti-aliasing.
+
+color_cam_sim_lens_single_elements (S): Single element lens (Single in the sense that these element are not composed by
+                                        multiple sub-elements as in lens_intrinsics, for example).
+    color_cam_sim_lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
+    type (S): Type of the lens mapping. Supported values are: gnomonical, stereographic, equidistant, equisolid_angle,
+              orthographic, custom.
+              - gnomonical (pinhole): Standard perspective projection. Straight lines in space are projected as
+                straight lines in the image. Used in conventional cameras.
+                For gnomonical type it is recommended to specify a horizontal_fov <= 90°.
+              - stereographic: Projection that preserves angles, common in fisheye lenses. Areas are distorted, but
+                angles remain unchanged.
+              - equidistant: The radial distance in the image is proportional to the angle of incidence. Used in some
+                fisheye lenses.
+              - equisolid_angle: Projection where the area in the image is proportional to the solid angle. Used in
+                fisheye lenses for scientific applications.
+              - orthographic: Orthographic projection, without perspective. Objects retain their size regardless of
+                distance.
+              - custom: Allows defining a custom angular mapping function using the custom_function field.
+                If custom is selected, you must also define the 'lens_custom_function' parameter with the appropriate
+                mapping function and constants (c1, c2, c3, f, fun).
+    scale_to_hfov (B): If true the image will be scaled to fit horizontal FOV, otherwise it will be shown according to
+                        projection type parameters.
+    cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default.
+    env_texture_size (I): Resolution of the environment cube map used to draw the world.
+
+color_cam_sim_lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix.
+    lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+    fx (R): X focal length in pixels. A decimal part is allowed.
+    fy (R): Y focal length in pixels. A decimal part is allowed.
+    cx (R): principal point x in pixels. A decimal part is allowed.
+    cy (R): principal point y in pixels. A decimal part is allowed.
+
+The intrinsic parameters above form the camera matrix K:
+
+    K = | fx  s  cx |
+        |  0 fy  cy |
+        |  0  0   1 |
+where s is the 'lens_xy_skew' parameter.
+
+color_cam_sim_lens_xy_skew (R): Parameter in the camera intrinsic matrix that represents the tilt between the X and Y
+                                axes of the image sensor. In an ideal sensor, pixels are perfectly aligned in rows and
+                                columns, and the X and Y axes are perpendicular, so lens_xy_skew = 0.0. If the sensor is
+                                slightly deformed or the pixels are not perfectly aligned, there may be a small tilt
+                                between the axes, and s would have a nonzero value.
+                                In practice, almost all modern cameras have lens_xy_skew = 0.0, and only in special
+                                cases or defective sensors is a different value used.
+
+color_cam_sim_distortion_k_p (S): Lens distortion to be applied to camera images.
+                              See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
+    color_cam_sim_distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
+    k1 (R): The radial distortion coefficient k1 (Default: 0.0).
+    k2 (R): The radial distortion coefficient k2 (Default: 0.0).
+    k3 (R): The radial distortion coefficient k3 (Default: 0.0).
+    p1 (R): The tangential distortion coefficient p1 (Default: 0.0).
+    p2 (R): The tangential distortion coefficient p2 (Default: 0.0).
+
+If the distortion parameters k1, k2, k3 (radial) and p1, p2 (tangential) are set to zero (their default values),
+no optical distortion will be applied to the camera image. The result is an ideal image, free from radial or
+tangential deformation, as if the lens were a perfect pinhole model without imperfections. This is the standard
+setting for most simulations where realistic lens distortion is not required.
+
+color_cam_sim_distortion_center (S): The normalized coordinates of the distortion center or principal point.
+    color_cam_sim_distortion_center (S) = 'center_x_norm (R) center_y_norm (R)'
+    center_x_norm (R): The normalized x coordinate of the distortion center or principal point, in the range
+                        [0.0, 1.0].
+    center_y_norm (R): The normalized y coordinate of the distortion center or principal point, in the range
+                        [0.0, 1.0].
+
+color_cam_sim_gaussian_noise (S): The properties of the noise model that should be applied to generated images.
+    color_cam_sim_gaussian_noise = 'mean (R) stddev (R)'
+    mean (R): Mean of the Gaussian noise.
+    stddev (R): Standard deviation of the Gaussian noise.
+
+infrared camera uses the same parameters as the color camera, but prefixed with infrared_cam_
+depth camera uses the same parameters as the color camera, but prefixed with depth_cam_, with the addition of:
+depth_cam_sim_depth_clip (S): These limits are the ones used to generate the depth image.
+                              Unlike clip, these values do NOT affect visualization in the Gazebo GUI, only the depth
+                              image data.
+    depth_clip (S) = 'near (R) far (R)'
+    near (R): Near clipping plane.
+    far (R): Far clipping plane.
+-->
+
+<robot name="realsense_d435" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="realsense_d435"
+               params="name
+                       prefix:=''
+                       namespace:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=True
+                       color:='0.5 0.5 0.5 1.0'
+                       use_c_mesh:=False
+                       use_nominal_extrinsics:=False
+                       joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       use_sim:=False
+                       color_cam_sim_enabled:=True
+                       color_cam_sim_use_gravity:=True
+                       color_cam_sim_always_on:=True
+                       color_cam_sim_visualize:=False
+                       color_cam_sim_enable_metrics:=False
+                       color_cam_sim_save:='False /tmp'
+                       color_cam_sim_triggered:=False
+                       color_cam_sim_visible_mask:=4294967295
+                       color_cam_sim_clip:='0.1 100.0'
+                       color_cam_sim_update_rate
+                       color_cam_sim_image
+                       color_cam_sim_lens_single_elements
+                       color_cam_sim_lens_intrinsics:=''
+                       color_cam_sim_lens_xy_skew:=0.0
+                       color_cam_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       color_cam_sim_distortion_center:='0.5 0.5'
+                       color_cam_sim_gaussian_noise:='0.0 0.0'
+                       infrared_cam_sim_enabled:=True
+                       infrared_cam_sim_use_gravity:=True
+                       infrared_cam_sim_always_on:=True
+                       infrared_cam_sim_visualize:=False
+                       infrared_cam_sim_enable_metrics:=False
+                       infrared_cam_sim_save:='False /tmp'
+                       infrared_cam_sim_triggered:=False
+                       infrared_cam_sim_visible_mask:=4294967295
+                       infrared_cam_sim_clip:='0.1 10.0'
+                       infrared_cam_sim_update_rate
+                       infrared_cam_sim_image
+                       infrared_cam_sim_lens_single_elements
+                       infrared_cam_sim_lens_intrinsics:=''
+                       infrared_cam_sim_lens_xy_skew:=0.0
+                       infrared_cam_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       infrared_cam_sim_distortion_center:='0.5 0.5'
+                       infrared_cam_sim_gaussian_noise:='0.0 0.0'
+                       depth_cam_sim_enabled:=True
+                       depth_cam_sim_use_gravity:=True
+                       depth_cam_sim_always_on:=True
+                       depth_cam_sim_visualize:=False
+                       depth_cam_sim_enable_metrics:=False
+                       depth_cam_sim_save:='False /tmp'
+                       depth_cam_sim_triggered:=False
+                       depth_cam_sim_visible_mask:=4294967295
+                       depth_cam_sim_clip:='0.1 100.0'
+                       depth_cam_sim_depth_clip:='0.1 10.0'
+                       depth_cam_sim_update_rate
+                       depth_cam_sim_image
+                       depth_cam_sim_lens_single_elements
+                       depth_cam_sim_lens_intrinsics:=''
+                       depth_cam_sim_lens_xy_skew:=0.0
+                       depth_cam_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       depth_cam_sim_distortion_center:='0.5 0.5'
+                       depth_cam_sim_gaussian_noise:='0.0 0.0'">
+
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <!--
+    The following values are approximate, and the camera node publishing TF values with actual calibrated camera
+    extrinsic values.
+    -->
+    <xacro:property name="cam_depth_to_infra1_offset" value="0.0"/>
+    <xacro:property name="cam_depth_to_infra2_offset" value="-0.050"/>
+    <xacro:property name="cam_depth_to_color_offset"  value="0.015"/>
+
+    <!--
+    The following values model the aluminum peripherial case for the D435 camera, with the camera joint represented by
+    the actual peripherial camera tripod mount.
+    -->
+    <xacro:property name="size_x"                       value="0.02505"/>
+    <xacro:property name="size_y"                       value="0.090"/>
+    <xacro:property name="size_z"                       value="0.025"/>
+    <xacro:property name="size"                         value="${size_x} ${size_y} ${size_z}"/>
+    <!-- glass cover is 0.1 mm inwards from front aluminium plate -->
+    <xacro:property name="glass_to_front"               value="0.1e-3"/>
+    <!-- see datasheet Revision 007, Fig. 4-4 page 65 -->
+    <xacro:property name="zero_depth_to_glass"          value="4.2e-3"/>
+    <!-- convenience precomputation to avoid clutter-->
+    <xacro:property name="cam_mount_from_center_offset" value="0.0149"/>
+    <xacro:property name="mesh_x_offset"
+                    value="${cam_mount_from_center_offset - zero_depth_to_glass - glass_to_front}"/>
+
+    <!-- The following offset is relative the the physical D435 camera peripherial camera tripod mount. -->
+    <xacro:property name="cam_depth_px" value="${cam_mount_from_center_offset}"/>
+    <xacro:property name="cam_depth_py" value="0.0175"/>
+    <xacro:property name="cam_depth_pz" value="${size_z * 0.5}"/>
+
+    <!--
+    The frame of the mesh is located at its geometric center (See MeshLab), so it coincides with the frame of a box
+    shape.
+    Therefore, just one origin is needed no matter if use_<v|c>_mesh is true or false.
+    Scale is 1 1 1.
+    The mesh does not have color information, so a color is encouraged.
+    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="mesh"
+                    value="eut_robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
+    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+    <xacro:property name="origin"
+                    value="${(-size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
+
+    <!-- root frame for the camera -->
+    <link name="${prefix}${name}_bottom_screw_frame"/>
+
+    <!--
+    Definition of the joint '${prefix}${name}_joint', that joins the ${prefix}${name}_bottom_screw_frame to its
+    parent frame.
+    -->
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_bottom_screw_frame" />
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <link name="${prefix}${name}_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_mesh"  value="${mesh if use_v_mesh else ''}"/>
+        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${v_mesh}"
+                          scale="${mesh_scale}"
+                          mesh_origin="${origin}"
+                          size="${size}"
+                          shape_origin="${origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:property name="c_mesh" value="${mesh if use_c_mesh else ''}"/>
+        <xacro:collision_box mesh="${c_mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${origin}"
+                             size="${size}"
+                             shape_origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="0.072" size="${size}" origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <joint name="${prefix}${name}_link_joint" type="fixed">
+      <parent link="${prefix}${name}_bottom_screw_frame"/>
+      <child link="${prefix}${name}_link" />
+      <origin rpy="0.0 0.0 0.0" xyz="${mesh_x_offset} ${cam_depth_py} ${cam_depth_pz}"/>
+    </joint>
+
+    <!--
+    Use the nominal extrinsics between camera frames if the calibrated extrinsics aren't being published. e.g. running
+    the device in simulation
+    -->
+    <xacro:if value="${use_nominal_extrinsics}">
+      <!-- camera depth joints and links -->
+      <link name="${prefix}${name}_depth_frame"/>
+
+      <joint name="${prefix}${name}_depth_joint" type="fixed">
+        <parent link="${prefix}${name}_link"/>
+        <child link="${prefix}${name}_depth_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_depth_optical_frame"/>
+
+      <joint name="${prefix}${name}_depth_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_depth_frame" />
+        <child link="${prefix}${name}_depth_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <!-- camera left IR joints and links -->
+      <link name="${prefix}${name}_infra1_frame"/>
+
+      <joint name="${prefix}${name}_infra1_joint" type="fixed">
+        <parent link="${prefix}${name}_link" />
+        <child link="${prefix}${name}_infra1_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_infra1_offset} 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_infra1_optical_frame"/>
+
+      <joint name="${prefix}${name}_infra1_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_infra1_frame" />
+        <child link="${prefix}${name}_infra1_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <!-- camera right IR joints and links -->
+      <link name="${prefix}${name}_infra2_frame"/>
+
+      <joint name="${prefix}${name}_infra2_joint" type="fixed">
+        <parent link="${prefix}${name}_link" />
+        <child link="${prefix}${name}_infra2_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_infra2_offset} 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_infra2_optical_frame"/>
+
+      <joint name="${prefix}${name}_infra2_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_infra2_frame" />
+        <child link="${prefix}${name}_infra2_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <!-- camera color joints and links -->
+      <link name="${prefix}${name}_color_frame"/>
+
+      <joint name="${name}_color_joint" type="fixed">
+        <parent link="${prefix}${name}_link" />
+        <child link="${prefix}${name}_color_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_color_offset} 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_color_optical_frame"/>
+
+      <joint name="${prefix}${name}_color_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_color_frame" />
+        <child link="${prefix}${name}_color_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+    </xacro:if>
+
+    <xacro:if value="${use_sim}">
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
+
+      <xacro:make_namespace prop_id="camera_namespace" namespace="${namespace}" name="${name}"/>
+
+      <xacro:if value="${color_cam_sim_enabled}">
+        <xacro:plugin_camera name="${prefix}${name}_color"
+                             reference_frame="${prefix}${name}_color_frame"
+                             optical_frame="${prefix}${name}_color_optical_frame"
+                             use_gravity="${color_cam_sim_use_gravity}"
+                             always_on="${color_cam_sim_always_on}"
+                             visualize="${color_cam_sim_visualize}"
+                             enable_metrics="${color_cam_sim_enable_metrics}"
+                             save="${color_cam_sim_save}"
+                             triggered="${color_cam_sim_triggered}"
+                             trigger_topic="${camera_namespace}/color/trigger"
+                             info_topic="${camera_namespace}/color/camera_info"
+                             topic="${camera_namespace}/color/image_raw"
+                             visible_mask="${color_cam_sim_visible_mask}"
+                             clip="${color_cam_sim_clip}"
+                             update_rate="${color_cam_sim_update_rate}"
+                             image="${color_cam_sim_image}"
+                             lens_single_elements="${color_cam_sim_lens_single_elements}"
+                             lens_custom_function=""
+                             lens_intrinsics="${color_cam_sim_lens_intrinsics}"
+                             lens_projection=""
+                             lens_xy_skew="${color_cam_sim_lens_xy_skew}"
+                             distortion_k_p="${color_cam_sim_distortion_k_p}"
+                             distortion_center="${color_cam_sim_distortion_center}"
+                             gaussian_noise="${color_cam_sim_gaussian_noise}"/>
+      </xacro:if>
+
+      <xacro:if value="${infrared_cam_sim_enabled}">
+        <xacro:plugin_camera name="${prefix}${name}_infrared1"
+                             reference_frame="${prefix}${name}_infra1_frame"
+                             optical_frame="${prefix}${name}_infra1_optical_frame"
+                             use_gravity="${infrared_cam_sim_use_gravity}"
+                             always_on="${infrared_cam_sim_always_on}"
+                             visualize="${infrared_cam_sim_visualize}"
+                             enable_metrics="${infrared_cam_sim_enable_metrics}"
+                             save="${infrared_cam_sim_save}"
+                             triggered="${infrared_cam_sim_triggered}"
+                             trigger_topic="${camera_namespace}/infra1/trigger"
+                             info_topic="${camera_namespace}/infra1/camera_info"
+                             topic="${camera_namespace}/infra1/image_raw"
+                             visible_mask="${infrared_cam_sim_visible_mask}"
+                             clip="${infrared_cam_sim_clip}"
+                             update_rate="${infrared_cam_sim_update_rate}"
+                             image="${infrared_cam_sim_image}"
+                             lens_single_elements="${infrared_cam_sim_lens_single_elements}"
+                             lens_custom_function=""
+                             lens_intrinsics="${infrared_cam_sim_lens_intrinsics}"
+                             lens_projection=""
+                             lens_xy_skew="${infrared_cam_sim_lens_xy_skew}"
+                             distortion_k_p="${infrared_cam_sim_distortion_k_p}"
+                             distortion_center="${infrared_cam_sim_distortion_center}"
+                             gaussian_noise="${infrared_cam_sim_gaussian_noise}"/>
+
+        <xacro:plugin_camera name="${prefix}${name}_infrared2"
+                             reference_frame="${prefix}${name}_infra2_frame"
+                             optical_frame="${prefix}${name}_infra2_optical_frame"
+                             use_gravity="${infrared_cam_sim_use_gravity}"
+                             always_on="${infrared_cam_sim_always_on}"
+                             visualize="${infrared_cam_sim_visualize}"
+                             enable_metrics="${infrared_cam_sim_enable_metrics}"
+                             save="${infrared_cam_sim_save}"
+                             triggered="${infrared_cam_sim_triggered}"
+                             trigger_topic="${camera_namespace}/infra2/trigger"
+                             info_topic="${camera_namespace}/infra2/camera_info"
+                             topic="${camera_namespace}/infra2/image_raw"
+                             visible_mask="${infrared_cam_sim_visible_mask}"
+                             clip="${infrared_cam_sim_clip}"
+                             update_rate="${infrared_cam_sim_update_rate}"
+                             image="${infrared_cam_sim_image}"
+                             lens_single_elements="${infrared_cam_sim_lens_single_elements}"
+                             lens_custom_function=""
+                             lens_intrinsics="${infrared_cam_sim_lens_intrinsics}"
+                             lens_projection=""
+                             lens_xy_skew="${infrared_cam_sim_lens_xy_skew}"
+                             distortion_k_p="${infrared_cam_sim_distortion_k_p}"
+                             distortion_center="${infrared_cam_sim_distortion_center}"
+                             gaussian_noise="${infrared_cam_sim_gaussian_noise}"/>
+      </xacro:if>
+
+      <xacro:if value="${depth_cam_sim_enabled}">
+        <xacro:plugin_camera_depth type="depth_camera"
+                                   name="${prefix}${name}_depth"
+                                   reference_frame="${prefix}${name}_depth_frame"
+                                   optical_frame="${prefix}${name}_depth_optical_frame"
+                                   use_gravity="${depth_cam_sim_use_gravity}"
+                                   always_on="${depth_cam_sim_always_on}"
+                                   visualize="${depth_cam_sim_visualize}"
+                                   enable_metrics="${depth_cam_sim_enable_metrics}"
+                                   save="${depth_cam_sim_save}"
+                                   triggered="${depth_cam_sim_triggered}"
+                                   trigger_topic="${camera_namespace}/depth/trigger"
+                                   info_topic="${camera_namespace}/depth/camera_info"
+                                   topic="${camera_namespace}/depth/image_raw"
+                                   visible_mask="${depth_cam_sim_visible_mask}"
+                                   clip="${depth_cam_sim_clip}"
+                                   depth_clip="${depth_cam_sim_depth_clip}"
+                                   update_rate="${depth_cam_sim_update_rate}"
+                                   image="${depth_cam_sim_image}"
+                                   lens_single_elements="${depth_cam_sim_lens_single_elements}"
+                                   lens_custom_function=""
+                                   lens_intrinsics="${depth_cam_sim_lens_intrinsics}"
+                                   lens_projection=""
+                                   lens_xy_skew="${depth_cam_sim_lens_xy_skew}"
+                                   distortion_k_p="${depth_cam_sim_distortion_k_p}"
+                                   distortion_center="${depth_cam_sim_distortion_center}"
+                                   gaussian_noise="${depth_cam_sim_gaussian_noise}"/>
+      </xacro:if>
+    </xacro:if>
+
+  </xacro:macro>
+</robot>
