@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<robot name="all_cameras" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/set_props_plugin_camera_all_macro.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/realsense_d435.xacro"/>
+</robot>
