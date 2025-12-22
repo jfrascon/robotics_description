@@ -61,8 +61,8 @@ Mandatory parameters:
 - ver_res_deg has 1 value.
 - dist_span has 2 values between quotes in this order 'min_dist max_dist'
 -->
-<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="lidar_3d_ring_plugin"
+<robot name="plugin_lidar_3d_ring" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_lidar_3d_ring"
                params="sensor_name
                        reference_link
                        always_on:=True
@@ -98,10 +98,9 @@ Mandatory parameters:
     <xacro:property name="min_dist"              value="${min_max_dists[0]}"/>
     <xacro:property name="max_dist"              value="${min_max_dists[1]}"/>
 
-    <xacro:property name="gaussian_noise_list"   value="${gaussian_noise.split()}"/>
-    <xacro:property name="gaussian_noise_mean"   value="${gaussian_noise_list[0]}"/>
-    <xacro:property name="gaussian_noise_stddev" value="${gaussian_noise_list[1]}"/>
-
+    <xacro:property name="gaussian_noise_seq"    value="${gaussian_noise.split()}"/>
+    <xacro:property name="gaussian_noise_mean"   value="${gaussian_noise_seq[0]}"/>
+    <xacro:property name="gaussian_noise_stddev" value="${gaussian_noise_seq[1]}"/>
 
     <gazebo reference="${reference_link}">
       <gravity>True</gravity>

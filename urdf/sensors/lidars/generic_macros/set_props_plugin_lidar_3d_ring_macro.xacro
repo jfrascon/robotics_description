@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<robot name="set_props_plugin_lidar_3d_ring" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="set_props_plugin_lidar_3d_ring"
+               params="prop_prefix
+                       lidar_3d_sim_cfg:=dict()
+                       default_sim_always_on:=True
+                       default_sim_visualize:=False
+                       default_sim_update_rate:=10
+                       default_sim_hor_fov_deg:='-180 180'
+                       default_sim_hor_res_deg:=0.2
+                       default_sim_ver_fov_deg:='-15 15'
+                       default_sim_ver_res_deg:=2
+                       default_sim_dist_span:='0.2 150'
+                       default_sim_gaussian_noise:='0 0.01'">
+
+    <!--
+    If lidar_3d_sim_cfg does not have the field 'enabled' or if it is set to False, then set all the simulation
+    properties to disable the simulation of the 3D lidar ring.
+    -->
+    <xacro:unless value="${lidar_3d_sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_sim_enabled"        value="False"                      scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_always_on"      value="False"                      scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_visualize"      value="False"                      scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_update_rate"    value="0"                          scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_hor_fov_deg"    value="0 0"                        scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_hor_res_deg"    value="0"                          scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_ver_fov_deg"    value="0 0"                        scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_ver_res_deg"    value="0"                          scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_dist_span"      value="0 0"                        scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_gaussian_noise" value="0 0"                        scope="parent"/>
+    </xacro:unless>
+
+    <!--
+    If lidar_3d_sim_cfg has the field 'enabled' set to True, then set all the simulation properties according to the
+    values in lidar_3d_sim_cfg, or to the default values if a specific field is not found.
+    -->
+    <xacro:if value="${lidar_3d_sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_sim_enabled"
+                      value="True"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_always_on"
+                      value="${lidar_3d_sim_cfg.get('always_on', default_sim_always_on)}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_visualize"
+                      value="${lidar_3d_sim_cfg.get('visualize', default_sim_visualize)}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_update_rate"
+                      value="${lidar_3d_sim_cfg.get('update_rate', default_sim_update_rate)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_hor_fov_deg"
+                      value="${lidar_3d_sim_cfg.get('hor_fov_deg', dict())}"/>
+
+      <xacro:if value="${sim_hor_fov_deg == dict()}">
+        <xacro:property name="${prop_prefix}_sim_hor_fov_deg"
+                        value="${default_sim_hor_fov_deg}"
+                        scope="parent"/>
+      </xacro:if>
+      <xacro:if value="${sim_hor_fov_deg != dict()}">
+        <xacro:property name="${prop_prefix}_sim_hor_fov_deg"
+                        value="${sim_hor_fov_deg['min_angle']} ${sim_hor_fov_deg['max_angle']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="${prop_prefix}_sim_hor_res_deg"
+                      value="${lidar_3d_sim_cfg.get('hor_res_deg', default_sim_hor_res_deg)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_ver_fov_deg"
+                      value="${lidar_3d_sim_cfg.get('ver_fov_deg', dict())}"/>
+
+      <xacro:if value="${sim_ver_fov_deg == dict()}">
+        <xacro:property name="${prop_prefix}_sim_ver_fov_deg"
+                        value="${default_sim_ver_fov_deg}"
+                        scope="parent"/>
+      </xacro:if>
+      <xacro:if value="${sim_ver_fov_deg != dict()}">
+        <xacro:property name="${prop_prefix}_sim_ver_fov_deg"
+                        value="${sim_ver_fov_deg['min_angle']} ${sim_ver_fov_deg['max_angle']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="${prop_prefix}_sim_ver_res_deg"
+                      value="${lidar_3d_sim_cfg.get('ver_res_deg', default_sim_ver_res_deg)}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_dist_span"
+                      value="${lidar_3d_sim_cfg.get('dist_span', dict())}"/>
+
+      <xacro:if value="${sim_dist_span == dict()}">
+        <xacro:property name="${prop_prefix}_sim_dist_span"
+                        value="${default_sim_dist_span}"
+                        scope="parent"/>
+      </xacro:if>
+      <xacro:if value="${sim_dist_span != dict()}">
+        <xacro:property name="${prop_prefix}_sim_dist_span"
+                        value="${sim_dist_span['min_dist']} ${sim_dist_span['max_dist']}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:property name="sim_gaussian_noise"
+                      value="${lidar_3d_sim_cfg.get('gaussian_noise', dict())}"/>
+
+      <xacro:if value="${sim_gaussian_noise == dict()}">
+        <xacro:property name="${prop_prefix}_sim_gaussian_noise"
+                        value="${default_sim_gaussian_noise}"
+                        scope="parent"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_gaussian_noise != dict()}">
+        <xacro:property name="${prop_prefix}_sim_gaussian_noise"
+                        value="${sim_gaussian_noise['mean']} ${sim_gaussian_noise['stddev']}"
+                        scope="parent"/>
+      </xacro:if>
+    </xacro:if>
+  </xacro:macro>
+</robot>

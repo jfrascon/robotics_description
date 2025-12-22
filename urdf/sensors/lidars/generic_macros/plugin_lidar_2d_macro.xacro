@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="lidar_2d_plugin"
+<robot name="plugin_lidar_2d" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_lidar_2d"
                params="sensor_name
                        reference_link
                        always_on:=True
@@ -13,9 +13,9 @@
                        topic">
     <!--
     According to the documentation at 'http://sdformat.org/spec?ver=1.7&elem=sensor#sensor_ray'
-    The 'ray' type is equivalent to 'lidar' type.
-    It is preferred to use 'lidar' since 'ray' will be deprecated at some point.
-    The 'ray' type is maintained for legacy support.
+    The 'gpu_ray' type is equivalent to the 'gpu_lidar' type.
+    It is preferred to use the 'gpu_lidar' type since 'gpu_ray' type will be deprecated at some point.
+    The 'gpu_ray' type is maintained for legacy support.
     -->
 
     <xacro:property name="hor_min_max_angles_deg" value="${hor_fov_deg.split()}"/>
@@ -41,7 +41,8 @@
         <update_rate>${update_rate}</update_rate>
         <topic>${topic}</topic>
         <!--
-        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string '<model>::${parent_frame}::${laser_id}_link', which probably is not what you want.
+        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
+        '<model>::${parent_frame}::${laser_id}_link', which is probably what you do not want.
         -->
         <gz_frame_id>${reference_link}</gz_frame_id>
         <enable_metrics>False</enable_metrics>
