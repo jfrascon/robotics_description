@@ -1,0 +1,121 @@
+<!--
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
+
+When using the term 'base' here, it refers to the fork base, the platform where the tines are attached.
+
+name (S): name of the tine, used to name the links and joints.
+prefix (S): optional prefix for the names of the links and joints.
+parent_frame (S): name of the parent frame to which the tine frame is attached.
+use_visual (B): if true, include visual elements.
+use_collision (B): if true, include collision elements.
+use_inertial (B): if true, include inertial elements using the provided tine mass, base mass, tine size and base size.
+tine_v_mesh (S): mesh filename for the visual element of the main link, '${prefix}${name}_link'. If empty string, a box
+                 shape is used with size defined by 'tine_size'.
+                 Used only if use_visual is true.
+tine_v_mesh_scale (S): Scale of the visual mesh, if use_visual is true and tine_v_mesh is provided.
+    tine_v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
+tine_v_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place the visual mesh
+                        w.r.t the frame of the tine's link (${prefix}${name}_link).
+                        Used only if use_visual is true and tine_v_mesh is provided.
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is not empty, the provided color is applied to the object used in the visual element, either
+           a mesh (even if the mesh has its own color) or box shape.
+           If color is empty:
+               If a mesh is used and has its own color, the color of the mesh is displayed.
+               If a mesh is used with no color data associated or a box shape is used, a whitish default color is used
+               to display the visual element.
+tine_c_mesh (S): mesh filename for the collision element of the main link, '${prefix}${name}_link'. If empty string, a
+                 box shape is used with size defined by 'tine_size'. Used only if use_collision is true.
+tine_c_mesh_scale (S): Scale of the collision mesh, if use_collision is true and a tine_c_mesh is provided.
+    tine_c_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
+tine_c_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place the collision
+                        mesh w.r.t the main frame of the tine (${prefix}${name}_link).
+                        Used only if use_collision is true and a tine_c_mesh is provided.
+tine_size (S): The size of the box shape used to represent each tine.
+               Used if tine_v_mesh or tine_c_mesh are empty strings or use_inertial is true (even if meshes are used,
+               the size is used to compute the inertia).
+    tine_size (S) = 'sx (R) sy (R) sz (R)'.
+tine_shape_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place the box shape
+                       w.r.t the main frame of the tine (${prefix}${name}_link).
+                       Used if tine_v_mesh or tine_c_mesh are empty strings or use_inertial is true (even if meshes are
+                       used, the tine_shape_origin is used to compute the inertia).
+tine_mass (R): mass of each tine. Used only if use_inertial is true.
+joint_parent_fr_tine_fr (S): Pose of the tine's frame w.r.t the parent's frame.
+    joint_parent_fr_tine_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+It is important to use the proper scale for each used mesh, so that sizes match correctly:
+tine_[v|c]_mesh.size_x * scale.x = tine_size[0] (tine_size[0] is size in x)
+tine_[v|c]_mesh.size_y * scale.y = tine_size[1] (tine_size[1] is size in y)
+tine_[v|c]_mesh.size_z * scale.z = tine_size[2] (tine_size[2] is size in z)
+-->
+
+<robot name="fork_tine" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="fork_tine"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       tine_v_mesh:=''
+                       tine_v_mesh_scale:='1.0 1.0 1.0'
+                       tine_v_mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       color:=''
+                       tine_c_mesh:=''
+                       tine_c_mesh_scale:='1.0 1.0 1.0'
+                       tine_c_mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       tine_size:='0.0 0.0 0.0'
+                       tine_shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       tine_mass:=0.1
+                       joint_parent_fr_tine_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
+
+    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <link name="${prefix}${name}_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${tine_v_mesh}"
+                          scale="${tine_v_mesh_scale}"
+                          mesh_origin="${tine_v_mesh_origin}"
+                          size="${tine_size}"
+                          shape_origin="${tine_shape_origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:collision_box mesh="${tine_c_mesh}"
+                             scale="${tine_c_mesh_scale}"
+                             mesh_origin="${tine_c_mesh_origin}"
+                             size="${tine_size}"
+                             shape_origin="${tine_shape_origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${tine_mass}"
+                                 size="${tine_size}"
+                                 origin="${tine_shape_origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <xacro:property name="j" value="${joint_parent_fr_tine_fr.split()}"/>
+
+    <xacro:if value="${len(j) != 6}">
+        ${xacro.fatal("fork_tine: joint_parent_fr_tine_fr must have 6 elements: 'x y z roll pitch yaw'")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+  </xacro:macro>
+</robot>

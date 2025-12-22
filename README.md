@@ -27,7 +27,7 @@ For example, the concept of `namespace` is used across the xacro files when need
 For example, in the file `lidar_3d_ring_macro.xacro`, you can find the macro `lidar_3d_ring` with the parameter `id`, used to name the links, joints, sensors, etc., in the URDF/Xacro file. This way, you can have multiple LIDARs in the same robot, and each one will have its own unique name based on the `id` parameter.
 
 ```xml
-<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
     <xacro:macro name="lidar_3d_ring"
                  params="id
                          prefix:=''
@@ -47,7 +47,7 @@ For example, in the file `lidar_3d_ring_macro.xacro`, you can find the macro `li
 Then, in the file `robosense_helios_16p_macro.xacro`, you can find the macro `robosense_helios_16p` that uses the macro `lidar_3d_ring`:
 
 ```xml
-<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro
     name="robosense_helios_16p"
     params="id
@@ -97,7 +97,7 @@ Then when you use the macro `robosense_helios_16p` in a robot, you can give the 
                   value="${'' if namespace == '' or namespace == '/' else namespace.strip('/').replace('/', '_') + '_'}"/>
 
   <xacro:robosense_helios_16p
-    id="front_lidar"
+    id="top_lidar"
     prefix="${prefix}${id}_"
     parent_frame="${prefix}${id}_base_link"
     ...

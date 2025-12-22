@@ -1,198 +1,234 @@
 <!--
-'base_' here refers to the fork base, the platform where the tines are attached.
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
+
+When using the term 'base' here, it refers to the fork's base, the platform where the tines are attached.
+
+name (S): name of the fork, used to name the links and joints.
+prefix (S): optional prefix for the names of the links and joints.
+parent_frame (S): name of the parent frame to which the fork's root link is attached.
+use_visual (B): if true, include visual elements.
+use_collision (B): if true, include collision elements.
+use_inertial (B): if true, include inertial elements using the provided tine mass, base mass, tine size and base size.
+tine_v_mesh (S): mesh filename for the visual element of each tine's link, '${prefix}${name}_<left|right>_link'.
+                 If empty string, a box shape is used with size defined by 'tine_size'.
+                 Used only if use_visual is true.
+tine_v_mesh_scale (S): Scale of tine_v_mesh, if use_visual is true and tine_v_mesh is provided.
+    tine_v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
+tine_v_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place tine_v_mesh
+                        w.r.t the frame of the links '<left|right>_tine_link', SO THAT EACH OF THESE FRAMES END UP
+                        LOCATED AT THE CENTER OF THE TOP FACE OF EACH TINE_V_MESH.
+                        THIS PLACEMENTET IS VERY IMPORTANT, SINCE IT IS CONDITION TO POSITION THE TINES' FRAMES
+                        CORRECTLY W.R.T. THE FORK BASE'S FRAME.
+                        Used only if use_visual is true and tine_v_mesh is provided.
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is not empty, the provided color is applied to the object used in the visual element, either
+           tine_v_mesh (even if the mesh has its own color) or box shape.
+           If color is empty:
+               If a mesh is used and has its own color, the color of the mesh is displayed.
+               If a mesh is used with no color data associated or a box shape is used, a whitish default color is used
+               to display the visual element.
+tine_c_mesh (S): mesh filename for the collision element of each tine's link, '${prefix}${name}_<left|right>_link'.
+                 If empty string, a box shape is used with size defined by 'tine_size'.
+                 Used only if use_collision is true.
+tine_c_mesh_scale (S): Scale of tine_c_mesh, if use_collision is true and tine_c_mesh is provided.
+    tine_c_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
+tine_c_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place tine_c_mesh
+                        w.r.t the frame of the links '<left|right>_tine_link', SO THAT EACH OF THESE FRAMES END UP
+                        LOCATED AT THE CENTER OF THE TOP FACE OF EACH TINE_C_MESH.
+                        THIS PLACEMENTET IS VERY IMPORTANT, SINCE IT IS CONDITION TO POSITION THE TINES' FRAMES
+                        CORRECTLY W.R.T. THE FORK BASE'S FRAME.
+                        Used only if use_collision is true and tine_c_mesh is provided.
+tine_size (S): The size of the box shape used to represent each tine.
+               Used if tine_v_mesh or tine_c_mesh are empty strings or use_inertial is true (even if meshes are used,
+               the size is used to compute the inertia).
+    tine_size (S) = 'sx (R) sy (R) sz (R)'.
+tine_mass (R): mass of each tine.
+base_size (S): Size of the box shape used to represent the fork base. The fork base is always represented as a box
+               primitive.
+    base_size (S) = 'sx (R) sy (R) sz (R)'.
+base_mass (R): mass of the fork base.
+tine_separation (R): distance between the inner edges of the two tines.
+limits (S): limits for the fork prismatic joint.
+    limits (S) = 'lower_limit (R) upper_limit (R) effor_limit (R) velocity_limit (R)'.
+joint_parent_fr_root_fr (S): Pose of the fork's root frame with respect to the parent's frame.
+    joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+It is important to use the proper scale for each used mesh, so that sizes match correctly:
+tine_[v|c]_mesh.size_x * scale.x = tine_size[0] (tine_size[0] is size in x)
+tine_[v|c]_mesh.size_y * scale.y = tine_size[1] (tine_size[1] is size in y)
+tine_[v|c]_mesh.size_z * scale.z = tine_size[2] (tine_size[2] is size in z)
 -->
 
-<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="fork"
                params="name
-                       prefix
+                       prefix:=''
                        parent_frame
-                       use_inertia
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       tine_v_mesh:=''
+                       tine_v_mesh_scale:='1.0 1.0 1.0'
+                       tine_v_mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       color:=''
+                       tine_c_mesh:=''
+                       tine_c_mesh_scale:='1.0 1.0 1.0'
+                       tine_c_mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       tine_size:='0.0 0.0 0.0'
                        tine_mass
-                       tine_size
-                       base_mass
                        base_size
+                       base_mass
                        tine_separation
-                       lower_limit
-                       upper_limit
-                       brake_distance
-                       velocity_limit
-                       velocity_limit_full_effort
-                       acceleration
-                       max_load
-                       effort_tolerance:=0.1
-                       dynamics_damping:=50
-                       tine_mesh_visual:=''
-                       tine_mesh_visual_has_color:=False
-                       tine_mesh_collision:=''
-                       tine_scale:=''
-                       color:='1 1 1 1'
+                       limits:='0.0 0.0 0.0 0.0'
                        joint_parent_fr_root_fr">
 
     <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find eut_robotics_description)/urdf/extras/fork_tine_macro.xacro"/>
 
-    <xacro:property name="tine_sz_lst" value="${tine_size.split()}"/>
-    <xacro:property name="tine_size_x" value="${tine_sz_lst[0]}"/>
-    <xacro:property name="tine_size_y" value="${tine_sz_lst[1]}"/>
-    <xacro:property name="tine_size_z" value="${tine_sz_lst[2]}"/>
+    <xacro:property name="tine_size_seq" value="${tine_size.split()}"/>
 
-    <xacro:property name="base_sz_lst" value="${base_size.split()}"/>
-    <xacro:property name="base_size_x" value="${base_sz_lst[0]}"/>
-    <xacro:property name="base_size_y" value="${base_sz_lst[1]}"/>
-    <xacro:property name="base_size_z" value="${base_sz_lst[2]}"/>
+    <xacro:if value="${len(tine_size_seq) != 3}">
+      ${xacro.fatal("fork macro: invalid tine_size. Expected: 'sx sy sz'")}
+    </xacro:if>
+
+    <!-- Convert them from str into float, in case any value intervenes in calculations later on. -->
+    <xacro:property name="tine_size_x"   value="${float(tine_size_seq[0])}"/>
+    <xacro:property name="tine_size_y"   value="${float(tine_size_seq[1])}"/>
+    <xacro:property name="tine_size_z"   value="${float(tine_size_seq[2])}"/>
+
+    <xacro:property name="base_size_seq" value="${base_size.split()}"/>
+
+    <xacro:if value="${len(base_size_seq) != 3}">
+      ${xacro.fatal("fork macro: invalid tine_size. Expected: 'sx sy sz'")}
+    </xacro:if>
+
+    <!-- Convert them from str into float, in case any value intervenes in calculations later on. -->
+    <xacro:property name="base_size_x"   value="${float(base_size_seq[0])}"/>
+    <xacro:property name="base_size_y"   value="${float(base_size_seq[1])}"/>
+    <xacro:property name="base_size_z"   value="${float(base_size_seq[2])}"/>
 
     <!--
     Create tines and fork base.
     -->
 
     <!--
-    Definition of the links:
-    - ${prefix}${name}_left_tine_link
-    - ${prefix}${name}_right_tine_link
-    - ${prefix}${name}_root_link
-
-    The link for each tine is located at the center of the top face.
-    The link for the base is located in the front face, in the middle of the y-axis, at a height of 'tine_size_z'
-    over the bottom face.
-    This way the links of the tines and the fork base are at the same height.
+    The frame of the base is located at its front face, in the middle of the y-axis, at a height of 'tine_size_z' over
+    the bottom face.
+    This way the frame of each tine and the frame of the base are at the same height.
     -->
 
-    <xacro:link_r
-      name="${name}_left_tine"
-      prefix="${prefix}"
-      use_visual="True"
-      use_collision="True"
-      use_inertia="${use_inertia}"
-      mass="${tine_mass}"
-      size="${tine_size}"
-      mesh_visual="${tine_mesh_visual}"
-      mesh_visual_has_color="${tine_mesh_visual_has_color}"
-      mesh_collision="${tine_mesh_collision}"
-      scale="${tine_scale}"
-      color="${color}"
-      vci_pose="0 0 ${-tine_size_z * 0.5} 0 0 0"/>
+    <link name="${prefix}${name}_root_link">
+      <xacro:property name="base_shape_origin"
+                      value="${-base_size_x * 0.5} 0.0 ${(base_size_z * 0.5) - tine_size_z} 0.0 0.0 0.0"/>
 
-    <xacro:link_r
-      name="${name}_right_tine"
-      prefix="${prefix}"
-      use_visual="True"
-      use_collision="True"
-      use_inertia="${use_inertia}"
-      mass="${tine_mass}"
-      size="${tine_size}"
-      mesh_visual="${tine_mesh_visual}"
-      mesh_visual_has_color="${tine_mesh_visual_has_color}"
-      mesh_collision="${tine_mesh_collision}"
-      scale="${tine_scale}"
-      color="${color}"
-      vci_pose="0 0 ${-tine_size_z * 0.5} 0 0 0"/>
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box size="${base_size}"
+                          shape_origin="${base_shape_origin}"
+                          color="${v_color}"/>
+      </xacro:if>
 
-    <!--
-    The ${prefix}${name}_root_link is located in the fork base, at the front face, in the middle of the y-axis, at a
-    height of 'tine_size_z' over the bottom face.
-    This way the links of the tines and the fork base are at the same height.
-    -->
-    <xacro:link_r
-      name="${name}_root"
-      prefix="${prefix}"
-      use_visual="True"
-      use_collision="True"
-      use_inertia="${use_inertia}"
-      mass="${base_mass}"
-      size="${base_size}"
-      mesh_visual=""
-      mesh_visual_has_color="False"
-      mesh_collision=""
-      scale=""
-      color="${color}"
-      vci_pose="${-base_size_x * 0.5} 0 ${(base_size_z * 0.5) - tine_size_z} 0 0 0"/>
+      <xacro:if value="${use_collision}">
+        <xacro:collision_box size="${base_size}"
+                             shape_origin="${base_shape_origin}"/>
+      </xacro:if>
 
-    <!--
-    Links are separated from their inner edges by a distance of 'tine_separation' in the y-axis.
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${base_mass}"
+                                 size="${base_size}"
+                                 origin="${base_shape_origin}"/>
+      </xacro:if>
 
-    Definitions of the joints:
-    - ${prefix}${name}_left_tine_joint  (fixed)
-    - ${prefix}${name}_right_tine_joint (fixed)
-    - ${prefix}${name}_root_joint  (prismatic)
-    -->
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
 
-    <joint name="${prefix}${name}_left_tine_joint" type="fixed">
-      <parent link="${prefix}${name}_root_link"/>
-      <child link="${prefix}${name}_left_tine_link"/>
-      <origin rpy="0 0 0"
-              xyz="${(tine_size_x * 0.5) - base_size_x} ${(tine_separation * 0.5) + (tine_size_y * 0.5)} 0"/>
-    </joint>
+    <xacro:property name="limits_seq" value="${limits.split()}"/>
 
-    <joint name="${prefix}${name}_right_tine_joint" type="fixed">
-      <parent link="${prefix}${name}_root_link"/>
-      <child link="${prefix}${name}_right_tine_link"/>
-      <origin rpy="0 0 0"
-              xyz="${(tine_size_x * 0.5) - base_size_x} ${-(tine_separation * 0.5) - (tine_size_y * 0.5)} 0"/>
-    </joint>
+    <xacro:if value="${len(limits_seq) != 4}">
+      ${xacro.fatal("fork macro: invalid limits. Expected: 'lower_limit upper_limit effort_limit velocity_limit'")}
+    </xacro:if>
 
-    <xacro:property name="soft_lower_limit" value="${lower_limit + brake_distance}"/>
-    <xacro:property name="soft_upper_limit" value="${upper_limit - brake_distance}"/>
+    <xacro:property name="lower_limit"    value="${limits_seq[0]}"/>
+    <xacro:property name="upper_limit"    value="${limits_seq[1]}"/>
+    <xacro:property name="effort_limit"   value="${limits_seq[2]}"/>
+    <xacro:property name="velocity_limit" value="${limits_seq[3]}"/>
 
-    <!--
-    The effort limit is computed for a mass (m) of '${max_load}' Kg (to lift) + two tines plus + fork base.
-    The total required force includes:
-      - The gravitational force, f_gravity = m * g = m * 9.81 m/s^2 N.
-      - An additional smooth acceleration to ensure responsive upward motion.
-      - And a x% safety margin to account for friction, inertia, and transient loads.
-    The resulting formula is, f_total = m * (g + a) * (1 + x/100).
-    -->
-    <xacro:property name="max_mass_to_lift"  value="${max_load + (2 * tine_mass) + base_mass}"/>
-    <xacro:property name="effort_limit"
-                    value="${round(max_mass_to_lift * (9.81 + acceleration) * (1 + effort_tolerance))}"/>
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
 
-    <!--
-      k_position:
-      Constant that limits the joint velocity based on proximity to the hard limits.
-      'brake_distance' defines the braking distance from each hard limit, the point at which the joint starts to
-      reduce speed as it approaches the limit.
-
-      - If the joint is farther than 'brake_distance' meters from a hard limit:
-        v_pos_limit = velocity_limit  (no position-based reduction applied)
-      - If the joint is within 'brake_distance' meters of a hard limit:
-        v_pos_limit = k_position * distance_to_limit
-        where: k_position = velocity_limit / brake_distance
-
-      k_velocity:
-      Constant that limits the joint velocity based on measured effort, regardless of position.
-      Effort-based limit is always calculated:
-      v_effort_limit = effort_measured / k_velocity
-
-      Design criterion used here:
-      We want the joint speed to be capped at 'velocity_limit_full_effort' when the measured effort reaches
-      'effort_limit'.
-      Therefore:
-      k_velocity = effort_limit / velocity_limit_full_effort
-
-      Final allowed velocity:
-      - Outside braking zone:
-        v_final = min(velocity_limit, v_effort_limit)
-      - Inside braking zone:
-        v_final = min(velocity_limit, v_pos_limit, v_effort_limit)
-    -->
-    <xacro:property name="k_position" value="${velocity_limit/brake_distance}"/>
-    <xacro:property name="k_velocity" value="${effort_limit/velocity_limit_full_effort}"/>
-
-    <xacro:property name="j_root" value="${joint_parent_fr_root_fr.split()}"/>
+    <xacro:if value="${len(j) != 6}">
+      ${xacro.fatal("fork macro: invalid joint_parent_fr_root_fr. Expected: 'x y z roll pitch yaw'")}
+    </xacro:if>
 
     <joint name="${prefix}${name}_root_joint" type="prismatic">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_root_link"/>
-      <origin rpy="${j_root[3]} ${j_root[4]} ${j_root[5]}" xyz="${j_root[0]} ${j_root[1]} ${j_root[2]}"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
       <axis xyz="0 0 1"/>
       <limit lower="${lower_limit}"
              upper="${upper_limit}"
              effort="${effort_limit}"
              velocity="${velocity_limit}"/>
-      <safety_controller soft_lower_limit="${soft_lower_limit}"
-                         soft_upper_limit="${soft_upper_limit}"
-                         k_position="${k_position}"
-                         k_velocity="${k_velocity}"/>
-      <dynamics damping="${dynamics_damping}"/>
     </joint>
+
+
+    <!--
+    IMPORTANT: THE ELEMENTS 'tine_v_mesh_origin', 'tine_c_mesh_origin' MUST BE SET SO THAT THE FRAME FOR EACH TINE MUST
+    END UP LOCATED AT THE CENTER OF THE TOP FACE OF EACH MESH, IN CASE A MESH IS USED FOR THE VISUAL OR COLLISION
+    ELEMENTS.
+    THIS CONDITION MUST BE MET IN ORDER TO POSITION THE TINES' FRAME CORRECTLY W.R.T. THE FORK BASE'S FRAME.
+
+    The value of 'tine_shape_origin' MUST ALSO BE SET SO THAT THE FRAME FOR EACH TINE MUST  END UP LOCATED AT THE CENTER
+    OF THE TOP FACE OF EACH BOX SHAPE, IN CASE A BOX SHAPE IS USED FOR THE VISUAL OR COLLISION ELEMENTS.
+    HOWEVER, UNLIKE THE CASE OF MESHES, WHERE THE USER MUST SET THE ORIGIN PROPERLY, FOR BOX SHAPES IT IS EASIER TO
+    COMPUTE THE ORIGIN, SINCE THE FRAME OF A BOX SHAPE IS ALWAYS LOCATED AT ITS GEOMETRIC CENTER.
+    THEREFORE, TO LOCATE THE FRAME AT THE CENTER OF THE TOP FACE OF A BOX SHAPE, THE FOLLOWING ORIGIN MUST BE USED:
+    '0.0 0.0 (-0.5 * tine_size_z) 0.0 0.0 0.0'
+    WHERE size_z IS THE SIZE OF THE BOX SHAPE ALONG THE Z AXIS.
+    THIS CONDITION MUST BE MET IN ORDER TO POSITION THE TINES' FRAME CORRECTLY W.R.T. THE FORK BASE'S FRAME.
+    -->
+    <xacro:property name="tine_shape_origin" value="0.0 0.0 ${-0.5 * tine_size_z} 0.0 0.0 0.0"/>
+
+    <xacro:fork_tine name="${name}_left_tine"
+                     prefix="${prefix}"
+                     parent_frame="${prefix}${name}_root_link"
+                     use_visual="${use_visual}"
+                     use_collision="${use_collision}"
+                     use_inertial="${use_inertial}"
+                     tine_v_mesh="${tine_v_mesh}"
+                     tine_v_mesh_scale="${tine_v_mesh_scale}"
+                     tine_v_mesh_origin="${tine_v_mesh_origin}"
+                     color="${color}"
+                     tine_c_mesh="${tine_c_mesh}"
+                     tine_c_mesh_scale="${tine_c_mesh_scale}"
+                     tine_c_mesh_origin="${tine_c_mesh_origin}"
+                     tine_size="${tine_size}"
+                     tine_shape_origin="${tine_shape_origin}"
+                     tine_mass="${tine_mass}"
+                     joint_parent_fr_tine_fr="${(tine_size_x * 0.5) - base_size_x} ${(tine_separation * 0.5) + (tine_size_y * 0.5)} 0.0 0.0 0.0 0.0"/>
+
+    <xacro:fork_tine name="${name}_right_tine"
+                     prefix="${prefix}"
+                     parent_frame="${prefix}${name}_root_link"
+                     use_visual="${use_visual}"
+                     use_collision="${use_collision}"
+                     use_inertial="${use_inertial}"
+                     tine_v_mesh="${tine_v_mesh}"
+                     tine_v_mesh_scale="${tine_v_mesh_scale}"
+                     tine_v_mesh_origin="${tine_v_mesh_origin}"
+                     color="${color}"
+                     tine_c_mesh="${tine_c_mesh}"
+                     tine_c_mesh_scale="${tine_c_mesh_scale}"
+                     tine_c_mesh_origin="${tine_c_mesh_origin}"
+                     tine_size="${tine_size}"
+                     tine_shape_origin="${tine_shape_origin}"
+                     tine_mass="${tine_mass}"
+                     joint_parent_fr_tine_fr="${(tine_size_x * 0.5) - base_size_x} ${-(tine_separation * 0.5) - (tine_size_y * 0.5)} 0.0 0.0 0.0 0.0"/>
   </xacro:macro>
 </robot>
