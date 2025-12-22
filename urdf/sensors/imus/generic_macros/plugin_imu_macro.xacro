@@ -65,112 +65,72 @@ TO USE IMU PLUGIN DO NOT FORGET TO ADD THE FOLLOWING BLOCK TO THE SDF WORLD FILE
 Reference: https://gazebosim.org/docs/harmonic/sensors/
 -->
 
-<robot xmlns:xacro="http://ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="imu_plugin"
+<robot name="plugin_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_imu"
                params="sensor_name
                        reference_link
-                       topic
+                       use_gravity:=True
                        always_on:=True
-                       update_rate
-                       ang_vel_gaussian_noise:='0 0 0 0 0 0'
-                       ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
+                       update_rate:=100
+                       ang_vel_gaussian_noise:='0 0.0002 0 0.0002 0 0.0002'
+                       ang_vel_gaussian_noise_bias:='0.0000075 0.0000008 0.0000075 0.0000008 0.0000075 0.0000008'
                        ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
-                       lin_acc_gaussian_noise:='0 0 0 0 0 0'
-                       lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
+                       lin_acc_gaussian_noise:='0 0.017 0 0.017 0 0.017'
+                       lin_acc_gaussian_noise_bias:='0.1 0.001 0.1 0.001 0.1 0.001'
                        lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
-                       use_orientation:=True">
+                       use_orientation:=True
+                       topic">
 
     <!-- Gaussian noise for angular velocity -->
 
-    <xacro:property name="ang_vel_gaussian_noise_list"
-                    value="${ang_vel_gaussian_noise.split()}"/>
-
-    <xacro:property name="wx_gaussian_noise"
-                    value="${ang_vel_gaussian_noise_list[:2]}"/>
-
-    <xacro:property name="wy_gaussian_noise"
-                    value="${ang_vel_gaussian_noise_list[2:4]}"/>
-
-    <xacro:property name="wz_gaussian_noise"
-                    value="${ang_vel_gaussian_noise_list[4:]}"/>
+    <xacro:property name="ang_vel_gaussian_noise_seq" value="${ang_vel_gaussian_noise.split()}"/>
+    <xacro:property name="wx_gaussian_noise"          value="${ang_vel_gaussian_noise_seq[0:2]}"/>
+    <xacro:property name="wy_gaussian_noise"          value="${ang_vel_gaussian_noise_seq[2:4]}"/>
+    <xacro:property name="wz_gaussian_noise"          value="${ang_vel_gaussian_noise_seq[4:]}"/>
 
     <!-- Gaussian noise bias for angular velocity -->
 
-    <xacro:property name="ang_vel_gaussian_noise_bias_list"
-                    value="${ang_vel_gaussian_noise_bias.split()}"/>
-
-    <xacro:property name="wx_gaussian_noise_bias"
-                    value="${ang_vel_gaussian_noise_bias_list[:2]}"/>
-
-    <xacro:property name="wy_gaussian_noise_bias"
-                    value="${ang_vel_gaussian_noise_bias_list[2:4]}"/>
-
-    <xacro:property name="wz_gaussian_noise_bias"
-                    value="${ang_vel_gaussian_noise_bias_list[4:]}"/>
+    <xacro:property name="ang_vel_gaussian_noise_bias_seq" value="${ang_vel_gaussian_noise_bias.split()}"/>
+    <xacro:property name="wx_gaussian_noise_bias"          value="${ang_vel_gaussian_noise_bias_seq[0:2]}"/>
+    <xacro:property name="wy_gaussian_noise_bias"          value="${ang_vel_gaussian_noise_bias_seq[2:4]}"/>
+    <xacro:property name="wz_gaussian_noise_bias"          value="${ang_vel_gaussian_noise_bias_seq[4:]}"/>
 
     <!-- Gaussian noise dynamic bias for angular velocity -->
 
-    <xacro:property name="ang_vel_gaussian_noise_dynamic_bias_list"
+    <xacro:property name="ang_vel_gaussian_noise_dynamic_bias_seq"
                     value="${ang_vel_gaussian_noise_dynamic_bias.split()}"/>
-
-    <xacro:property name="wx_gaussian_noise_dynamic_bias"
-                    value="${ang_vel_gaussian_noise_dynamic_bias_list[:2]}"/>
-
-    <xacro:property name="wy_gaussian_noise_dynamic_bias"
-                    value="${ang_vel_gaussian_noise_dynamic_bias_list[2:4]}"/>
-
-    <xacro:property name="wz_gaussian_noise_dynamic_bias"
-                    value="${ang_vel_gaussian_noise_dynamic_bias_list[4:]}"/>
+    <xacro:property name="wx_gaussian_noise_dynamic_bias"  value="${ang_vel_gaussian_noise_dynamic_bias_seq[:2]}"/>
+    <xacro:property name="wy_gaussian_noise_dynamic_bias"  value="${ang_vel_gaussian_noise_dynamic_bias_seq[2:4]}"/>
+    <xacro:property name="wz_gaussian_noise_dynamic_bias"  value="${ang_vel_gaussian_noise_dynamic_bias_seq[4:]}"/>
 
     <!-- Gaussian noise for linear acceleration -->
 
-    <xacro:property name="lin_acc_gaussian_noise_list"
-                    value="${lin_acc_gaussian_noise.split()}"/>
-
-    <xacro:property name="accx_gaussian_noise"
-                    value="${lin_acc_gaussian_noise_list[:2]}"/>
-
-    <xacro:property name="accy_gaussian_noise"
-                    value="${lin_acc_gaussian_noise_list[2:4]}"/>
-
-    <xacro:property name="accz_gaussian_noise"
-                    value="${lin_acc_gaussian_noise_list[4:]}"/>
+    <xacro:property name="lin_acc_gaussian_noise_seq" value="${lin_acc_gaussian_noise.split()}"/>
+    <xacro:property name="accx_gaussian_noise"        value="${lin_acc_gaussian_noise_seq[:2]}"/>
+    <xacro:property name="accy_gaussian_noise"        value="${lin_acc_gaussian_noise_seq[2:4]}"/>
+    <xacro:property name="accz_gaussian_noise"        value="${lin_acc_gaussian_noise_seq[4:]}"/>
 
     <!-- Gaussian noise bias for linear acceleration -->
 
-    <xacro:property name="lin_acc_gaussian_noise_bias_list"
-                    value="${lin_acc_gaussian_noise_bias.split()}"/>
-
-    <xacro:property name="accx_gaussian_noise_bias"
-                    value="${lin_acc_gaussian_noise_bias_list[:2]}"/>
-
-    <xacro:property name="accy_gaussian_noise_bias"
-                    value="${lin_acc_gaussian_noise_bias_list[2:4]}"/>
-
-    <xacro:property name="accz_gaussian_noise_bias"
-                    value="${lin_acc_gaussian_noise_bias_list[4:]}"/>
-
+    <xacro:property name="lin_acc_gaussian_noise_bias_seq" value="${lin_acc_gaussian_noise_bias.split()}"/>
+    <xacro:property name="accx_gaussian_noise_bias"        value="${lin_acc_gaussian_noise_bias_seq[:2]}"/>
+    <xacro:property name="accy_gaussian_noise_bias"        value="${lin_acc_gaussian_noise_bias_seq[2:4]}"/>
+    <xacro:property name="accz_gaussian_noise_bias"        value="${lin_acc_gaussian_noise_bias_seq[4:]}"/>
 
     <!-- Gaussian noise dynamic_bias for linear acceleration -->
 
-    <xacro:property name="lin_acc_gaussian_noise_dynamic_bias_list"
+    <xacro:property name="lin_acc_gaussian_noise_dynamic_bias_seq"
                     value="${lin_acc_gaussian_noise_dynamic_bias.split()}"/>
-
-    <xacro:property name="accx_gaussian_noise_dynamic_bias"
-                    value="${lin_acc_gaussian_noise_dynamic_bias_list[:2]}"/>
-
-    <xacro:property name="accy_gaussian_noise_dynamic_bias"
-                    value="${lin_acc_gaussian_noise_dynamic_bias_list[2:4]}"/>
-
-    <xacro:property name="accz_gaussian_noise_dynamic_bias"
-                    value="${lin_acc_gaussian_noise_dynamic_bias_list[4:]}"/>
+    <xacro:property name="accx_gaussian_noise_dynamic_bias" value="${lin_acc_gaussian_noise_dynamic_bias_seq[:2]}"/>
+    <xacro:property name="accy_gaussian_noise_dynamic_bias" value="${lin_acc_gaussian_noise_dynamic_bias_seq[2:4]}"/>
+    <xacro:property name="accz_gaussian_noise_dynamic_bias" value="${lin_acc_gaussian_noise_dynamic_bias_seq[4:]}"/>
 
     <gazebo reference="${reference_link}">
-      <gravity>True</gravity>
+      <gravity>${use_gravity}</gravity>
       <sensor type="imu" name="${sensor_name}">
+        <topic>${topic}</topic>
         <always_on>${always_on}</always_on>
         <update_rate>${update_rate}</update_rate>
-        <topic>${topic}</topic>
         <!--
         If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the Imu message
         the string '<model>::${parent_frame}::${id}_link', which probably is not what you want.
