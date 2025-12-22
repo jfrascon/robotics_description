@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot name="make_namespace" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="make_namespace" params="prop_id namespace name">
+
+    <xacro:if value="${name == ''}">
+        ${xacro.fatal("The argument 'name' cannot be empty")}
+    </xacro:if>
+
+    <xacro:property name="${prop_id}"
+                    value="${(namespace + name)
+                           if namespace in ('', '/')
+                           else (namespace.rstrip('/') + '/' + name)}"
+                    scope="parent"/>
+  </xacro:macro>
+</robot>

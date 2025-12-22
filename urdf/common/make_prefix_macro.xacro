@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot name="make_prefix" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="make_prefix" params="prop_id name">
+
+    <xacro:if value="${name == ''}">
+        ${xacro.fatal("The argument 'name' cannot be empty")}
+    </xacro:if>
+
+    <xacro:property name="${prop_id}" value="${name + '_'}" scope="parent"/>
+  </xacro:macro>
+</robot>
