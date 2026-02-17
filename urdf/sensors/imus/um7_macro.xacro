@@ -66,7 +66,7 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
                        sim_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
                        sim_use_orientation:=True">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <xacro:property name="mass"   value="0.0110"/>
 
@@ -89,7 +89,7 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
     The mesh has its own color, so no color is needed.
     To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
-    <xacro:property name="mesh"       value="eut_robotics_description/meshes/sensors/imus/um7/mesh.dae"/>
+    <xacro:property name="mesh"       value="robotics_description/meshes/sensors/imus/um7/mesh.dae"/>
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
     <!--
     Move the visual element half length up in z to place the root frame at the center of the bottom face of the imu.
@@ -148,7 +148,7 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
     </joint>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
 
       <xacro:make_namespace prop_id="imu_namespace" namespace="${namespace}" name="${name}"/>
 

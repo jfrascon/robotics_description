@@ -6,14 +6,14 @@ I means integer
 S means string
 B means boolean
 
-Note: In some expressions used in <xacro:if> tags you will observer the symgol '&lt;' instead of '<'.
+Note: In some expressions used in <xacro:if> tags, the symbol '&lt;' appears instead of '<'.
       This is because the character '<' is reserved in XML files. Therefore, to use it inside an attribute value, it
       must be escaped as '&lt;'.
 -->
 
 <robot name="visual_collision" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
-  <xacro:include filename="$(find eut_robotics_description)/urdf/common/set_basic_geometry_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/common/set_basic_geometry_macro.xacro"/>
 
   <!--
   Macro for visual element with box shape.

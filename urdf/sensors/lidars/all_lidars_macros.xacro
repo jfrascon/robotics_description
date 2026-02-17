@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <robot name="all_lidars" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_2d_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_3d_ring_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/robosense_airy_macro.xacro"/>
-  <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/robosense_helios_16p_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_2d_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_3d_ring_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_airy_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_helios_16p_macro.xacro"/>
 </robot>

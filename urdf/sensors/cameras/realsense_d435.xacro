@@ -243,7 +243,7 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                        depth_cam_sim_gaussian_noise:='0.0 0.0'">
 
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
     The following values are approximate, and the camera node publishing TF values with actual calibrated camera
@@ -284,7 +284,7 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
     To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
     <xacro:property name="mesh"
-                    value="eut_robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
+                    value="robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
     <xacro:property name="origin"
                     value="${(-size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
@@ -415,8 +415,8 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
     </xacro:if>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
 
       <xacro:make_namespace prop_id="camera_namespace" namespace="${namespace}" name="${name}"/>
 

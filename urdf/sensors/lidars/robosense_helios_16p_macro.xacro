@@ -25,7 +25,7 @@
                        sim_dist_span
                        sim_gaussian_noise:='0 0'">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <xacro:property name="mass"   value="0.99"/>
 
@@ -45,7 +45,7 @@
     To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
     <xacro:property name="mesh"
-                    value="eut_robotics_description/meshes/sensors/lidars/robosense_helios_16p/mesh.stl"/>
+                    value="robotics_description/meshes/sensors/lidars/robosense_helios_16p/mesh.stl"/>
 
     <!--
     The mesh represents a cylinder with its symmetry axis along the z-axis.
@@ -55,7 +55,7 @@
     To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
     <xacro:property name="low_res_mesh"
-                    value="eut_robotics_description/meshes/sensors/lidars/robosense_helios_16p/mesh_low_res.dae"/>
+                    value="robotics_description/meshes/sensors/lidars/robosense_helios_16p/mesh_low_res.dae"/>
 
     <!-- Scale for both meshes, standard mesh and low resolition mesh -->
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
@@ -128,7 +128,7 @@
     </joint>
 
     <xacro:if value="${use_sim}">
-      <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
       <!--
       The behaviour of the Gazebo Sim plugin for a 3D ring LiDAR is to publish two topics:
       - A topic with the name provided in the parameter 'topic', with message type LaserScan (2D laser scan).

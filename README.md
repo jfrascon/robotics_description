@@ -1,30 +1,30 @@
-# eut_robotics_description
+# robotics_description
 
-The goal of this package is to provide a common place where we can store the URDF/Xacro files of the different robots we use in EUT Robotics.
-This way we can reuse those models in different projects in an simple way.
+The goal of this package is to provide a common place to store URDF/Xacro files for different robots across projects.
+This way, those models can be reused in different projects in a simple way.
 
-The organization of the package is simple, there is a **urdf** folder where you can find folders for different components of the robots, like **bases**, **imus**, **lidars**, **wheels** and **robots**.
-There is another folder called **meshes** that contains folders matching the components in the **urdf** folder, where you can find the 3D meshes of the components.
-It is very likely that over time we will add more folders to the **urdf** and **meshes** folders, so you can find more components in the future.
+The organization of the package is simple, with a **urdf** folder containing subfolders for different robot components, like **bases**, **imus**, **lidars**, **wheels** and **robots**.
+There is another folder called **meshes** with matching component folders from **urdf**, where the 3D meshes are stored.
+Over time, more folders will likely be added to **urdf** and **meshes**, so additional components can be included in the future.
 
-Regarding the xacro files under the **urdf** folder, the approach here is to reuse as much a possible these description files. For example, you will find the macro `lidar_3d_ring` defined in the file `lidar_3d_ring_macro.xacro`, that represents the 3D LIDAR with a ring of beams, and can be used to create different types of LIDARs by changing the number of beams and their angles. Internally, the macro `lidar_3d_ring` uses the macro `lidar_3d_ring_plugin`, defined in the file `lidar_3d_ring_plugin_macro.xacro`, which is a plugin for Gazebo. The macro `lidar_2d`, defined in the file `lidar_2d_macro.xacro`, is just an instatation of the macro `lidar_3d_ring`, restricting the number of beams to 1, at 0 degrees, so it can be used as a 2D LIDAR.
+Regarding the xacro files under the **urdf** folder, the approach here is to reuse these description files as much as possible. For example, the macro `lidar_3d_ring`, defined in `lidar_3d_ring_macro.xacro`, represents a 3D LIDAR with a ring of beams and can be used to create different LIDAR types by changing beam count and angles. Internally, `lidar_3d_ring` uses `lidar_3d_ring_plugin`, defined in `lidar_3d_ring_plugin_macro.xacro`, which is a Gazebo plugin. The macro `lidar_2d`, defined in `lidar_2d_macro.xacro`, is an instantiation of `lidar_3d_ring` with a single beam at 0 degrees, so it can be used as a 2D LIDAR.
 The macro `robosense_helios_16p` substitutes some of the parameters of the macro `lidar_3d_ring`, like `mass`, `dimensions`, etc., to create a specific LIDAR model, the **Robosense Helios 16P**.
 Other parameters in the macro `robosense_helios_16p` are left to the user to set, like the position of the `root_link`, used to attach the LIDAR to the robot, the number of horizontal beams, etc.
 
-Finally, specific robots are defined in the **robots** folder, where you can find the URDF/Xacro files for the complete robots, including the mobile base, arms, sensors, etc.
+Finally, specific robots are defined in the **robots** folder, where URDF/Xacro files for complete robots are stored, including the mobile base, arms, sensors, etc.
 For example, the macro `mecanum_rectangular_forklift`, defined in the file `mecanum_rectangular_forklift_macro.xacro` represents a generic forklift that uses a rectangular base, with four mecanum wheels, two at front and two at back, and a fork that can be moved up and down. No sensors are included in this macro, so it can be used as a base for different types of forklifts. Then, the robot `forlift_artisteril`, which is **NOT A MACRO** but a complete robot, defined in the file `forlift_artisteril.xacro`, is an instantiation of the macro `mecanum_rectangular_forklift`, using the proper values for the parameters, like the position of the wheels, the dimensions of the fork, etc. This particular model of a robot can define its own sensors, like a 2D LIDAR, a 3D LIDAR, a camera, etc., and it can be used in different projects, if needed.
 
-At *Eurecat*, we do not manufacture our own robots, but we customize existing ones, or retrofit regular vehicles to create robots, and we can treat all these robots like *our products*, the same way a manufacture would do with its own products. We give them a name, a version, and we can use them in different projects, if needed, like a product catalog. This is the reason why we have the **robots** folder, where you can find the URDF/Xacro files for the complete robots.
-For example, we could have files called `husky_agro_trials.xacro` or `vogui_agro_trials.xacro`, defining especifics configurations for the Husky and Vogui robots, respectively, to be used in the trials for Agro projects, so we could reuse those configurations for specific purposes.
+In many workflows, robots are not manufactured from scratch but customized from existing platforms, or regular vehicles are retrofitted into robots. These robot configurations can be treated like *products*: each one gets a name and version and can be reused across projects as part of a catalog. This is the reason for the **robots** folder, where complete robot URDF/Xacro files are stored.
+For example, files such as `husky_agro_trials.xacro` or `vogui_agro_trials.xacro` can define specific configurations for Husky and Vogui robots in Agro trials, enabling reuse of those configurations for specific purposes.
 
-Each robot defined in the **robots** folder must have a python launch file called the same name as the robot, with the suffix `.launch.py`, that will be used to launch the robot description. In the robot python launch file, you tipically define one `DeclareArgument` for each argument the associated xacro file for the robot accepts. Sice you are using a python launch file, you have the possibility to code whatever actions you need to do before launching the `robot_state_publlisher` node that will take the expanded robot description as an input and publish it in a topic.
+Each robot defined in the **robots** folder must have a python launch file with the same robot name and suffix `.launch.py`, which is used to launch the robot description. In this launch file, one `DeclareArgument` is typically defined for each argument accepted by the associated robot xacro file. Since a python launch file is used, any required pre-processing actions can be coded before launching the `robot_state_publlisher` node that takes the expanded robot description as input and publishes it to a topic.
 
-Since the robot `forklift_artisteril` is the first robot added to this package, you could use both the xacro file and the associated launch file as a guide to create new robots in the future. The xacro file is a good example of how to use the macros defined in the **urdf** folder, and the launch file is a good example of what arguments to declare and how to declare them and launch the `robot_state_publisher` node.
+Since `forklift_artisteril` is the first robot added to this package, both the xacro file and its associated launch file can be used as a guide to create new robots in the future. The xacro file is a good example of how to use the macros defined in the **urdf** folder, and the launch file is a good example of which arguments to declare, how to declare them, and how to launch the `robot_state_publisher` node.
 
 **This package has been developed with the idea in mind that multiple robots can be used in the same project, so in order to achive that the source code in the xacro files and the python launch files has been thought and structured in a way that permit this goal.**
-For example, the concept of `namespace` is used across the xacro files when needed. Derivated from the concept of the `namespace` we have the concept of the `prefix`, which is basically the namespace where the characters `/` are replaced by `_`, so it can be used as a prefix for the names of the links, joints, sensors, etc., in the URDF/Xacro files. Another concept that has been introduced is the `id` for each component used in a robot, so each macro uses a parameter `id` which will be use to name the component.
+For example, the concept of `namespace` is used across the xacro files when needed. Derived from `namespace`, the concept of `prefix` is used, which is basically the namespace where the characters `/` are replaced by `_`, so it can be used as a prefix for names of links, joints, sensors, etc., in the URDF/Xacro files. Another concept introduced is the `id` for each component used in a robot, so each macro uses an `id` parameter to name the component.
 
-For example, in the file `lidar_3d_ring_macro.xacro`, you can find the macro `lidar_3d_ring` with the parameter `id`, used to name the links, joints, sensors, etc., in the URDF/Xacro file. This way, you can have multiple LIDARs in the same robot, and each one will have its own unique name based on the `id` parameter.
+For example, in `lidar_3d_ring_macro.xacro`, the macro `lidar_3d_ring` includes the `id` parameter, used to name links, joints, sensors, etc., in the URDF/Xacro file. This enables multiple LIDARs in the same robot, with unique names based on `id`.
 
 ```xml
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
@@ -44,7 +44,7 @@ For example, in the file `lidar_3d_ring_macro.xacro`, you can find the macro `li
                          ...
 ```
 
-Then, in the file `robosense_helios_16p_macro.xacro`, you can find the macro `robosense_helios_16p` that uses the macro `lidar_3d_ring`:
+Then, in `robosense_helios_16p_macro.xacro`, the macro `robosense_helios_16p` uses `lidar_3d_ring`:
 
 ```xml
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
@@ -57,7 +57,7 @@ Then, in the file `robosense_helios_16p_macro.xacro`, you can find the macro `ro
             ...
             *joint_parent_frame_root_frame">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/lidars/lidar_3d_ring_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/lidars/lidar_3d_ring_macro.xacro"/>
     <xacro:lidar_3d_ring
         id="${id}"
         prefix="${prefix}"
@@ -66,7 +66,7 @@ Then, in the file `robosense_helios_16p_macro.xacro`, you can find the macro `ro
         size_x="0.1"
         size_y="0.1"
         size_z="0.1005"
-        mesh="eut_robotics_description/meshes/lidars/robosense_helios_16p_low_res.stl"
+        mesh="robotics_description/meshes/lidars/robosense_helios_16p_low_res.stl"
         scale_x="1.0"
         scale_y="1.0"
         scale_z="1.0"
@@ -77,9 +77,9 @@ Then, in the file `robosense_helios_16p_macro.xacro`, you can find the macro `ro
 </robot>
 ```
 
-where you can observe that some parameters in the macro `robosense_helios_16p` do no appear in the macro definition, like `mass`, `size_x`, `size_y`, `size_z`, `mesh`, `scale_x`, etc., since they have been substituted by the proper values in the macro `lidar_3d_ring`.
+where it can be observed that some parameters in `robosense_helios_16p` do not appear in the macro definition, like `mass`, `size_x`, `size_y`, `size_z`, `mesh`, `scale_x`, etc., because they have been substituted with proper values in `lidar_3d_ring`.
 
-Then when you use the macro `robosense_helios_16p` in a robot, you can give the parameter `id` a value, like `front_lidar`, `back_lidar`, etc., so the links, joints, sensors, etc., in the URDF/Xacro file will have unique names based on that value:
+Then, when `robosense_helios_16p` is used in a robot, the `id` parameter can be set to values like `front_lidar`, `back_lidar`, etc., so links, joints, sensors, etc., in the URDF/Xacro file get unique names based on that value:
 
 ```xml
 <robot name="botzilla" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
@@ -91,7 +91,7 @@ Then when you use the macro `robosense_helios_16p` in a robot, you can give the 
   <!-- arg transformed into property to use ${...} notation -->
   <xacro:property name="namespace" value="$(arg namespace)"/>
 
-  <xacro:include filename="$(find eut_robotics_description)/urdf/lidars/robosense_helios_16p_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/lidars/robosense_helios_16p_macro.xacro"/>
 
   <xacro:property name="prefix"
                   value="${'' if namespace == '' or namespace == '/' else namespace.strip('/').replace('/', '_') + '_'}"/>

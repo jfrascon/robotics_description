@@ -12,7 +12,7 @@ from ament_index_python.packages import get_package_share_directory
 # package_dir = os.path.dirname(test_dir)
 
 xacro_files = []
-robots_dir = os.path.join(get_package_share_directory('eut_robotics_description'), 'urdf', 'robots')
+robots_dir = os.path.join(get_package_share_directory('robotics_description'), 'urdf', 'robots')
 # robots_dir = os.path.join(package_dir, "urdf", "robots")
 
 for root, _, files in os.walk(robots_dir):

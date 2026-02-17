@@ -66,4 +66,4 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = false
-known-first-party = ["eut_robotics_description"]
+known-first-party = ["robotics_description"]

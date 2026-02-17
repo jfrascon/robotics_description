@@ -211,7 +211,7 @@
                        info_topic
                        trigger_topic:=''" >
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
 
     <xacro:if value="${box_type != '2d' and box_type != 'visible_2d' and box_type != 'visible_box_2d' and box_type != 'full_2d' and box_type != 'full_box_2d' and box_type != '3d'}">
       ${xacro.fatal('Invalid box_type. Valid: 2d | visible_2d | visible_box_2d | full_2d | full_box_2d | 3d')}

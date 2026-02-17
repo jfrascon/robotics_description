@@ -1,4 +1,4 @@
-# Remember that many of the values you find here can be obtained by running the binay:
+# Many of the values in this file can be obtained by running the binary:
 # > rs-enumerate-devices <options>
 # Find more information about the command and its options at
 # https://github.com/realsenseai/librealsense/blob/master/tools/enumerate-devices/readme.md
@@ -67,7 +67,7 @@ color_camera:
     p2: 0.0
   # center_x_norm = lens_intrinsics.cx + 0.5 / image.width = (959.5 + 0.5) / 1920 = 0.5
   # center_y_norm = lens_intrinsics.cy + 0.5 / image.height = (539.5 + 0.5) / 1080 = 0.5
-  # We use +0.5 to convert from pixel index to pixel center.
+  # +0.5 is used to convert from pixel index to pixel center.
   distortion_center:
     center_x_norm: 0.5
     center_y_norm: 0.5
@@ -76,8 +76,8 @@ color_camera:
     stddev: 0.0
 
 # In the real camera, the depth image is computed y processing the infrared images captured by the two infrared cameras.
-# However, in simulation, we simulate two infrared cameras and a depth camera separately.
-# For that reason, you find in this file the configuration for the infrared camera and the configuration for the depth
+# However, in simulation, two infrared cameras and a depth camera are simulated separately.
+# For that reason, this file includes the configuration for the infrared camera and the configuration for the depth
 # camera.
 
 infrared_camera:
@@ -134,7 +134,7 @@ infrared_camera:
     p2: 0.0
   # center_x_norm = lens_intrinsics.cx + 0.5 / image.width = (639.5 + 0.5) / 1280 = 0.5
   # center_y_norm = lens_intrinsics.cy + 0.5 / image.height = (359.5 + 0.5) / 720 = 0.5
-  # We use +0.5 to convert from pixel index to pixel center.
+  # +0.5 is used to convert from pixel index to pixel center.
   distortion_center:
     center_x_norm: 0.5
     center_y_norm: 0.5
@@ -203,7 +203,7 @@ depth_camera:
     p2: 0.0
   # center_x_norm = lens_intrinsics.cx + 0.5 / image.width = (639.5 + 0.5) / 1280 = 0.5
   # center_y_norm = lens_intrinsics.cy + 0.5 / image.height = (359.5 + 0.5) / 720 = 0.5
-  # We use +0.5 to convert from pixel index to pixel center.
+  # +0.5 is used to convert from pixel index to pixel center.
   distortion_center:
     center_x_norm: 0.5
     center_y_norm: 0.5

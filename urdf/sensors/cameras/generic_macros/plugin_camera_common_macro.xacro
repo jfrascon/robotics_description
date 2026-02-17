@@ -154,7 +154,7 @@ follows:
       center_y_norm = (cy + 0.5) / image_height_in_pixels
 
       Why +0.5 in the formulas?
-      We normalize distortion center in edge coordinates where the left border is 0 and right border is W, hence the
+      Distortion center is normalized in edge coordinates where the left border is 0 and right border is W, hence the
       +0.5 shift from pixel-center coordinates.
 
   - Pass center_x_norm and center_y_norm in the distortion.center_x and distortion.center_y parameters.
@@ -438,7 +438,7 @@ follows:
       <!--
       According to the sdformat documentation, if lens_projection is defined, it overrides the intrinsics parameters
       fx, fy, cx, cy.
-      Therefore, if lens_projection is defined, we use it.
+      Therefore, if lens_projection is defined, it is used.
       -->
       <xacro:if value="${lens_projection != ''}">
         <xacro:property name="lens_projection_seq" value="${lens_projection.split()}"/>
@@ -466,11 +466,11 @@ follows:
         <!--
         When 'lens_projection' is used, still set the 'lens_xy_skew' in the intrinsics element since there is no other
         way to set it.
-        Since the rest of the element in intrinsics are required (see sdformat documentation), we must set them,
-        otherwise sdf parser will raise an error. However, in practical terms, no matter the values we give to fx, fy,
-        cx, cy here, they will be overridden by the values in projection (p_fx, p_fy, p_cx, p_cy), as we can read in the
+        Since the rest of the element in intrinsics are required (see sdformat documentation), they must be set,
+        otherwise sdf parser will raise an error. However, in practical terms, no matter the values assigned to fx, fy,
+        cx, cy here, they will be overridden by the values in projection (p_fx, p_fy, p_cx, p_cy), as described in the
         sdformat documentation.
-        Therefore, we set the parameters fx, fy, cx, cy to p_fx, p_fy, p_cx, p_cy respectively, just to avoid errors
+        Therefore, the parameters fx, fy, cx, cy are set to p_fx, p_fy, p_cx, p_cy respectively, just to avoid errors
         in sdf parsing, knowing that these values will be overridden later by the projection values.
         -->
         <intrinsics>

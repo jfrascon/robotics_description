@@ -129,7 +129,7 @@ and fx and fy are computed independently and can be different.
   center_y_norm = (cy + 0.5) / image_height_in_pixels
 
   Why +0.5 in the formulas?
-  We normalize distortion center in edge coordinates where the left border is 0 and right border is W, hence the
+  Distortion center is normalized in edge coordinates where the left border is 0 and right border is W, hence the
   +0.5 shift from pixel-center coordinates.
 
 - Pass center_x_norm and center_y_norm in the distortion.center_x and distortion.center_y parameters.
@@ -277,7 +277,7 @@ gaussian_noise (S): The properties of the noise model that should be applied to 
                        distortion_center:='0.5 0.5'
                        gaussian_noise:='0.0 0.0'">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
 
     <gazebo reference="${reference_frame}">
       <gravity>${use_gravity}</gravity>

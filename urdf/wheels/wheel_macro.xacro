@@ -71,10 +71,10 @@ Explanation of the default values for the field 'rotation_joint_limits: "100 100
 =====================================================================================
 The 'effort' and 'velocity' limits for this joint are intentionally set to extremely high, non-physical values.
 This is a common and deliberate practice in simulation for the specific reason of modeling an 'ideal' actuator.
-By setting virtually infinite limits, we ensure that the simulator's physics engine will never be the limiting
+By setting virtually infinite limits, the simulator's physics engine is prevented from becoming the limiting
 factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
 trajectory following) without being constrained by the physical limitations of real-world motors.
-in essence, we are testing the software logic in isolation.
+in essence, the software logic is tested in isolation.
 
 rotation_joint_limits.velocity = "100" (radians/second).
 This translates to approximately 955 rpm. for context, a typical educational robot wheel (like a turtlebot) spins
@@ -85,8 +85,8 @@ This represents the maximum torque the joint can apply. to put this into perspec
 passenger car engine produces between 200-500 n·m of torque. a value of 100000 n·m is more in the realm of
 industrial cranes or ship engines. it is an astronomically high value for a robot wheel.
 
-If you need a realistic simulation of a physical robot, you should replace these values with the specifications
-from your wheel. for a typical medium-sized wheel, realistic values would be in the range of:
+For a realistic simulation of a physical robot, these values should be replaced with wheel specifications.
+For a typical medium-sized wheel, realistic values would be in the range of:
 effort:   10 to 100 n·m
 velocity: 10 to 30 rad/s
 -->
@@ -116,7 +116,7 @@ velocity: 10 to 30 rad/s
 
     <!-- a wheel is cylinder with its rotation axis along the y-axis. -->
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
     When the v_mesh_origin parameter was explained above, it was mentioned:
@@ -130,13 +130,13 @@ velocity: 10 to 30 rad/s
     axis along the z-axis by default. Therefore, the cylinder shape must be rotated along its x-axis (roll = 0.5 * pi),
     so that its symmetry axis aligns with the y-axis of the wheel's frame.
 
-    Besides, we need to model some friction properties for the wheel, because the wheel will interact with the ground.
+    Besides, some friction properties must be modeled for the wheel, because the wheel will interact with the ground.
     therefore, a wheel always uses a collision element.
     The collision element is always a cylinder shape (no mesh), also with its symmetry axis (rotation axis) along the
     y-axis, regardless if the visual element is a mesh or a cylinder shape.
     The use a basic cylinder shape for the collision element improves the simulation performance.
 
-    Therefore, we create a property 'shape_origin = "0.0 0.0 0.0 0.5*pi 0.0 0.0"', which is used as the origin
+    Therefore, a property 'shape_origin = "0.0 0.0 0.0 0.5*pi 0.0 0.0"' is created, which is used as the origin
     for a cylinder shape, that could be used for the visual element, if no mesh is provided, and is always used for the
     collision element and for the inertia computation.
     -->
@@ -165,11 +165,11 @@ velocity: 10 to 30 rad/s
 
       <xacro:if value="${use_inertial}">
       <!--
-      We use the inertia of a solid cylinder with uniform mass distribution, radius and length, whose symmetry axis
+      The inertia of a solid cylinder with uniform mass distribution, radius and length is used, with symmetry axis
       is the y-axis and center of mass is at the origin of the wheel's frame.
       For that reason, the origin used is "0 0 0 0 0 0", unlinke the shape_origin used for visual and collision
       elements.
-      In other words, the solid_cylinder_inertia_y computes the same inertia as if we used solid_cylinder_inertia_z
+      In other words, solid_cylinder_inertia_y computes the same inertia as if solid_cylinder_inertia_z were used
       (assuming the cylinder's symmetry axis is along the z-axis, which is the default for a cylinder shape) but using
       origin "0 0 0 0.5*pi 0 0" to rotate the inertia tensor accordingly.
       -->

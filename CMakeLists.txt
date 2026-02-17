@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(eut_robotics_description)
+project(robotics_description)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)

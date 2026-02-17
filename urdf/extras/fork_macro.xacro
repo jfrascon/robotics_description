@@ -86,8 +86,8 @@ tine_[v|c]_mesh.size_z * scale.z = tine_size[2] (tine_size[2] is size in z)
                        limits:='0.0 0.0 0.0 0.0'
                        joint_parent_fr_root_fr">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
-    <xacro:include filename="$(find eut_robotics_description)/urdf/extras/fork_tine_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/extras/fork_tine_macro.xacro"/>
 
     <xacro:property name="tine_size_seq" value="${tine_size.split()}"/>
 

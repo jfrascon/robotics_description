@@ -217,7 +217,7 @@
                        info_topic
                        trigger_topic:=''" >
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
 
     <xacro:if value="${segmentation_type != 'semantic' and segmentation_type != 'panoptic' and segmentation_type != 'instance'}">
       ${xacro.fatal("Invalid segmentation_type. Valid: semantic | panoptic | instance")}

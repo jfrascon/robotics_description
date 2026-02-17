@@ -73,7 +73,7 @@ tine_[v|c]_mesh.size_z * scale.z = tine_size[2] (tine_size[2] is size in z)
                        tine_mass:=0.1
                        joint_parent_fr_tine_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
 
-    <xacro:include filename="$(find eut_robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <link name="${prefix}${name}_link">
       <xacro:if value="${use_visual}">

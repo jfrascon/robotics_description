@@ -1,6 +1,6 @@
 # Testing the URDF/XACRO descriptions
 
-This document explains how to run the validation tests for the robot description files (URDF/XACRO) in the `eut_robotics_description` package.
+This document explains how to run the validation tests for the robot description files (URDF/XACRO) in the `robotics_description` package.
 
 ## 1. Purpose of the tests
 
@@ -64,9 +64,9 @@ The `package.xml` file must declare all the external packages that are needed to
 **Explanation of each dependency:**
 
 * `ament_cmake_pytest`: Provides the core integration between `ament_cmake` and `pytest`.
-* `launch_testing_*`: While our current test doesn't launch a ROS system, these are standard dependencies for any package that might include launch tests. It's good practice to keep them.
-* `liburdfdom-tools`: This package provides the `check_urdf` executable, which our test script calls to validate the final URDF structure.
-* `xacro`: This package provides the `xacro` executable, which our test script calls to process the `.xacro` files.
+* `launch_testing_*`: While the current test doesn't launch a ROS system, these are standard dependencies for any package that might include launch tests. It's good practice to keep them.
+* `liburdfdom-tools`: This package provides the `check_urdf` executable, which the test script calls to validate the final URDF structure.
+* `xacro`: This package provides the `xacro` executable, which the test script calls to process the `.xacro` files.
 
 With these configurations in place, the package is self-contained and explicitly declares everything it needs to be tested robustly.
 
@@ -76,7 +76,7 @@ Before running any tests, the workspace must be built in a way that registers th
 
 ### Recommended build command
 
-From the root of your workspace (`~/workspace`), run the following commands to ensure a clean build that includes tests:
+From the workspace root (`~/workspace`), run the following commands to ensure a clean build that includes tests:
 
 ```bash
 # First, clean the previous build artifacts to avoid any conflicts
@@ -92,61 +92,61 @@ colcon build --merge-install --symlink-install --parallel-workers 6 --mixin rel-
 
 ## 4. Running the tests
 
-Once the workspace is built correctly, you have three primary methods to execute the tests, each with a different purpose.
+Once the workspace is built correctly, there are three primary methods to execute the tests, each with a different purpose.
 
 ---
 
 ### Method A: Direct `pytest` execution (recommended for debugging)
 
-This is the most effective method when you are actively developing or debugging a test, as it provides immediate, detailed, and unfiltered output directly to your terminal.
+This is the most effective method when actively developing or debugging a test, as it provides immediate, detailed, and unfiltered output directly to the terminal.
 
 **Command:**
 
 ```bash
-pytest -s -v src/0_deps/eut_robotics_description/test/test_xacro.py
+pytest -s -v src/0_deps/robotics_description/test/test_xacro.py
 ```
 
-*(Adjust the path to the test file if your package is in a different subdirectory of `src/`)*
+*(Adjust the path to the test file if the package is in a different subdirectory of `src/`)*
 
 **Explanation of flags:**
 
-* `-s`: (shorthand for `--show-capture=no`) This is the key flag that tells `pytest` **not to capture** the output. It allows your `print()` statements to be displayed in real-time.
+* `-s`: (shorthand for `--show-capture=no`) This is the key flag that tells `pytest` **not to capture** the output. It allows `print()` statements to be displayed in real-time.
 * `-v`: (shorthand for `verbose`) This provides more detailed output, including the full name of each test being run, making the results easier to read.
 
 ---
 
 ### Method B: Using `colcon test` (the official ROS 2 method)
 
-This is the standard way to run tests in a ROS 2 workspace. It's what you would use for a final check or in a Continuous Integration (CI) environment. By design, `colcon test` provides a high-level summary and **hides the detailed print output** from the terminal to keep it clean.
+This is the standard way to run tests in a ROS 2 workspace. It is typically used for a final check or in a Continuous Integration (CI) environment. By design, `colcon test` provides a high-level summary and **hides the detailed print output** from the terminal to keep it clean.
 
 **Command:**
 
 ```bash
-colcon test --merge-install --packages-select eut_robotics_description
+colcon test --merge-install --packages-select robotics_description
 ```
 
 **How to see the detailed output:**
-The verbose output you are looking for is not lost; it's simply redirected to log files. To view it, you must inspect the log file after the test run is complete.
+The required verbose output is not lost; it is simply redirected to log files. To view it, inspect the log file after the test run is complete.
 
 1. Run the `colcon test` command above.
 2. After it finishes, view the standard output log with this command:
 
     ```bash
-    cat log/latest_test/eut_robotics_description/stdout_stderr.log
+    cat log/latest_test/robotics_description/stdout_stderr.log
     ```
 
-    Inside this file, you will find the complete, verbose output from `pytest`, including all your `print()` statements.
+    This file contains the complete, verbose output from `pytest`, including all `print()` statements.
 
 ---
 
 ### Method C: Direct script execution (for a quick sanity check)
 
-You can also run the test file directly with Python. This is useful for a quick check to see if the script has any syntax errors, but it does not use the `pytest` framework, so it will not generate standard test reports.
+The test file can also be run directly with Python. This is useful for a quick check to detect syntax errors, but it does not use the `pytest` framework, so it will not generate standard test reports.
 
 **Command:**
 
 ```bash
-python3 src/0_deps/eut_robotics_description/test/test_xacro.py
+python3 src/0_deps/robotics_description/test/test_xacro.py
 ```
 
-This will execute the code inside the `if __name__ == "__main__":` block of your test script, which is configured to run the tests manually on all discovered xacro files.
+This executes the code inside the `if __name__ == "__main__":` block of the test script, which is configured to run tests manually on all discovered xacro files.
