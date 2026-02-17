@@ -399,7 +399,7 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
       <!-- camera color joints and links -->
       <link name="${prefix}${name}_color_frame"/>
 
-      <joint name="${name}_color_joint" type="fixed">
+      <joint name="${prefix}${name}_color_joint" type="fixed">
         <parent link="${prefix}${name}_link" />
         <child link="${prefix}${name}_color_frame" />
         <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_color_offset} 0.0"/>
