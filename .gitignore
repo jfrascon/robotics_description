@@ -1,0 +1,41 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+venv/
+env/
+
+# Tool caches
+.cache/
+.pre-commit-cache/
+
+# ROS 2 / colcon / CMake build outputs
+build/
+install/
+log/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+compile_commands.json
+Testing/
+CTestTestfile.cmake
+
+# Packaging / metadata
+*.egg-info/
