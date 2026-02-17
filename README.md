@@ -1,126 +1,37 @@
 # robotics_description
 
-The goal of this package is to provide a common place to store URDF/Xacro files for different robots across projects.
-This way, those models can be reused in different projects in a simple way.
+Reusable URDF/Xacro assets for ROS 2.
 
-The organization of the package is simple, with a **urdf** folder containing subfolders for different robot components, like **bases**, **imus**, **lidars**, **wheels** and **robots**.
-There is another folder called **meshes** with matching component folders from **urdf**, where the 3D meshes are stored.
-Over time, more folders will likely be added to **urdf** and **meshes**, so additional components can be included in the future.
+This package is a shared component library to build robot descriptions across projects. The generic part provides reusable macro blocks for consistent naming (`namespace`/`prefix`), visual and collision definitions, inertial definitions, and common mechanical elements such as wheels and forklift forks. Sensor URDF/Xacro files are grouped by type under `urdf/sensors` (`lidars`, `imus`, `cameras`), and that is the place where specific sensor models are incorporated over time.
 
-Regarding the xacro files under the **urdf** folder, the approach here is to reuse these description files as much as possible. For example, the macro `lidar_3d_ring`, defined in `lidar_3d_ring_macro.xacro`, represents a 3D LIDAR with a ring of beams and can be used to create different LIDAR types by changing beam count and angles. Internally, `lidar_3d_ring` uses `lidar_3d_ring_plugin`, defined in `lidar_3d_ring_plugin_macro.xacro`, which is a Gazebo plugin. The macro `lidar_2d`, defined in `lidar_2d_macro.xacro`, is an instantiation of `lidar_3d_ring` with a single beam at 0 degrees, so it can be used as a 2D LIDAR.
-The macro `robosense_helios_16p` substitutes some of the parameters of the macro `lidar_3d_ring`, like `mass`, `dimensions`, etc., to create a specific LIDAR model, the **Robosense Helios 16P**.
-Other parameters in the macro `robosense_helios_16p` are left to the user to set, like the position of the `root_link`, used to attach the LIDAR to the robot, the number of horizontal beams, etc.
+Current specific sensor models are: `robosense_airy`, `robosense_helios_16p`, `um7`, and `realsense_d435`. Associated meshes are stored under `meshes/`, and example simulation parameters are provided under `config/sensors/`.
 
-Finally, specific robots are defined in the **robots** folder, where URDF/Xacro files for complete robots are stored, including the mobile base, arms, sensors, etc.
-For example, the macro `mecanum_rectangular_forklift`, defined in the file `mecanum_rectangular_forklift_macro.xacro` represents a generic forklift that uses a rectangular base, with four mecanum wheels, two at front and two at back, and a fork that can be moved up and down. No sensors are included in this macro, so it can be used as a base for different types of forklifts. Then, the robot `forlift_artisteril`, which is **NOT A MACRO** but a complete robot, defined in the file `forlift_artisteril.xacro`, is an instantiation of the macro `mecanum_rectangular_forklift`, using the proper values for the parameters, like the position of the wheels, the dimensions of the fork, etc. This particular model of a robot can define its own sensors, like a 2D LIDAR, a 3D LIDAR, a camera, etc., and it can be used in different projects, if needed.
-
-In many workflows, robots are not manufactured from scratch but customized from existing platforms, or regular vehicles are retrofitted into robots. These robot configurations can be treated like *products*: each one gets a name and version and can be reused across projects as part of a catalog. This is the reason for the **robots** folder, where complete robot URDF/Xacro files are stored.
-For example, files such as `husky_agro_trials.xacro` or `vogui_agro_trials.xacro` can define specific configurations for Husky and Vogui robots in Agro trials, enabling reuse of those configurations for specific purposes.
-
-Each robot defined in the **robots** folder must have a python launch file with the same robot name and suffix `.launch.py`, which is used to launch the robot description. In this launch file, one `DeclareArgument` is typically defined for each argument accepted by the associated robot xacro file. Since a python launch file is used, any required pre-processing actions can be coded before launching the `robot_state_publlisher` node that takes the expanded robot description as input and publishes it to a topic.
-
-Since `forklift_artisteril` is the first robot added to this package, both the xacro file and its associated launch file can be used as a guide to create new robots in the future. The xacro file is a good example of how to use the macros defined in the **urdf** folder, and the launch file is a good example of which arguments to declare, how to declare them, and how to launch the `robot_state_publisher` node.
-
-**This package has been developed with the idea in mind that multiple robots can be used in the same project, so in order to achive that the source code in the xacro files and the python launch files has been thought and structured in a way that permit this goal.**
-For example, the concept of `namespace` is used across the xacro files when needed. Derived from `namespace`, the concept of `prefix` is used, which is basically the namespace where the characters `/` are replaced by `_`, so it can be used as a prefix for names of links, joints, sensors, etc., in the URDF/Xacro files. Another concept introduced is the `id` for each component used in a robot, so each macro uses an `id` parameter to name the component.
-
-For example, in `lidar_3d_ring_macro.xacro`, the macro `lidar_3d_ring` includes the `id` parameter, used to name links, joints, sensors, etc., in the URDF/Xacro file. This enables multiple LIDARs in the same robot, with unique names based on `id`.
+Example integration of `robosense_helios_16p`:
 
 ```xml
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-    <xacro:macro name="lidar_3d_ring"
-                 params="id
-                         prefix:=''
-                         parent_frame
-                         mass
-                         size_x
-                         size_y
-                         size_z
-                         mesh:=''
-                         scale_x:=1.0
-                         scale_y:=1.0
-                         scale_z:=1.0
-                         color:=''
-                         ...
+<xacro:robosense_helios_16p name="front_lidar"
+                            prefix="${robot_prefix}"
+                            namespace="${robot_namespace}"
+                            parent_frame="${robot_prefix}front_platform_link"
+                            use_visual="${front_lidar_use_visual}"
+                            use_collision="${front_lidar_use_collision}"
+                            use_inertial="${front_lidar_use_inertial}"
+                            use_v_mesh="${front_lidar_use_v_mesh}"
+                            use_low_res_v_mesh="${front_lidar_use_low_res_v_mesh}"
+                            color="${front_lidar_color}"
+                            use_c_mesh="${front_lidar_use_c_mesh}"
+                            use_low_res_c_mesh="${front_lidar_use_low_res_c_mesh}"
+                            joint_parent_fr_root_fr="0.0 0.0 ${front_platform_size_z} 0.0 0.0 0.0"
+                            use_sim="${use_sim_mode and front_lidar_sim_enabled}"
+                            sim_always_on="${front_lidar_sim_always_on}"
+                            sim_visualize="${front_lidar_sim_visualize}"
+                            sim_update_rate="${front_lidar_sim_update_rate}"
+                            sim_hor_fov_deg="${front_lidar_sim_hor_fov_deg}"
+                            sim_hor_res_deg="${front_lidar_sim_hor_res_deg}"
+                            sim_ver_fov_deg="${front_lidar_sim_ver_fov_deg}"
+                            sim_ver_res_deg="${front_lidar_sim_ver_res_deg}"
+                            sim_dist_span="${front_lidar_sim_dist_span}"
+                            sim_gaussian_noise="${front_lidar_sim_gaussian_noise}"/>
 ```
 
-Then, in `robosense_helios_16p_macro.xacro`, the macro `robosense_helios_16p` uses `lidar_3d_ring`:
-
-```xml
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro
-    name="robosense_helios_16p"
-    params="id
-            prefix:=''
-            parent_frame
-            color:='0 0 0 1'
-            ...
-            *joint_parent_frame_root_frame">
-
-    <xacro:include filename="$(find robotics_description)/urdf/lidars/lidar_3d_ring_macro.xacro"/>
-    <xacro:lidar_3d_ring
-        id="${id}"
-        prefix="${prefix}"
-        parent_frame="${parent_frame}"
-        mass="0.99"
-        size_x="0.1"
-        size_y="0.1"
-        size_z="0.1005"
-        mesh="robotics_description/meshes/lidars/robosense_helios_16p_low_res.stl"
-        scale_x="1.0"
-        scale_y="1.0"
-        scale_z="1.0"
-        color="${color}"
-        ...
-    </xacro:lidar_3d_ring>
-  </xacro:macro>
-</robot>
-```
-
-where it can be observed that some parameters in `robosense_helios_16p` do not appear in the macro definition, like `mass`, `size_x`, `size_y`, `size_z`, `mesh`, `scale_x`, etc., because they have been substituted with proper values in `lidar_3d_ring`.
-
-Then, when `robosense_helios_16p` is used in a robot, the `id` parameter can be set to values like `front_lidar`, `back_lidar`, etc., so links, joints, sensors, etc., in the URDF/Xacro file get unique names based on that value:
-
-```xml
-<robot name="botzilla" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:arg name="id"      default="pink_botzilla"/>
-  <!-- arg transformed into property to use ${...} notation -->
-  <xacro:property name="id" value="$(arg id)"/>
-
-  <xacro:arg name="namespace" default=""/>
-  <!-- arg transformed into property to use ${...} notation -->
-  <xacro:property name="namespace" value="$(arg namespace)"/>
-
-  <xacro:include filename="$(find robotics_description)/urdf/lidars/robosense_helios_16p_macro.xacro"/>
-
-  <xacro:property name="prefix"
-                  value="${'' if namespace == '' or namespace == '/' else namespace.strip('/').replace('/', '_') + '_'}"/>
-
-  <xacro:robosense_helios_16p
-    id="top_lidar"
-    prefix="${prefix}${id}_"
-    parent_frame="${prefix}${id}_base_link"
-    ...
-```
-
-It is important to understand how arguments are handled in the Python launch files associated with each robot defined in the **robots** folder.
-
-Each `.launch.py` file declares a list of arguments that are required to instantiate the robot description properly. These include:
-
-* **All the parameters expected by the corresponding Xacro file**, which typically represent the robot configuration (geometry, frame naming, enabled components, etc.).
-* **Parameters required by the `robot_state_publisher` node**, such as `use_sim_time` or `publish_frequency`, that are not used in the Xacro but must be passed at runtime.
-* An additional argument named `config_file`, which allows passing a YAML file containing any subset of the above parameters.
-
-Each parameter can be provided from multiple sources, and the system uses a well-defined precedence rule to determine which value should be used at runtime.
-
-The argument resolution priority is:
-
-1. **Explicit values passed to the launch file**, either from the command line or from a parent launch file using `launch_arguments=[...]`.
-2. **Values loaded from the YAML configuration file**, specified via the `config_file` argument.
-3. **Fallback values defined in the launch file itself**, as part of the internal `Arguments` list.
-
-If an argument is defined in more than one source, the one with higher priority takes precedence.
-For example, if the same parameter is set both in the YAML file and from the command line, the command line value will be used.
-If a value is not provided anywhere, the fallback defined in the `Arguments` list will be used.
-
-This priority system provides flexibility to use the most appropriate source of configuration for each parameter: values can be passed explicitly via the command line or a parent launch file when needed, set globally through a YAML file for reuse across experiments, or simply fall back to predefined defaults when no specific value is required.
+Validation is covered by `test/test_xacro.py`, which checks Xacro-to-URDF generation and mesh references.
