@@ -60,3 +60,54 @@ Example integration of `robosense_helios_16p` (some properties are scalar, other
 ```
 
 Validation is covered by `test/test_xacro.py`, which checks Xacro-to-URDF generation and mesh references.
+
+## Xacro guard pattern
+
+Use this pattern in macros to enforce input constraints at generation time:
+
+```xml
+<xacro:if value="${condition_here}">
+  ${xacro.fatal("error_message_here")}
+</xacro:if>
+```
+
+Important XML note:
+- Inside XML attributes (such as `value="..."`), the `<` symbol must be escaped as `&lt;`.
+- For example, write `&lt;=` instead of `<=`, otherwise XML parsing may fail before `xacro.fatal` is evaluated.
+- The `>` symbol is usually accepted as-is in XML attributes, but you may still use `&gt;` (or `&gt;=`) for consistency and readability.
+
+This form is incorrect and may fail during XML parsing:
+
+```xml
+<xacro:if value="${mass <= 0.0}">
+  ${xacro.fatal("mass must be > 0")}
+</xacro:if>
+```
+
+Examples:
+
+```xml
+<xacro:if value="${mass &lt;= 0.0}">
+  ${xacro.fatal("mass must be > 0")}
+</xacro:if>
+
+<xacro:if value="${len(shape_seq) &lt; 3}">
+  ${xacro.fatal("shape must contain at least 3 elements")}
+</xacro:if>
+
+<xacro:if value="${effort &gt; 1000.0}">
+  ${xacro.fatal("effort must be <= 1000")}
+</xacro:if>
+```
+
+Keep this section as the canonical reference when adding validation checks to new Xacro files.
+
+## Mesh generation scripts
+
+Some objects include Python generators under `meshes/` (for example in `meshes/extras/fork_simple`) that export STL files with a simplified body representation. These simplified meshes are intended to be lightweight and sufficient for simulation workflows (visual/collision/inertial approximation), while keeping geometry generation reproducible from script parameters.
+
+For these generators, installing `cadquery` in the local user environment is recommended:
+
+```bash
+python3 -m pip install --user cadquery
+```
