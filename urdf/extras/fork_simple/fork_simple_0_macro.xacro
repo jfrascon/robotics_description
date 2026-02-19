@@ -1,0 +1,65 @@
+<?xml version="1.0"?>
+<!--
+This file defines a specific fork model macro, `fork_simple_0`.
+It reuses the generic `fork_simple` macro and provides fixed, model-specific values for geometry, mesh path, and
+inertial properties.
+
+All values below were extracted with MeshLab using:
+Filters -> Quality Measure and Computations -> Compute Geometric Measures
+
+Mesh path:
+robotics_description/meshes/extras/fork_simple/fork_simple_0/fork_simple_0.stl
+
+Companion MeshLab report:
+robotics_description/meshes/extras/fork_simple/fork_simple_0/meshlab_geometric_measures.txt
+
+Inertia-scaling procedure:
+robotics_description/doc/how_to_compute_inertia_w_meshlab.md
+
+Note on inertia/mass consistency:
+- The raw MeshLab inertia tensor is reported in the companion text file for rho=1 kg/m^3.
+- The macro values below are scaled to use mass = 100.0 kg.
+-->
+<robot name="fork_simple_0" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+
+  <!-- Import generic simplified fork macro. -->
+  <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_macro.xacro"/>
+
+  <xacro:macro name="fork_simple_0"
+               params="name:='fork_simple_0'
+                       prefix:=''
+                       parent_frame
+                       use_inertial:=True
+                       color:='0.0 0.0 0.0 1.0'
+                       limits:='0.0 0.0 1000.0 1000.0'
+                       joint_parent_fr_root_fr">
+
+    <!-- Model-specific mesh path (package-relative, without package:// prefix). -->
+    <xacro:property name="mesh" value="robotics_description/meshes/extras/fork_simple/fork_simple_0/fork_simple_0.stl"/>
+
+    <!-- Geometry constants of fork_simple_0 (meters), matching script defaults. -->
+    <xacro:property name="tine_size"         value="1.20 0.12 0.06"/>
+    <xacro:property name="tine_separation"   value="0.25"/>
+    <xacro:property name="tine_union_size_x" value="0.03"/>
+
+    <!-- Inertial constants scaled from MeshLab raw values to mass = 100.0 kg. -->
+    <xacro:property name="mass"              value="100.0"/>
+    <xacro:property name="center_of_mass"    value="0.571591 0.000000 0.031427"/>
+    <xacro:property name="inertial_elements" value="3.507323 0.000000 0.077084 13.038212 0.000000 16.468451"/>
+
+    <!-- Call generic macro with fixed model parameters and forwarded integration params. -->
+    <xacro:fork_simple name="${name}"
+                       prefix="${prefix}"
+                       parent_frame="${parent_frame}"
+                       mesh="${mesh}"
+                       color="${color}"
+                       mass="${mass if use_inertial else ''}"
+                       tine_size="${tine_size}"
+                       tine_separation="${tine_separation}"
+                       tine_union_size_x="${tine_union_size_x}"
+                       inertial_elements="${inertial_elements if use_inertial else ''}"
+                       center_of_mass="${center_of_mass if use_inertial else ''}"
+                       limits="${limits}"
+                       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+  </xacro:macro>
+</robot>
