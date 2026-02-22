@@ -4,9 +4,6 @@ This file defines a specific fork model macro, `fork_simple_0`.
 It reuses the generic `fork_simple` macro and provides fixed, model-specific values for geometry, mesh path, and
 inertial properties.
 
-All values below were extracted with MeshLab using:
-Filters -> Quality Measure and Computations -> Compute Geometric Measures
-
 Mesh path:
 robotics_description/meshes/extras/fork_simple/fork_simple_0/fork_simple_0.stl
 
@@ -15,10 +12,8 @@ robotics_description/meshes/extras/fork_simple/fork_simple_0/meshlab_geometric_m
 
 Inertia-scaling procedure:
 robotics_description/doc/how_to_compute_inertia_w_meshlab.md
-
-Note on inertia/mass consistency:
-- The raw MeshLab inertia tensor is reported in the companion text file for rho=1 kg/m^3.
-- The macro values below are scaled to use mass = 100.0 kg.
+The raw MeshLab inertia tensor is reported in the companion MeshLab report for rho=1 kg/m^3.
+The macro values below are scaled to use mass = 100.0 kg.
 -->
 <robot name="fork_simple_0" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
@@ -42,24 +37,62 @@ Note on inertia/mass consistency:
     <xacro:property name="tine_separation"   value="0.25"/>
     <xacro:property name="tine_union_size_x" value="0.03"/>
 
-    <!-- Inertial constants scaled from MeshLab raw values to mass = 100.0 kg. -->
-    <xacro:property name="mass"              value="100.0"/>
-    <xacro:property name="center_of_mass"    value="0.571591 0.000000 0.031427"/>
-    <xacro:property name="inertial_elements" value="3.507323 0.000000 0.077084 13.038212 0.000000 16.468451"/>
+    <!-- Path for simulation setups where inertial data is intentionally disabled. -->
+    <xacro:unless value="${use_inertial}">
+      <xacro:fork_simple name="${name}"
+                         prefix="${prefix}"
+                         parent_frame="${parent_frame}"
+                         mesh="${mesh}"
+                         color="${color}"
+                         tine_size="${tine_size}"
+                         tine_separation="${tine_separation}"
+                         tine_union_size_x="${tine_union_size_x}"
+                         limits="${limits}"
+                         joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+    </xacro:unless>
 
-    <!-- Call generic macro with fixed model parameters and forwarded integration params. -->
-    <xacro:fork_simple name="${name}"
-                       prefix="${prefix}"
-                       parent_frame="${parent_frame}"
-                       mesh="${mesh}"
-                       color="${color}"
-                       mass="${mass if use_inertial else ''}"
-                       tine_size="${tine_size}"
-                       tine_separation="${tine_separation}"
-                       tine_union_size_x="${tine_union_size_x}"
-                       inertial_elements="${inertial_elements if use_inertial else ''}"
-                       center_of_mass="${center_of_mass if use_inertial else ''}"
-                       limits="${limits}"
-                       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+    <!-- Inertial path: compute scaled tensor from MeshLab reference values and pass it to fork_simple. -->
+    <xacro:if value="${use_inertial}">
+      <!--
+      Inertial constants from MeshLab reference values (rho=1 kg/m^3), scaled to mass.
+      Following doc/how_to_compute_inertia_w_meshlab.md:
+        m_ref = V_meshlab
+        s = m_real / m_ref
+        I_real_ij = s * I_ref_ij
+      -->
+      <xacro:property name="mass"            value="100.0"/>
+      <xacro:property name="center_of_mass"  value="0.571591 0.000000 0.031427"/>
+      <xacro:property name="mesh_volume_ref" value="0.018162"/>
+      <xacro:property name="s"               value="${mass / mesh_volume_ref}"/>
+
+      <xacro:property name="ixx_ref" value="0.000637"/>
+      <xacro:property name="ixy_ref" value="0.000000"/>
+      <xacro:property name="ixz_ref" value="0.000014"/>
+      <xacro:property name="iyy_ref" value="0.002368"/>
+      <xacro:property name="iyz_ref" value="0.000000"/>
+      <xacro:property name="izz_ref" value="0.002991"/>
+
+      <xacro:property name="ixx" value="${s * ixx_ref}"/>
+      <xacro:property name="ixy" value="${s * ixy_ref}"/>
+      <xacro:property name="ixz" value="${s * ixz_ref}"/>
+      <xacro:property name="iyy" value="${s * iyy_ref}"/>
+      <xacro:property name="iyz" value="${s * iyz_ref}"/>
+      <xacro:property name="izz" value="${s * izz_ref}"/>
+      <xacro:property name="inertial_elements" value="${ixx} ${ixy} ${ixz} ${iyy} ${iyz} ${izz}"/>
+
+      <xacro:fork_simple name="${name}"
+                         prefix="${prefix}"
+                         parent_frame="${parent_frame}"
+                         mesh="${mesh}"
+                         color="${color}"
+                         mass="${mass}"
+                         tine_size="${tine_size}"
+                         tine_separation="${tine_separation}"
+                         tine_union_size_x="${tine_union_size_x}"
+                         inertial_elements="${inertial_elements}"
+                         center_of_mass="${center_of_mass}"
+                         limits="${limits}"
+                         joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+    </xacro:if>
   </xacro:macro>
 </robot>

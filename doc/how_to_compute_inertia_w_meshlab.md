@@ -1,4 +1,4 @@
-# How to Compute Inertia with MeshLab
+# How to compute inertia with MeshLab
 
 ## 1. Measure geometry in MeshLab
 
