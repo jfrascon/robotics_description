@@ -1,30 +1,31 @@
 <?xml version="1.0"?>
 <!--
+This macro models one non-steerable wheel assembly: a rotating wheel link with its rotation joint.
+
 Convention for parameter types:
-R means real number (float or double)
-I means integer
-S means string
-B means boolean
+R means real number (with decimal point)
+I means integer (without decimal point)
+S means string (any sequence of characters)
+B means boolean (true or false)
 
 name (S): name of the wheel, used to name the links and joints.
 prefix (S): optional prefix for the names of the links and joints.
 parent_frame (S): name of the parent frame to which the wheel's root link is attached.
 use_visual (B): if true, include visual element.
-use_collision (B): if true, include collision element.
 use_inertial (B): if true, include inertial element.
-v_mesh (S): mesh filename for the visual element of the main link, '${prefix}${name}_rotation_link'. If empty string,
-            a cylinder shape is used with size defined by 'radius' and 'length'.
-            Used only if use_visual is true.
+v_mesh (S): package-relative mesh path used only by the visual element of '${prefix}${name}_rotation_link'
+            (for example: 'robotics_description/meshes/.../wheel.dae').
+            If empty, the visual element falls back to a primitive cylinder defined by 'radius' and 'length'.
+            Ignored when use_visual is false.
 v_mesh_scale (S): Scale of the visual mesh, if use_visual is true and v_mesh is provided.
     v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
 v_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place the visual mesh
-                   w.r.t the frame of the wheel's link (${prefix}${name}_rotation_link).
-                   Used only if use_visual is true and v_mesh is provided.
-                   IMPORTANT: A WHEEL IS CONSIDERED TO BE A CYLINDER WITH ITS ROTATION AXIS ALONG THE Y-AXIS.
-                   THEREFORE, A PROPER ORIGIN MUST BE PROVIDED TO ALIGN THE MESH W.R.T THE WHEEL'S FRAME,
-                   '${prefix}${name}_rotation_link', SO THAT THE Y-AXIS OF THE WHEEL'S FRAME IS THE ROTATION AXIS OF THE
-                   WHEEL MESH, THE X-AXIS OF THE WHEEL'S FRAME IS ALONG THE ROLLING DIRECTION OF THE WHEEL MESH,
-                   AND THE Z-AXIS OF THE WHEEL'S FRAME POINTS UPWARDS.
+                   w.r.t the frame '${prefix}${name}_rotation_link'. Used only if use_visual is true and v_mesh is provided.
+                   IMPORTANT: The wheel frame convention is fixed:
+                     - +Y is the wheel spin axis.
+                     - +X is the rolling direction.
+                     - +Z points upward.
+                   v_mesh_origin must align the mesh to that convention.
 color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
            If color is not empty, the provided color is applied to the object used in the visual element, either
            a mesh (even if the mesh has its own color) or cylinder shape.
@@ -32,10 +33,10 @@ color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual
                If a mesh is used and has its own color, the color of the mesh is displayed.
                If a mesh is used with no color data associated or a cylinder shape is used, a whitish default color is used
                to display the visual element.
-radius (R): radius of the wheel. Used if v_mesh is an empty string or use_inertial is true (even if a mesh is used,
-               the radius is used to compute the inertia).
-length (R): length of the wheel along its rotation axis (y-axis). Used if v_mesh is an empty string or use_inertial
-               is true (even if a mesh is used, the length is used to compute the inertia).
+radius (R): wheel radius. Used for primitive visual (when v_mesh is empty), always used for collision
+            (collision is always a primitive cylinder), and used for inertia if use_inertial is true.
+length (R): wheel length along the rotation axis (+Y). Used for primitive visual (when v_mesh is empty), always used
+            for collision, and used for inertia if use_inertial is true.
 mass (R): mass of the wheel. Used only if use_inertial is true.
 rotation_joint_type (S): type of the joint connecting the wheel to the parent frame.
     rotation_joint_type (S) = 'continuous' | 'fixed'.
@@ -119,26 +120,20 @@ velocity: 10 to 30 rad/s
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
-    When the v_mesh_origin parameter was explained above, it was mentioned:
-    IMPORTANT: A WHEEL IS CONSIDERED TO BE A CYLINDER WITH ITS ROTATION AXIS ALONG THE Y-AXIS.
-    THEREFORE, A PROPER ORIGIN MUST BE PROVIDED TO ALIGN THE MESH W.R.T THE WHEEL'S FRAME,
-    '${prefix}${name}_rotation_link', SO THAT THE Y-AXIS OF THE WHEEL'S FRAME IS THE ROTATION AXIS OF THE WHEEL MESH,
-    THE X-AXIS OF THE WHEEL'S FRAME IS ALONG THE ROLLING DIRECTION OF THE WHEEL MESH, AND THE Z-AXIS OF THE WHEEL'S
-    FRAME POINTS UPWARDS.
+    Frame convention for '${prefix}${name}_rotation_link':
+      - +Y is wheel spin axis.
+      - +X is rolling direction.
+      - +Z points upward.
 
-    If v_mesh is an empty string, a cylinder shape is used for the visual element. A cylinder shape has its symmetry
-    axis along the z-axis by default. Therefore, the cylinder shape must be rotated along its x-axis (roll = 0.5 * pi),
-    so that its symmetry axis aligns with the y-axis of the wheel's frame.
+    If v_mesh is provided, v_mesh_origin must align the mesh to that convention.
+    If v_mesh is empty, a primitive cylinder is used for visual.
 
-    Besides, some friction properties must be modeled for the wheel, because the wheel will interact with the ground.
-    therefore, a wheel always uses a collision element.
-    The collision element is always a cylinder shape (no mesh), also with its symmetry axis (rotation axis) along the
-    y-axis, regardless if the visual element is a mesh or a cylinder shape.
-    The use a basic cylinder shape for the collision element improves the simulation performance.
+    Collision is always enabled and always represented as a primitive cylinder (no collision mesh), to keep contacts
+    stable and fast.
 
-    Therefore, a property 'shape_origin = "0.0 0.0 0.0 0.5*pi 0.0 0.0"' is created, which is used as the origin
-    for a cylinder shape, that could be used for the visual element, if no mesh is provided, and is always used for the
-    collision element and for the inertia computation.
+    Primitive cylinders are Z-axis aligned by default in URDF, so they are rotated by +pi/2 around X using:
+      shape_origin = "0.0 0.0 0.0 0.5*pi 0.0 0.0"
+    The same shape_origin is used by visual primitives and collision primitives.
     -->
     <xacro:property name="shape_origin" value="0.0 0.0 0.0 ${0.5 * pi} 0.0 0.0"/>
 
@@ -155,13 +150,13 @@ velocity: 10 to 30 rad/s
                                color="${v_color}"/>
       </xacro:if>
 
-      <!-- The collision element is always used -->
-      <xacro:visual_cylinder mesh="${v_mesh}"
-                             scale="${v_mesh_scale}"
-                             mesh_origin="${v_mesh_origin}"
-                             radius="${radius}"
-                             length="${length}"
-                             shape_origin="${shape_origin}"/>
+      <!--
+      Collision is always enabled for wheel-ground contact and is always represented as
+      a primitive cylinder (no collision mesh), for stable and fast simulation.
+      -->
+      <xacro:collision_cylinder radius="${radius}"
+                                length="${length}"
+                                shape_origin="${shape_origin}"/>
 
       <xacro:if value="${use_inertial}">
       <!--
@@ -188,6 +183,7 @@ velocity: 10 to 30 rad/s
       ${xacro.fatal("the field 'rotation_joint_type' must be either 'continuous' or 'fixed'")}
     </xacro:if>
 
+    <!-- Parsed as [x, y, z, roll, pitch, yaw]. -->
     <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
 
     <joint name="${prefix}${name}_rotation_joint" type="${rotation_joint_type}">
@@ -208,6 +204,10 @@ velocity: 10 to 30 rad/s
     </joint>
 
     <gazebo reference="${prefix}${name}_rotation_link">
+      <!--
+      This block configures contact/friction for the URDF collision already defined in rotation_link.
+      It does not create a second collision shape.
+      -->
       <collision>
         <max_contacts>${max_contacts}</max_contacts>
         <surface>
