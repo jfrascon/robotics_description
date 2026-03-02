@@ -12,8 +12,11 @@ robotics_description/meshes/extras/fork_simple/fork_simple_0/meshlab_geometric_m
 
 Inertia-scaling procedure:
 robotics_description/doc/how_to_compute_inertia_w_meshlab.md
-The raw MeshLab inertia tensor is reported in the companion MeshLab report for rho=1 kg/m^3.
-The macro values below are scaled to use mass = 100.0 kg.
+MeshLab works with rho=1 (it does not model a specific material here).
+With rho=1, the reference mass is mass_ref = mesh volume (computed by MeshLab).
+To obtain inertia tensors for the target mass `mass`, scale each tensor component by
+s = mass / mass_ref.
+In this macro, the target mass used for scaling is mass = 100.0 kg.
 -->
 <robot name="fork_simple_0" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
@@ -29,7 +32,16 @@ The macro values below are scaled to use mass = 100.0 kg.
                        limits:='0.0 0.0 1000.0 1000.0'
                        joint_parent_fr_root_fr">
 
-    <!-- Model-specific mesh path (package-relative, without package:// prefix). -->
+    <!--
+    Model-specific mesh path (package-relative, without package:// prefix).
+    The mesh frame is expected to follow the generator convention:
+    - Origin: rear face of the tine union, centered in Y, on the bottom plane.
+    - +X: from the rear union plate toward the tine tips.
+    - +Y: side where the left tine is built (right tine is mirrored to -Y).
+    - +Z: upward.
+    Therefore, when integrating this fork model on a robot, `joint_parent_fr_root_fr` must be chosen
+    consistently with that frame convention.
+    -->
     <xacro:property name="mesh" value="robotics_description/meshes/extras/fork_simple/fork_simple_0/fork_simple_0.stl"/>
 
     <!-- Geometry constants of fork_simple_0 (meters), matching script defaults. -->
@@ -54,10 +66,11 @@ The macro values below are scaled to use mass = 100.0 kg.
     <!-- Inertial path: compute scaled tensor from MeshLab reference values and pass it to fork_simple. -->
     <xacro:if value="${use_inertial}">
       <!--
-      Inertial constants from MeshLab reference values (rho=1 kg/m^3), scaled to mass.
+      Compute inertia elements by scaling the reference values reported by MeshLab.
+      MeshLab uses rho=1 kg/m^3 (it does not model a specific material here), so mass_ref = mesh volume.
       Following doc/how_to_compute_inertia_w_meshlab.md:
-        m_ref = V_meshlab
-        s = m_real / m_ref
+        mass_ref = V_meshlab
+        s = mass_real / mass_ref
         I_real_ij = s * I_ref_ij
       -->
       <xacro:property name="mass"            value="100.0"/>
