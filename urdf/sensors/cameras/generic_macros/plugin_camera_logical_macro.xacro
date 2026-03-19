@@ -6,7 +6,7 @@
   The <topic> you set is the prefix used by Gazebo to publish detections.
 
   Parameters near_clip / far_clip define the sensing range (meters).
-  horizontal_fov is given in degrees; aspect_ratio sets width/height of the frustum.
+  horizontal_fov is given in degrees; aspect_ratio is a dimensionless width/height ratio of the frustum.
   Frame id for messages is forced via <gz_frame_id> using optical_frame.
 
   This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
@@ -46,8 +46,7 @@
       near (R): Near clipping distance of the view frustum.
       far (R): Far clipping distance of the view frustum.
 
-  aspect_ratio_deg (R): Horizontal field of view of the frustum, in degrees. This is the angle between the frustum's
-                        vertex and the edges of the near or far plane.
+  aspect_ratio (R): Width / height ratio of the logical camera frustum. This is a dimensionless value, not an angle.
   -->
   <xacro:macro name="plugin_camera_logical"
                params="name
@@ -59,7 +58,7 @@
                        update_rate:=30.0
                        hor_fov_deg:=60.0
                        clip:='0.0 1.0'
-                       aspect_ratio_deg:=57.296
+                       aspect_ratio:=1.0
                        topic" >
 
     <xacro:property name="clip_seq"                 value="${clip.split()}"/>
@@ -90,7 +89,7 @@
           <near_clip>${near_clip}</near_clip>
           <far_clip>${far_clip}</far_clip>
           <horizontal_fov>${radians(float(hor_fov_deg))}</horizontal_fov>
-          <aspect_ratio>${radians(float(aspect_ratio_deg))}</aspect_ratio>
+          <aspect_ratio>${aspect_ratio}</aspect_ratio>
         </logical_camera>
       </sensor>
     </gazebo>

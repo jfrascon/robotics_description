@@ -1,0 +1,103 @@
+# Example bridge channels for the RGBD RealSense D435 model: rgbd + infrared pair.
+#
+# The RGBD image, depth_image, and points channels must share a common base topic. For that reason, their final
+# Gazebo topics must end with '/image', '/depth_image', and '/points', respectively.
+
+realsense_d435_rgbd_image:
+  ros_topic_name: realsense_d435/rgbd/image
+  gz_topic_name: realsense_d435/rgbd/image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_rgbd_camera_info:
+  ros_topic_name: realsense_d435/rgbd/camera_info
+  gz_topic_name: realsense_d435/rgbd/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_rgbd_depth_image:
+  ros_topic_name: realsense_d435/rgbd/depth_image
+  gz_topic_name: realsense_d435/rgbd/depth_image
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_rgbd_points:
+  ros_topic_name: realsense_d435/rgbd/points
+  gz_topic_name: realsense_d435/rgbd/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_rgbd_trigger:
+  ros_topic_name: realsense_d435/rgbd/trigger
+  gz_topic_name: realsense_d435/rgbd/trigger
+  ros_type_name: std_msgs/msg/Empty
+  gz_type_name: gz.msgs.Empty
+  direction: ROS_TO_GZ
+  qos_profile: DEFAULT
+  lazy: True
+
+realsense_d435_infra1_image:
+  ros_topic_name: realsense_d435/infra1/image_raw
+  gz_topic_name: realsense_d435/infra1/image_raw
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_infra1_camera_info:
+  ros_topic_name: realsense_d435/infra1/camera_info
+  gz_topic_name: realsense_d435/infra1/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_infra1_trigger:
+  ros_topic_name: realsense_d435/infra1/trigger
+  gz_topic_name: realsense_d435/infra1/trigger
+  ros_type_name: std_msgs/msg/Empty
+  gz_type_name: gz.msgs.Empty
+  direction: ROS_TO_GZ
+  qos_profile: DEFAULT
+  lazy: True
+
+realsense_d435_infra2_image:
+  ros_topic_name: realsense_d435/infra2/image_raw
+  gz_topic_name: realsense_d435/infra2/image_raw
+  ros_type_name: sensor_msgs/msg/Image
+  gz_type_name: gz.msgs.Image
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_infra2_camera_info:
+  ros_topic_name: realsense_d435/infra2/camera_info
+  gz_topic_name: realsense_d435/infra2/camera_info
+  ros_type_name: sensor_msgs/msg/CameraInfo
+  gz_type_name: gz.msgs.CameraInfo
+  direction: GZ_TO_ROS
+  qos_profile: SENSOR_DATA
+  lazy: True
+
+realsense_d435_infra2_trigger:
+  ros_topic_name: realsense_d435/infra2/trigger
+  gz_topic_name: realsense_d435/infra2/trigger
+  ros_type_name: std_msgs/msg/Empty
+  gz_type_name: gz.msgs.Empty
+  direction: ROS_TO_GZ
+  qos_profile: DEFAULT
+  lazy: True

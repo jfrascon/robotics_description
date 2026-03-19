@@ -1,0 +1,187 @@
+<?xml version="1.0"?>
+
+<robot name="realsense_d435_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="realsense_d435_links_joints"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=True
+                       color:='0.5 0.5 0.5 1.0'
+                       use_c_mesh:=False
+                       use_nominal_extrinsics:=False
+                       joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <!--
+    The following values are approximate, and the camera node publishing TF values with actual calibrated camera
+    extrinsic values.
+    -->
+    <xacro:property name="cam_depth_to_infra1_offset" value="0.0"/>
+    <xacro:property name="cam_depth_to_infra2_offset" value="-0.050"/>
+    <xacro:property name="cam_depth_to_color_offset"  value="0.015"/>
+
+    <!--
+    The following values model the aluminum peripherial case for the D435 camera, with the camera joint represented by
+    the actual peripherial camera tripod mount.
+    -->
+    <xacro:property name="size_x"                       value="0.02505"/>
+    <xacro:property name="size_y"                       value="0.090"/>
+    <xacro:property name="size_z"                       value="0.025"/>
+    <xacro:property name="size"                         value="${size_x} ${size_y} ${size_z}"/>
+    <!-- glass cover is 0.1 mm inwards from front aluminium plate -->
+    <xacro:property name="glass_to_front"               value="0.1e-3"/>
+    <!-- see datasheet Revision 007, Fig. 4-4 page 65 -->
+    <xacro:property name="zero_depth_to_glass"          value="4.2e-3"/>
+    <!-- convenience precomputation to avoid clutter-->
+    <xacro:property name="cam_mount_from_center_offset" value="0.0149"/>
+    <xacro:property name="mesh_x_offset"
+                    value="${cam_mount_from_center_offset - zero_depth_to_glass - glass_to_front}"/>
+
+    <!-- The following offset is relative the the physical D435 camera peripherial camera tripod mount. -->
+    <xacro:property name="cam_depth_px" value="${cam_mount_from_center_offset}"/>
+    <xacro:property name="cam_depth_py" value="0.0175"/>
+    <xacro:property name="cam_depth_pz" value="${size_z * 0.5}"/>
+
+    <!--
+    The frame of the mesh is located at its geometric center (See MeshLab), so it coincides with the frame of a box
+    shape.
+    Therefore, just one origin is needed no matter if use_<v|c>_mesh is true or false.
+    Scale is 1 1 1.
+    The mesh does not have color information, so a color is encouraged.
+    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="mesh"
+                    value="robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
+    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+    <xacro:property name="origin"
+                    value="${(-size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
+
+    <!-- root frame for the camera -->
+    <link name="${prefix}${name}_bottom_screw_frame"/>
+
+    <!--
+    Definition of the joint '${prefix}${name}_joint', that joins the ${prefix}${name}_bottom_screw_frame to its
+    parent frame.
+    -->
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_bottom_screw_frame" />
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <link name="${prefix}${name}_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_mesh"  value="${mesh if use_v_mesh else ''}"/>
+        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${v_mesh}"
+                          scale="${mesh_scale}"
+                          mesh_origin="${origin}"
+                          size="${size}"
+                          shape_origin="${origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:property name="c_mesh" value="${mesh if use_c_mesh else ''}"/>
+        <xacro:collision_box mesh="${c_mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${origin}"
+                             size="${size}"
+                             shape_origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="0.072" size="${size}" origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <joint name="${prefix}${name}_link_joint" type="fixed">
+      <parent link="${prefix}${name}_bottom_screw_frame"/>
+      <child link="${prefix}${name}_link" />
+      <origin rpy="0.0 0.0 0.0" xyz="${mesh_x_offset} ${cam_depth_py} ${cam_depth_pz}"/>
+    </joint>
+
+    <!--
+    Use the nominal extrinsics between camera frames if the calibrated extrinsics aren't being published. e.g. running
+    the device in simulation
+    -->
+    <xacro:if value="${use_nominal_extrinsics}">
+      <!-- camera depth joints and links -->
+      <link name="${prefix}${name}_depth_frame"/>
+
+      <joint name="${prefix}${name}_depth_joint" type="fixed">
+        <parent link="${prefix}${name}_link"/>
+        <child link="${prefix}${name}_depth_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_depth_optical_frame"/>
+
+      <joint name="${prefix}${name}_depth_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_depth_frame" />
+        <child link="${prefix}${name}_depth_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <!-- camera left IR joints and links -->
+      <link name="${prefix}${name}_infra1_frame"/>
+
+      <joint name="${prefix}${name}_infra1_joint" type="fixed">
+        <parent link="${prefix}${name}_link" />
+        <child link="${prefix}${name}_infra1_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_infra1_offset} 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_infra1_optical_frame"/>
+
+      <joint name="${prefix}${name}_infra1_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_infra1_frame" />
+        <child link="${prefix}${name}_infra1_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <!-- camera right IR joints and links -->
+      <link name="${prefix}${name}_infra2_frame"/>
+
+      <joint name="${prefix}${name}_infra2_joint" type="fixed">
+        <parent link="${prefix}${name}_link" />
+        <child link="${prefix}${name}_infra2_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_infra2_offset} 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_infra2_optical_frame"/>
+
+      <joint name="${prefix}${name}_infra2_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_infra2_frame" />
+        <child link="${prefix}${name}_infra2_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+
+      <!-- camera color joints and links -->
+      <link name="${prefix}${name}_color_frame"/>
+
+      <joint name="${prefix}${name}_color_joint" type="fixed">
+        <parent link="${prefix}${name}_link" />
+        <child link="${prefix}${name}_color_frame" />
+        <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_color_offset} 0.0"/>
+      </joint>
+
+      <link name="${prefix}${name}_color_optical_frame"/>
+
+      <joint name="${prefix}${name}_color_optical_joint" type="fixed">
+        <parent link="${prefix}${name}_color_frame" />
+        <child link="${prefix}${name}_color_optical_frame" />
+        <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+      </joint>
+    </xacro:if>
+  </xacro:macro>
+</robot>

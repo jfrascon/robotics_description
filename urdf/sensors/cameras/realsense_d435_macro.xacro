@@ -1,0 +1,489 @@
+<?xml version="1.0"?>
+
+<!--
+This is the URDF model for the Intel RealSense 435 camera.
+Base file used to create this file:
+https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/realsense2_description/urdf/_d435.urdf.xacro
+
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
+
+name (S): name of the realsense, used to name the links and joints.
+
+prefix (S): optional prefix for the names of the links and joints.
+
+parent_frame (S): name of the parent frame to which the cameras's root frame is attached.
+
+use_visual (B): if true, include visual element.
+
+use_collision (B): if true, include collision element.
+
+use_inertial (B): if true, include inertial element.
+
+use_v_mesh (B): if true, use the camera's mesh for the visual element. If false, use a box shape.
+
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is not empty, the provided color is applied to the object used in the visual element, either
+           a mesh (even if the mesh has its own color) or box shape.
+           If color is empty:
+               If a mesh is used and has its own color, the color of the mesh is displayed.
+               If a mesh is used with no color data associated or a box shape is used, a whitish default color is used
+               to display the visual element.
+
+use_c_mesh (B): if true, use the camera's mesh for the collision element. If false, use a box shape.
+
+joint_parent_fr_root_fr (S): Pose of the camera's root frame w.r.t the parent's frame.
+    joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+use_sim (B): if true, include Gazebo camera plugins.
+
+sim_use_gravity (B): if true, all simulated sensors of the split D435 model are affected by gravity.
+
+sim_color_enabled (B): if true, the color camera is included in simulation.
+
+sim_color_always_on (B): if true, the color camera is always on in simulation.
+
+sim_color_visualize (B): if true, the color camera image is visualized in simulation.
+
+sim_color_enable_metrics (B): if true, the color camera performance metrics are enabled in simulation.
+
+sim_color_save (S): Enable or disable saving of camera frames.
+    sim_color_save = 'enable (B) path (S)'
+    enable (B): If true, saving of camera frames is enabled.
+    path (S): The path name which will hold the frame data. If path name is relative, then directory is relative to
+              current working directory.
+
+sim_color_triggered (B): If true, the camera is triggered by a topic.
+
+sim_color_visible_mask (I): Visibility mask of a camera. Bitmask filter that controls which visuals this camera will
+                                render.
+                                A visual is visible if (visibility_mask & visual.visibility_flags) != 0.
+                                A mask 0xFFFFFFFF typically means 'see everything'
+
+sim_color_clip (S): The near and far clip planes used in simulation. Objects closer or farther than these planes are
+                    not rendered (captured by Gazebo in the image).
+    sim_color_clip = 'near (R) far (R)'
+    near (R): Near clipping distance of the view frustum.
+    far (R): Far clipping distance of the view frustum.
+
+sim_color_update_rate (R): The frequency at which the sensor data is generated. If left unspecified, the sensor will
+                           generate data every cycle.
+
+sim_color_image (S): The image size in pixels and format
+    sim_color_image = 'width (I) height (I) format (S) anti_aliasing (I)'
+    width (I): Width of the image in pixels.
+    height (I): Height of the image in pixels.
+    format (S) = L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8 | BAYER_GRBG8 |
+                  | R_FLOAT16 | R_FLOAT32 (These last two formats are hardly used)
+        The <format> field describes the format used for the data published in the color image message
+        ${topic}/image.
+        It is also the format Gazebo uses to render the color image in the GUI when <visualize> is enabled in the
+        sensor.
+        If you choose R8G8B8 you publish an RGB image, if you choose L8 you publish a monochrome image, etc.
+        Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
+        where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
+        intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
+        <image><format> is problably limited, but they are supported if you have a specific use case.
+
+    anti_aliasing (I): Value used for anti-aliasing.
+
+sim_color_lens_single_elements (S): Single element lens (Single in the sense that these element are not composed by
+                                    multiple sub-elements as in lens_intrinsics, for example).
+    sim_color_lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
+    type (S): Type of the lens mapping. Supported values are: gnomonical, stereographic, equidistant, equisolid_angle,
+              orthographic, custom.
+              - gnomonical (pinhole): Standard perspective projection. Straight lines in space are projected as
+                straight lines in the image. Used in conventional cameras.
+                For gnomonical type it is recommended to specify a horizontal_fov <= 90°.
+              - stereographic: Projection that preserves angles, common in fisheye lenses. Areas are distorted, but
+                angles remain unchanged.
+              - equidistant: The radial distance in the image is proportional to the angle of incidence. Used in some
+                fisheye lenses.
+              - equisolid_angle: Projection where the area in the image is proportional to the solid angle. Used in
+                fisheye lenses for scientific applications.
+              - orthographic: Orthographic projection, without perspective. Objects retain their size regardless of
+                distance.
+              - custom: Allows defining a custom angular mapping function using the custom_function field.
+                If custom is selected, you must also define the 'lens_custom_function' parameter with the appropriate
+                mapping function and constants (c1, c2, c3, f, fun).
+    scale_to_hfov (B): If true the image will be scaled to fit horizontal FOV, otherwise it will be shown according to
+                        projection type parameters.
+    cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default.
+    env_texture_size (I): Resolution of the environment cube map used to draw the world.
+
+sim_color_lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix.
+    lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+    fx (R): X focal length in pixels. A decimal part is allowed.
+    fy (R): Y focal length in pixels. A decimal part is allowed.
+    cx (R): principal point x in pixels. A decimal part is allowed.
+    cy (R): principal point y in pixels. A decimal part is allowed.
+
+The intrinsic parameters above form the camera matrix K:
+
+    K = | fx  s  cx |
+        |  0 fy  cy |
+        |  0  0   1 |
+where s is the 'lens_xy_skew' parameter.
+
+sim_color_lens_xy_skew (R): Parameter in the camera intrinsic matrix that represents the tilt between the X and Y
+                            axes of the image sensor. In an ideal sensor, pixels are perfectly aligned in rows and
+                            columns, and the X and Y axes are perpendicular, so lens_xy_skew = 0.0. If the sensor is
+                            slightly deformed or the pixels are not perfectly aligned, there may be a small tilt
+                            between the axes, and s would have a nonzero value.
+                            In practice, almost all modern cameras have lens_xy_skew = 0.0, and only in special
+                            cases or defective sensors is a different value used.
+
+sim_color_distortion_k_p (S): Lens distortion to be applied to camera images.
+                              See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
+    sim_color_distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
+    k1 (R): The radial distortion coefficient k1 (Default: 0.0).
+    k2 (R): The radial distortion coefficient k2 (Default: 0.0).
+    k3 (R): The radial distortion coefficient k3 (Default: 0.0).
+    p1 (R): The tangential distortion coefficient p1 (Default: 0.0).
+    p2 (R): The tangential distortion coefficient p2 (Default: 0.0).
+
+If the distortion parameters k1, k2, k3 (radial) and p1, p2 (tangential) are set to zero (their default values),
+no optical distortion will be applied to the camera image. The result is an ideal image, free from radial or
+tangential deformation, as if the lens were a perfect pinhole model without imperfections. This is the standard
+setting for most simulations where realistic lens distortion is not required.
+
+sim_color_distortion_center (S): The normalized coordinates of the distortion center or principal point.
+    sim_color_distortion_center (S) = 'center_x_norm (R) center_y_norm (R)'
+    center_x_norm (R): The normalized x coordinate of the distortion center or principal point, in the range
+                        [0.0, 1.0].
+    center_y_norm (R): The normalized y coordinate of the distortion center or principal point, in the range
+                        [0.0, 1.0].
+
+sim_color_gaussian_noise (S): The properties of the noise model that should be applied to generated images.
+    sim_color_gaussian_noise = 'mean (R) stddev (R)'
+    mean (R): Mean of the Gaussian noise.
+    stddev (R): Standard deviation of the Gaussian noise.
+
+sim_color_image_topic (S): Gazebo topic used for the color image stream.
+sim_color_camera_info_topic (S): Gazebo topic used for the color camera info stream.
+sim_color_trigger_topic (S): Gazebo topic used to trigger the color camera.
+
+infrared camera uses the same parameters as the color camera, but prefixed with sim_infra_
+infrared camera 1 and 2 use independent topics:
+- sim_infra1_image_topic
+- sim_infra1_camera_info_topic
+- sim_infra1_trigger_topic
+- sim_infra2_image_topic
+- sim_infra2_camera_info_topic
+- sim_infra2_trigger_topic
+
+depth camera uses the same parameters as the color camera, but prefixed with sim_depth_, with the addition of:
+sim_depth_depth_clip (S): These limits are the ones used to generate the depth image.
+                              Unlike clip, these values do NOT affect visualization in the Gazebo GUI, only the depth
+                              image data.
+    depth_clip (S) = 'near (R) far (R)'
+    near (R): Near clipping plane.
+    far (R): Far clipping plane.
+sim_depth_depth_image_topic (S): Gazebo topic used for the depth image stream.
+sim_depth_camera_info_topic (S): Gazebo topic used for the depth camera info stream.
+sim_depth_trigger_topic (S): Gazebo topic used to trigger the depth camera.
+-->
+
+<robot name="realsense_d435_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="realsense_d435"
+               params="name
+                       prefix:=''
+                       namespace:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=True
+                       color:='0.5 0.5 0.5 1.0'
+                       use_c_mesh:=False
+                       use_nominal_extrinsics:=False
+                       joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       use_sim:=False
+                       sim_use_gravity:=True
+                       sim_color_enabled:=True
+                       sim_color_always_on:=True
+                       sim_color_visualize:=False
+                       sim_color_enable_metrics:=False
+                       sim_color_save:='False /tmp'
+                       sim_color_triggered:=False
+                       sim_color_visible_mask:=4294967295
+                       sim_color_clip:='0.1 100.0'
+                       sim_color_update_rate
+                       sim_color_image
+                       sim_color_lens_single_elements
+                       sim_color_lens_custom_function:=''
+                       sim_color_lens_intrinsics:=''
+                       sim_color_lens_projection:=''
+                       sim_color_lens_xy_skew:=0.0
+                       sim_color_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_color_distortion_center:='0.5 0.5'
+                       sim_color_gaussian_noise:='0.0 0.0'
+                       sim_infra_enabled:=True
+                       sim_infra_always_on:=True
+                       sim_infra_visualize:=False
+                       sim_infra_enable_metrics:=False
+                       sim_infra_save:='False /tmp'
+                       sim_infra_triggered:=False
+                       sim_infra_visible_mask:=4294967295
+                       sim_infra_clip:='0.1 10.0'
+                       sim_infra_update_rate
+                       sim_infra_image
+                       sim_infra_lens_single_elements
+                       sim_infra_lens_custom_function:=''
+                       sim_infra_lens_intrinsics:=''
+                       sim_infra_lens_projection:=''
+                       sim_infra_lens_xy_skew:=0.0
+                       sim_infra_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_infra_distortion_center:='0.5 0.5'
+                       sim_infra_gaussian_noise:='0.0 0.0'
+                       sim_depth_enabled:=True
+                       sim_depth_always_on:=True
+                       sim_depth_visualize:=False
+                       sim_depth_enable_metrics:=False
+                       sim_depth_save:='False /tmp'
+                       sim_depth_triggered:=False
+                       sim_depth_visible_mask:=4294967295
+                       sim_depth_clip:='0.1 100.0'
+                       sim_depth_depth_clip:='0.1 10.0'
+                       sim_depth_update_rate
+                       sim_depth_image
+                       sim_depth_lens_single_elements
+                       sim_depth_lens_custom_function:=''
+                       sim_depth_lens_intrinsics:=''
+                       sim_depth_lens_projection:=''
+                       sim_depth_lens_xy_skew:=0.0
+                       sim_depth_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_depth_distortion_center:='0.5 0.5'
+                       sim_depth_gaussian_noise:='0.0 0.0'
+                       sim_color_image_topic:=''
+                       sim_color_camera_info_topic:=''
+                       sim_color_trigger_topic:=''
+                       sim_infra1_image_topic:=''
+                       sim_infra1_camera_info_topic:=''
+                       sim_infra1_trigger_topic:=''
+                       sim_infra2_image_topic:=''
+                       sim_infra2_camera_info_topic:=''
+                       sim_infra2_trigger_topic:=''
+                       sim_depth_depth_image_topic:=''
+                       sim_depth_camera_info_topic:=''
+                       sim_depth_trigger_topic:=''">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_links_joints_macro.xacro"/>
+
+    <xacro:realsense_d435_links_joints name="${name}"
+                                       prefix="${prefix}"
+                                       parent_frame="${parent_frame}"
+                                       use_visual="${use_visual}"
+                                       use_collision="${use_collision}"
+                                       use_inertial="${use_inertial}"
+                                       use_v_mesh="${use_v_mesh}"
+                                       color="${color}"
+                                       use_c_mesh="${use_c_mesh}"
+                                       use_nominal_extrinsics="${use_nominal_extrinsics}"
+                                       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+
+    <xacro:if value="${use_sim}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
+
+      <xacro:make_namespace prop_id="camera_namespace" namespace="${namespace}" name="${name}"/>
+
+      <xacro:if value="${sim_color_image_topic == ''}">
+        ${xacro.fatal("sim_color_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_color_camera_info_topic == ''}">
+        ${xacro.fatal("sim_color_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_color_trigger_topic == ''}">
+        ${xacro.fatal("sim_color_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_color_image_topic"
+                      value="${sim_color_image_topic if sim_color_image_topic.startswith('/') else camera_namespace + '/' + sim_color_image_topic}"/>
+
+      <xacro:property name="resolved_color_camera_info_topic"
+                      value="${sim_color_camera_info_topic if sim_color_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_color_camera_info_topic}"/>
+
+      <xacro:property name="resolved_color_trigger_topic"
+                      value="${sim_color_trigger_topic if sim_color_trigger_topic.startswith('/') else camera_namespace + '/' + sim_color_trigger_topic}"/>
+
+      <xacro:if value="${sim_infra1_image_topic == ''}">
+        ${xacro.fatal("sim_infra1_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_camera_info_topic == ''}">
+        ${xacro.fatal("sim_infra1_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_trigger_topic == ''}">
+        ${xacro.fatal("sim_infra1_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_infra1_image_topic"
+                      value="${sim_infra1_image_topic if sim_infra1_image_topic.startswith('/') else camera_namespace + '/' + sim_infra1_image_topic}"/>
+
+      <xacro:property name="resolved_infra1_camera_info_topic"
+                      value="${sim_infra1_camera_info_topic if sim_infra1_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_infra1_camera_info_topic}"/>
+
+      <xacro:property name="resolved_infra1_trigger_topic"
+                      value="${sim_infra1_trigger_topic if sim_infra1_trigger_topic.startswith('/') else camera_namespace + '/' + sim_infra1_trigger_topic}"/>
+
+      <xacro:if value="${sim_infra2_image_topic == ''}">
+        ${xacro.fatal("sim_infra2_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra2_camera_info_topic == ''}">
+        ${xacro.fatal("sim_infra2_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra2_trigger_topic == ''}">
+        ${xacro.fatal("sim_infra2_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_infra2_image_topic"
+                      value="${sim_infra2_image_topic if sim_infra2_image_topic.startswith('/') else camera_namespace + '/' + sim_infra2_image_topic}"/>
+
+      <xacro:property name="resolved_infra2_camera_info_topic"
+                      value="${sim_infra2_camera_info_topic if sim_infra2_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_infra2_camera_info_topic}"/>
+
+      <xacro:property name="resolved_infra2_trigger_topic"
+                      value="${sim_infra2_trigger_topic if sim_infra2_trigger_topic.startswith('/') else camera_namespace + '/' + sim_infra2_trigger_topic}"/>
+
+      <xacro:if value="${sim_depth_depth_image_topic == ''}">
+        ${xacro.fatal("sim_depth_depth_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_depth_camera_info_topic == ''}">
+        ${xacro.fatal("sim_depth_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_depth_trigger_topic == ''}">
+        ${xacro.fatal("sim_depth_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_depth_image_topic"
+                      value="${sim_depth_depth_image_topic if sim_depth_depth_image_topic.startswith('/') else camera_namespace + '/' + sim_depth_depth_image_topic}"/>
+
+      <xacro:property name="resolved_depth_camera_info_topic"
+                      value="${sim_depth_camera_info_topic if sim_depth_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_depth_camera_info_topic}"/>
+0
+      <xacro:property name="resolved_depth_trigger_topic"
+                      value="${sim_depth_trigger_topic if sim_depth_trigger_topic.startswith('/') else camera_namespace + '/' + sim_depth_trigger_topic}"/>
+
+      <xacro:if value="${sim_color_enabled}">
+        <xacro:plugin_camera name="${prefix}${name}_color"
+                             reference_frame="${prefix}${name}_color_frame"
+                             optical_frame="${prefix}${name}_color_optical_frame"
+                             use_gravity="${sim_use_gravity}"
+                             always_on="${sim_color_always_on}"
+                             visualize="${sim_color_visualize}"
+                             enable_metrics="${sim_color_enable_metrics}"
+                             save="${sim_color_save}"
+                             triggered="${sim_color_triggered}"
+                             trigger_topic="${resolved_color_trigger_topic}"
+                             info_topic="${resolved_color_camera_info_topic}"
+                             topic="${resolved_color_image_topic}"
+                             visible_mask="${sim_color_visible_mask}"
+                             clip="${sim_color_clip}"
+                             update_rate="${sim_color_update_rate}"
+                             image="${sim_color_image}"
+                             lens_single_elements="${sim_color_lens_single_elements}"
+                             lens_custom_function="${sim_color_lens_custom_function}"
+                             lens_intrinsics="${sim_color_lens_intrinsics}"
+                             lens_projection="${sim_color_lens_projection}"
+                             lens_xy_skew="${sim_color_lens_xy_skew}"
+                             distortion_k_p="${sim_color_distortion_k_p}"
+                             distortion_center="${sim_color_distortion_center}"
+                             gaussian_noise="${sim_color_gaussian_noise}"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_infra_enabled}">
+        <xacro:plugin_camera name="${prefix}${name}_infrared1"
+                             reference_frame="${prefix}${name}_infra1_frame"
+                             optical_frame="${prefix}${name}_infra1_optical_frame"
+                             use_gravity="${sim_use_gravity}"
+                             always_on="${sim_infra_always_on}"
+                             visualize="${sim_infra_visualize}"
+                             enable_metrics="${sim_infra_enable_metrics}"
+                             save="${sim_infra_save}"
+                             triggered="${sim_infra_triggered}"
+                             trigger_topic="${resolved_infra1_trigger_topic}"
+                             info_topic="${resolved_infra1_camera_info_topic}"
+                             topic="${resolved_infra1_image_topic}"
+                             visible_mask="${sim_infra_visible_mask}"
+                             clip="${sim_infra_clip}"
+                             update_rate="${sim_infra_update_rate}"
+                             image="${sim_infra_image}"
+                             lens_single_elements="${sim_infra_lens_single_elements}"
+                             lens_custom_function="${sim_infra_lens_custom_function}"
+                             lens_intrinsics="${sim_infra_lens_intrinsics}"
+                             lens_projection="${sim_infra_lens_projection}"
+                             lens_xy_skew="${sim_infra_lens_xy_skew}"
+                             distortion_k_p="${sim_infra_distortion_k_p}"
+                             distortion_center="${sim_infra_distortion_center}"
+                             gaussian_noise="${sim_infra_gaussian_noise}"/>
+
+        <xacro:plugin_camera name="${prefix}${name}_infrared2"
+                             reference_frame="${prefix}${name}_infra2_frame"
+                             optical_frame="${prefix}${name}_infra2_optical_frame"
+                             use_gravity="${sim_use_gravity}"
+                             always_on="${sim_infra_always_on}"
+                             visualize="${sim_infra_visualize}"
+                             enable_metrics="${sim_infra_enable_metrics}"
+                             save="${sim_infra_save}"
+                             triggered="${sim_infra_triggered}"
+                             trigger_topic="${resolved_infra2_trigger_topic}"
+                             info_topic="${resolved_infra2_camera_info_topic}"
+                             topic="${resolved_infra2_image_topic}"
+                             visible_mask="${sim_infra_visible_mask}"
+                             clip="${sim_infra_clip}"
+                             update_rate="${sim_infra_update_rate}"
+                             image="${sim_infra_image}"
+                             lens_single_elements="${sim_infra_lens_single_elements}"
+                             lens_custom_function="${sim_infra_lens_custom_function}"
+                             lens_intrinsics="${sim_infra_lens_intrinsics}"
+                             lens_projection="${sim_infra_lens_projection}"
+                             lens_xy_skew="${sim_infra_lens_xy_skew}"
+                             distortion_k_p="${sim_infra_distortion_k_p}"
+                             distortion_center="${sim_infra_distortion_center}"
+                             gaussian_noise="${sim_infra_gaussian_noise}"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_depth_enabled}">
+        <xacro:plugin_camera_depth type="depth_camera"
+                                   name="${prefix}${name}_depth"
+                                   reference_frame="${prefix}${name}_depth_frame"
+                                   optical_frame="${prefix}${name}_depth_optical_frame"
+                                   use_gravity="${sim_use_gravity}"
+                                   always_on="${sim_depth_always_on}"
+                                   visualize="${sim_depth_visualize}"
+                                   enable_metrics="${sim_depth_enable_metrics}"
+                                   save="${sim_depth_save}"
+                                   triggered="${sim_depth_triggered}"
+                                   trigger_topic="${resolved_depth_trigger_topic}"
+                                   info_topic="${resolved_depth_camera_info_topic}"
+                                   topic="${resolved_depth_image_topic}"
+                                   visible_mask="${sim_depth_visible_mask}"
+                                   clip="${sim_depth_clip}"
+                                   depth_clip="${sim_depth_depth_clip}"
+                                   update_rate="${sim_depth_update_rate}"
+                                   image="${sim_depth_image}"
+                                   lens_single_elements="${sim_depth_lens_single_elements}"
+                                   lens_custom_function="${sim_depth_lens_custom_function}"
+                                   lens_intrinsics="${sim_depth_lens_intrinsics}"
+                                   lens_projection="${sim_depth_lens_projection}"
+                                   lens_xy_skew="${sim_depth_lens_xy_skew}"
+                                   distortion_k_p="${sim_depth_distortion_k_p}"
+                                   distortion_center="${sim_depth_distortion_center}"
+                                   gaussian_noise="${sim_depth_gaussian_noise}"/>
+      </xacro:if>
+    </xacro:if>
+
+  </xacro:macro>
+</robot>

@@ -1,0 +1,137 @@
+# This file is a complete simulation example for the RGBD RealSense D435 model: rgbd + infrared pair.
+#
+# Many of the values in this file can be obtained by running the binary:
+# > rs-enumerate-devices <options>
+# Find more information about the command and its options at
+# https://github.com/realsenseai/librealsense/blob/master/tools/enumerate-devices/readme.md
+
+# This flag applies to all simulated sensors in this RGBD D435 model.
+use_gravity: True
+
+# In this RGBD model the main Gazebo sensor combines color and depth. For that reason, this example keeps the optical
+# and depth-related parameters close to the split model's depth camera, which is usually the more representative
+# starting point when tuning perception around the depth stream. The image.format field is still exposed here because an
+# RGBD camera also publishes a regular color image stream.
+rgbd_camera:
+  enabled: True
+  always_on: True
+  visualize: False
+  enable_metrics: False
+  save:
+    enabled: False
+    path: /tmp
+  triggered: False
+  visible_mask: 4294967295
+  clip:
+    near: 0.1
+    far: 10.0
+  depth_clip:
+    near: 0.1
+    far: 10.0
+  # These values follow the depth stream geometry used in the split D435 example.
+  # The RGB image published by the RGBD sensor will still use image.format below.
+  update_rate: 30.0
+  image:
+    width: 1280
+    height: 720
+    format: R8G8B8
+    anti_aliasing: 4
+  lens_single_elements:
+    type: gnomonical # DO NOT CHANGE
+    scale_to_hfov: True # DO NOT CHANGE
+    cutoff_angle_deg: 90.0
+    env_texture_size: 256
+  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  lens_custom_function: ""
+  # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(90/2) = 640 / tan(45) = 640
+  # fy = (image_height_px/2) / tan(vertical_fov/2)  = (720/2) / tan(63/2) = 360 / tan(31.5) = 588.2
+  # cx = (image_width_px − 1) / 2 = (1280 − 1) / 2  = 639.5
+  # cy = (image_height_px − 1) / 2 = (720 − 1) / 2  = 359.5
+  lens_intrinsics:
+    fx: 640.0
+    fy: 588.2
+    cx: 639.5
+    cy: 359.5
+  lens_xy_skew: 0.0
+  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
+  # overridden.
+  lens_projection: ""
+  distortion_k_p:
+    k1: 0.0
+    k2: 0.0
+    k3: 0.0
+    p1: 0.0
+    p2: 0.0
+  # center_x_norm = lens_intrinsics.cx + 0.5 / image.width = (639.5 + 0.5) / 1280 = 0.5
+  # center_y_norm = lens_intrinsics.cy + 0.5 / image.height = (359.5 + 0.5) / 720 = 0.5
+  # +0.5 is used to convert from pixel index to pixel center.
+  distortion_center:
+    center_x_norm: 0.5
+    center_y_norm: 0.5
+  gaussian_noise:
+    mean: 0.0
+    stddev: 0.0
+
+infrared_camera:
+  enabled: True
+  always_on: True
+  visualize: False
+  enable_metrics: False
+  save:
+    enabled: False
+    path: /tmp
+  triggered: False
+  visible_mask: 4294967295
+  clip:
+    near: 0.1
+    far: 10.0
+  # Official supported modes:
+  # | Resolution     | Aspect Ratio | FPS allowed (typical) | horizontal_fov_deg | vertical_fov_deg |
+  # | -------------- | ------------ | --------------------- | ------------------ | ---------------- |
+  # | 1280×720       | 16:9         | 30, 15, 6             | 91.2               | 65.5             |
+  # | 848×480        | 16:9         | 90, 60, 30            | 91.2               | 65.5             |
+  # | 640×480        | 4:3          | 90, 60, 30, 15, 6     | 91.2               | 65.5             |
+  # | 640×360        | 16:9         | 90, 60, 30, 15, 6     | 91.2               | 65.5             |
+  # | 480×270        | 16:9         | 90, 60, 30            | 91.2               | 65.5             |
+  # | 424×240        | 16:9         | 90, 60, 30            | 91.2               | 65.5             |
+  update_rate: 30.0
+  image:
+    width: 1280
+    height: 720
+    format: L8
+    anti_aliasing: 4
+  lens_single_elements:
+    type: gnomonical # DO NOT CHANGE
+    scale_to_hfov: True # DO NOT CHANGE
+    cutoff_angle_deg: 91.2
+    env_texture_size: 256
+  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  lens_custom_function: ""
+  # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(91.2/2) = 640/tan(45.6) = 626.7
+  # fy = (image_height_px/2) / tan(vertical_fov/2) = (720/2) / tan(65.5/2) = 360/tan(32.75) = 559.7
+  # cx = (image_width_px − 1) / 2 = (1280 − 1) / 2 = 639.5
+  # cy = (image_height_px − 1) / 2 = (720 − 1) / 2 = 359.5
+  lens_intrinsics:
+    fx: 626.7
+    fy: 559.7
+    cx: 639.5
+    cy: 359.5
+  lens_xy_skew: 0.0
+  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
+  # overridden.
+  lens_projection: ""
+  distortion_k_p:
+    k1: 0.0
+    k2: 0.0
+    k3: 0.0
+    p1: 0.0
+    p2: 0.0
+  # center_x_norm = lens_intrinsics.cx + 0.5 / image.width = (639.5 + 0.5) / 1280 = 0.5
+  # center_y_norm = lens_intrinsics.cy + 0.5 / image.height = (359.5 + 0.5) / 720 = 0.5
+  # +0.5 is used to convert from pixel index to pixel center.
+  distortion_center:
+    center_x_norm: 0.5
+    center_y_norm: 0.5
+  gaussian_noise:
+    mean: 0.0
+    stddev: 0.0

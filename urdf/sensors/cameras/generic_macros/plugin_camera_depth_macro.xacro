@@ -3,7 +3,7 @@
   <!--
   This macro implements a depth camera sensor for Gazebo of two possible types:
   - rgbd camera (type = 'rgbd_camera' or 'rgbd') or
-  - depth camera (type = 'depth').
+  - depth camera (type = 'depth_camera' or 'depth').
 
   The string in ${topic} is used as a prefix. Gazebo publishes a depth image on:
   ${topic}/depth_image
@@ -24,17 +24,17 @@
   The <image> block is a visual auxiliary channel associated with the camera. it only affects how the camera view looks
   in the Gz GUI (when <visualize> is true).  It does NOT change the depth stream.
 
-  Visual formats L8, L16, R8G8B8, B8G8R8, BAYER_*8, are encorauged for <image><format> because they are meaningful
+  Visual formats L8, L16, R8G8B8, B8G8R8, BAYER_*8 are encouraged for <image><format> because they are meaningful
   visual representations.
   Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats, where
   each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g., intensity,
-  radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. These last two fortmats do not affect depth
+  radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. These last two formats do not affect depth
   output and are not meaningful for the RGB stream of an RGBD camera. Therefore, their use in <image><format> is
   probably limited for depth cameras, but they are supported if you have a specific use case.
 
   The depth range is configured via the parameter depth_clip = 'near far', which is expanded into
   <depth_camera><clip><near>...</near><far>...</far></clip></depth_camera>.
-  The <depth_camera><output> is fixed to 'depths', and if you visit the sdformat especification you won't find any
+  The <depth_camera><output> is fixed to 'depths', and if you visit the SDFormat specification you won't find any
   other options for it. So, it is not clear if sdformat supports other output types for depth cameras.
 
   This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
@@ -159,7 +159,7 @@ follows:
       Distortion center is normalized in edge coordinates where the left border is 0 and right border is W, hence the
       +0.5 shift from pixel-center coordinates.
 
-  - Pass center_x_norm and center_y_norm in the distortion.center_x and distortion.center_y parameters.
+  - Pass center_x_norm and center_y_norm in the distortion_center parameters.
 
   - If you know the distortion coefficients of your camera lens (k1, k2, k3, p1, p2) set them in the distortion
     parameters. If you want an ideal pinhole camera without distortion, set all distortion coefficients to zero.
@@ -178,7 +178,7 @@ follows:
           Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
           where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
           intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
-          <image><format> is problably limited, but they are supported if you have a specific use case.
+          <image><format> is probably limited, but they are supported if you have a specific use case.
 
       anti_aliasing (I): Value used for anti-aliasing.
 
@@ -205,7 +205,7 @@ follows:
                          projection type parameters.
       cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default.
       env_texture_size (I): Resolution of the environment cube map used to draw the world.
-                            The highter it is, the sharper is your image.
+                            The higher it is, the sharper your image becomes.
 
   lens_custom_function (S): Definition of custom mapping function in a form of r=c1*f*fun(theta/c2 + c3).
                             See https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function
@@ -220,7 +220,7 @@ follows:
       fun (S): Mapping function. Supported values are: 'tan', 'sin' and 'id'.
 
   lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix.
-      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R)'
       fx (R): X focal length in pixels. A decimal part is allowed.
       fy (R): Y focal length in pixels. A decimal part is allowed.
       cx (R): principal point x in pixels. A decimal part is allowed.
@@ -253,7 +253,7 @@ follows:
 
   distortion_k_p (S): Lens distortion to be applied to camera images.
                   See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
-      distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
+      distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R)'
       k1 (R): The radial distortion coefficient k1 (Default: 0.0).
       k2 (R): The radial distortion coefficient k2 (Default: 0.0).
       k3 (R): The radial distortion coefficient k3 (Default: 0.0).
@@ -301,7 +301,7 @@ follows:
                        lens_intrinsics:=''
                        lens_xy_skew:=0.0
                        lens_projection:=''
-                       distortion_k_p:='0.0 0.0 0.0 0.0 0.0 0.5 0.5'
+                       distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        distortion_center:='0.5 0.5'
                        gaussian_noise:='0.0 0.0'">
 

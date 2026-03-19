@@ -157,7 +157,7 @@ follows:
       Distortion center is normalized in edge coordinates where the left border is 0 and right border is W, hence the
       +0.5 shift from pixel-center coordinates.
 
-  - Pass center_x_norm and center_y_norm in the distortion.center_x and distortion.center_y parameters.
+  - Pass center_x_norm and center_y_norm in the distortion_center parameters.
 
   - If you know the distortion coefficients of your camera lens (k1, k2, k3, p1, p2) set them in the distortion
     parameters. If you want an ideal pinhole camera without distortion, set all distortion coefficients to zero.
@@ -176,7 +176,7 @@ follows:
           Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
           where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
           intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
-          <image><format> is problably limited, but they are supported if you have a specific use case.
+          <image><format> is probably limited, but they are supported if you have a specific use case.
 
       anti_aliasing (I): Value used for anti-aliasing.
 
@@ -203,7 +203,7 @@ follows:
                          projection type parameters.
       cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default.
       env_texture_size (I): Resolution of the environment cube map used to draw the world.
-                            The highter it is, the sharper is your image.
+                            The higher it is, the sharper your image becomes.
 
   lens_custom_function (S): Definition of custom mapping function in a form of r=c1*f*fun(theta/c2 + c3).
                             See https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function
@@ -218,7 +218,7 @@ follows:
       fun (S): Mapping function. Supported values are: 'tan', 'sin' and 'id'.
 
   lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix.
-      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R)'
       fx (R): X focal length in pixels. A decimal part is allowed.
       fy (R): Y focal length in pixels. A decimal part is allowed.
       cx (R): principal point x in pixels. A decimal part is allowed.

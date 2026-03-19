@@ -1,0 +1,280 @@
+<?xml version="1.0"?>
+
+<!--
+RGBD variant of the Intel RealSense D435 macro.
+
+This variant reuses the same physical D435 model as realsense_d435, but in simulation it uses:
+- one RGBD Gazebo sensor for the combined color + depth stream
+- two regular Gazebo camera sensors for infra1 and infra2
+
+The RGBD plugin uses the base topic '<camera_namespace>/rgbd', so Gazebo publishes:
+- <camera_namespace>/rgbd/image
+- <camera_namespace>/rgbd/depth_image
+- and, if supported by Gazebo for the selected version, <camera_namespace>/rgbd/points
+-->
+
+<robot name="realsense_d435_rgbd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="realsense_d435_rgbd"
+               params="name
+                       prefix:=''
+                       namespace:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=True
+                       color:='0.5 0.5 0.5 1.0'
+                       use_c_mesh:=False
+                       use_nominal_extrinsics:=False
+                       joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       use_sim:=False
+                       sim_use_gravity:=True
+                       sim_rgbd_enabled:=True
+                       sim_rgbd_always_on:=True
+                       sim_rgbd_visualize:=False
+                       sim_rgbd_enable_metrics:=False
+                       sim_rgbd_save:='False /tmp'
+                       sim_rgbd_triggered:=False
+                       sim_rgbd_visible_mask:=4294967295
+                       sim_rgbd_clip:='0.1 100.0'
+                       sim_rgbd_depth_clip:='0.1 10.0'
+                       sim_rgbd_update_rate
+                       sim_rgbd_image
+                       sim_rgbd_lens_single_elements
+                       sim_rgbd_lens_custom_function:=''
+                       sim_rgbd_lens_intrinsics:=''
+                       sim_rgbd_lens_projection:=''
+                       sim_rgbd_lens_xy_skew:=0.0
+                       sim_rgbd_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_rgbd_distortion_center:='0.5 0.5'
+                       sim_rgbd_gaussian_noise:='0.0 0.0'
+                       sim_infra_enabled:=True
+                       sim_infra_always_on:=True
+                       sim_infra_visualize:=False
+                       sim_infra_enable_metrics:=False
+                       sim_infra_save:='False /tmp'
+                       sim_infra_triggered:=False
+                       sim_infra_visible_mask:=4294967295
+                       sim_infra_clip:='0.1 10.0'
+                       sim_infra_update_rate
+                       sim_infra_image
+                       sim_infra_lens_single_elements
+                       sim_infra_lens_custom_function:=''
+                       sim_infra_lens_intrinsics:=''
+                       sim_infra_lens_projection:=''
+                       sim_infra_lens_xy_skew:=0.0
+                       sim_infra_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_infra_distortion_center:='0.5 0.5'
+                       sim_infra_gaussian_noise:='0.0 0.0'
+                       sim_rgbd_image_topic:=''
+                       sim_rgbd_camera_info_topic:=''
+                       sim_rgbd_depth_image_topic:=''
+                       sim_rgbd_points_topic:=''
+                       sim_rgbd_trigger_topic:=''
+                       sim_infra1_image_topic:=''
+                       sim_infra1_camera_info_topic:=''
+                       sim_infra1_trigger_topic:=''
+                       sim_infra2_image_topic:=''
+                       sim_infra2_camera_info_topic:=''
+                       sim_infra2_trigger_topic:=''">
+
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_links_joints_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
+
+    <!-- Reuse the physical D435 structure and define the RGBD-specific simulated sensors below. -->
+    <xacro:realsense_d435_links_joints name="${name}"
+                                       prefix="${prefix}"
+                                       parent_frame="${parent_frame}"
+                                       use_visual="${use_visual}"
+                                       use_collision="${use_collision}"
+                                       use_inertial="${use_inertial}"
+                                       use_v_mesh="${use_v_mesh}"
+                                       color="${color}"
+                                       use_c_mesh="${use_c_mesh}"
+                                       use_nominal_extrinsics="${use_nominal_extrinsics}"
+                                       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+
+    <xacro:if value="${use_sim}">
+      <xacro:make_namespace prop_id="camera_namespace" namespace="${namespace}" name="${name}"/>
+
+      <xacro:if value="${sim_rgbd_image_topic == ''}">
+        ${xacro.fatal("sim_rgbd_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_rgbd_camera_info_topic == ''}">
+        ${xacro.fatal("sim_rgbd_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_rgbd_depth_image_topic == ''}">
+        ${xacro.fatal("sim_rgbd_depth_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_rgbd_points_topic == ''}">
+        ${xacro.fatal("sim_rgbd_points_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_rgbd_trigger_topic == ''}">
+        ${xacro.fatal("sim_rgbd_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_rgbd_image_topic"
+                      value="${sim_rgbd_image_topic if sim_rgbd_image_topic.startswith('/') else camera_namespace + '/' + sim_rgbd_image_topic}"/>
+
+      <xacro:property name="resolved_rgbd_camera_info_topic"
+                      value="${sim_rgbd_camera_info_topic if sim_rgbd_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_rgbd_camera_info_topic}"/>
+
+      <xacro:property name="resolved_rgbd_depth_image_topic"
+                      value="${sim_rgbd_depth_image_topic if sim_rgbd_depth_image_topic.startswith('/') else camera_namespace + '/' + sim_rgbd_depth_image_topic}"/>
+
+      <xacro:property name="resolved_rgbd_points_topic"
+                      value="${sim_rgbd_points_topic if sim_rgbd_points_topic.startswith('/') else camera_namespace + '/' + sim_rgbd_points_topic}"/>
+
+      <xacro:property name="resolved_rgbd_trigger_topic"
+                      value="${sim_rgbd_trigger_topic if sim_rgbd_trigger_topic.startswith('/') else camera_namespace + '/' + sim_rgbd_trigger_topic}"/>
+
+      <!--
+        For rgbd_camera, Gazebo uses a base topic and publishes the RGB image, depth image, and
+        point cloud by appending '/image', '/depth_image', and  '/points'. We therefore validate
+        the configured final topics and recover the base topic from the RGB image topic before
+        passing it to the plugin.
+      -->
+      <xacro:if value="${not resolved_rgbd_image_topic.endswith('/image')}">
+        ${xacro.fatal("The RGBD image topic must end with '/image'")}
+      </xacro:if>
+
+      <xacro:property name="resolved_rgbd_base_topic" value="${resolved_rgbd_image_topic[:-6]}"/>
+
+      <xacro:if value="${resolved_rgbd_depth_image_topic != resolved_rgbd_base_topic + '/depth_image'}">
+        ${xacro.fatal("The RGBD depth_image topic must match the RGBD base topic plus '/depth_image'")}
+      </xacro:if>
+
+      <xacro:if value="${resolved_rgbd_points_topic != resolved_rgbd_base_topic + '/points'}">
+        ${xacro.fatal("The RGBD points topic must match the RGBD base topic plus '/points'")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_image_topic == ''}">
+        ${xacro.fatal("sim_infra1_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_camera_info_topic == ''}">
+        ${xacro.fatal("sim_infra1_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_trigger_topic == ''}">
+        ${xacro.fatal("sim_infra1_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_infra1_image_topic"
+                      value="${sim_infra1_image_topic if sim_infra1_image_topic.startswith('/') else camera_namespace + '/' + sim_infra1_image_topic}"/>
+
+      <xacro:property name="resolved_infra1_camera_info_topic"
+                      value="${sim_infra1_camera_info_topic if sim_infra1_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_infra1_camera_info_topic}"/>
+
+      <xacro:property name="resolved_infra1_trigger_topic"
+                      value="${sim_infra1_trigger_topic if sim_infra1_trigger_topic.startswith('/') else camera_namespace + '/' + sim_infra1_trigger_topic}"/>
+
+      <xacro:if value="${sim_infra2_image_topic == ''}">
+        ${xacro.fatal("sim_infra2_image_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra2_camera_info_topic == ''}">
+        ${xacro.fatal("sim_infra2_camera_info_topic must be provided")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra2_trigger_topic == ''}">
+        ${xacro.fatal("sim_infra2_trigger_topic must be provided")}
+      </xacro:if>
+
+      <xacro:property name="resolved_infra2_image_topic"
+                      value="${sim_infra2_image_topic if sim_infra2_image_topic.startswith('/') else camera_namespace + '/' + sim_infra2_image_topic}"/>
+
+      <xacro:property name="resolved_infra2_camera_info_topic"
+                      value="${sim_infra2_camera_info_topic if sim_infra2_camera_info_topic.startswith('/') else camera_namespace + '/' + sim_infra2_camera_info_topic}"/>
+
+      <xacro:property name="resolved_infra2_trigger_topic"
+                      value="${sim_infra2_trigger_topic if sim_infra2_trigger_topic.startswith('/') else camera_namespace + '/' + sim_infra2_trigger_topic}"/>
+
+      <xacro:if value="${sim_rgbd_enabled}">
+        <xacro:plugin_camera_depth type="rgbd_camera"
+                                   name="${prefix}${name}_rgbd"
+                                   reference_frame="${prefix}${name}_depth_frame"
+                                   optical_frame="${prefix}${name}_depth_optical_frame"
+                                   use_gravity="${sim_use_gravity}"
+                                   always_on="${sim_rgbd_always_on}"
+                                   visualize="${sim_rgbd_visualize}"
+                                   enable_metrics="${sim_rgbd_enable_metrics}"
+                                   save="${sim_rgbd_save}"
+                                   triggered="${sim_rgbd_triggered}"
+                                   trigger_topic="${resolved_rgbd_trigger_topic}"
+                                   info_topic="${resolved_rgbd_camera_info_topic}"
+                                   topic="${resolved_rgbd_base_topic}"
+                                   visible_mask="${sim_rgbd_visible_mask}"
+                                   clip="${sim_rgbd_clip}"
+                                   depth_clip="${sim_rgbd_depth_clip}"
+                                   update_rate="${sim_rgbd_update_rate}"
+                                   image="${sim_rgbd_image}"
+                                   lens_single_elements="${sim_rgbd_lens_single_elements}"
+                                   lens_custom_function="${sim_rgbd_lens_custom_function}"
+                                   lens_intrinsics="${sim_rgbd_lens_intrinsics}"
+                                   lens_projection="${sim_rgbd_lens_projection}"
+                                   lens_xy_skew="${sim_rgbd_lens_xy_skew}"
+                                   distortion_k_p="${sim_rgbd_distortion_k_p}"
+                                   distortion_center="${sim_rgbd_distortion_center}"
+                                   gaussian_noise="${sim_rgbd_gaussian_noise}"/>
+      </xacro:if>
+
+      <xacro:if value="${sim_infra_enabled}">
+        <xacro:plugin_camera name="${prefix}${name}_infrared1"
+                             reference_frame="${prefix}${name}_infra1_frame"
+                             optical_frame="${prefix}${name}_infra1_optical_frame"
+                             use_gravity="${sim_use_gravity}"
+                             always_on="${sim_infra_always_on}"
+                             visualize="${sim_infra_visualize}"
+                             enable_metrics="${sim_infra_enable_metrics}"
+                             save="${sim_infra_save}"
+                             triggered="${sim_infra_triggered}"
+                             trigger_topic="${resolved_infra1_trigger_topic}"
+                             info_topic="${resolved_infra1_camera_info_topic}"
+                             topic="${resolved_infra1_image_topic}"
+                             visible_mask="${sim_infra_visible_mask}"
+                             clip="${sim_infra_clip}"
+                             update_rate="${sim_infra_update_rate}"
+                             image="${sim_infra_image}"
+                             lens_single_elements="${sim_infra_lens_single_elements}"
+                             lens_custom_function="${sim_infra_lens_custom_function}"
+                             lens_intrinsics="${sim_infra_lens_intrinsics}"
+                             lens_projection="${sim_infra_lens_projection}"
+                             lens_xy_skew="${sim_infra_lens_xy_skew}"
+                             distortion_k_p="${sim_infra_distortion_k_p}"
+                             distortion_center="${sim_infra_distortion_center}"
+                             gaussian_noise="${sim_infra_gaussian_noise}"/>
+
+        <xacro:plugin_camera name="${prefix}${name}_infrared2"
+                             reference_frame="${prefix}${name}_infra2_frame"
+                             optical_frame="${prefix}${name}_infra2_optical_frame"
+                             use_gravity="${sim_use_gravity}"
+                             always_on="${sim_infra_always_on}"
+                             visualize="${sim_infra_visualize}"
+                             enable_metrics="${sim_infra_enable_metrics}"
+                             save="${sim_infra_save}"
+                             triggered="${sim_infra_triggered}"
+                             trigger_topic="${resolved_infra2_trigger_topic}"
+                             info_topic="${resolved_infra2_camera_info_topic}"
+                             topic="${resolved_infra2_image_topic}"
+                             visible_mask="${sim_infra_visible_mask}"
+                             clip="${sim_infra_clip}"
+                             update_rate="${sim_infra_update_rate}"
+                             image="${sim_infra_image}"
+                             lens_single_elements="${sim_infra_lens_single_elements}"
+                             lens_custom_function="${sim_infra_lens_custom_function}"
+                             lens_intrinsics="${sim_infra_lens_intrinsics}"
+                             lens_projection="${sim_infra_lens_projection}"
+                             lens_xy_skew="${sim_infra_lens_xy_skew}"
+                             distortion_k_p="${sim_infra_distortion_k_p}"
+                             distortion_center="${sim_infra_distortion_center}"
+                             gaussian_noise="${sim_infra_gaussian_noise}"/>
+      </xacro:if>
+    </xacro:if>
+  </xacro:macro>
+</robot>

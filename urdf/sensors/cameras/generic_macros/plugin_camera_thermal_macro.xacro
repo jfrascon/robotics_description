@@ -109,16 +109,11 @@
       mean (R): Mean of the Gaussian noise.
       stddev (R): Standard deviation of the Gaussian noise.
 
-  distortion (S): Lens distortion to be applied to camera images.
-                  See http://en.wikipedia.org/wiki/Distortion_(optics)#Software_correction
-      distortion (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R) center_x (R) center_y (R)'
-      k1 (R): The radial distortion coefficient k1.
-      k2 (R): The radial distortion coefficient k2.
-      k3 (R): The radial distortion coefficient k3.
-      p1 (R): The tangential distortion coefficient p1.
-      p2 (R): The tangential distortion coefficient p2.
-      center_x (R): The x coordinate of the distortion center or principal point.
-      center_y (R): The y coordinate of the distortion center or principal point.
+  distortion_k_p (S): Lens distortion coefficients applied to camera images.
+      distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R)'
+
+  distortion_center (S): The normalized coordinates of the distortion center or principal point.
+      distortion_center (S) = 'center_x_norm (R) center_y_norm (R)'
 
   lens_single_elements (S): Single element lens.
       lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
@@ -145,12 +140,13 @@
                        a wide field of view).
                        The focal lengths can be computed using
                        focal_length_in_pixels = (img_width_pixels * 0.5) / tan(field_of_view_in_degrees * 0.5 * PI/180)
-      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R) s (R)'
+      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R)'
       fx (R): X focal length (in pixels, overrides horizontal_fov). fx = fy = width / ( 2 * tan (hfov / 2 ) )
       fy (R): Y focal length (in pixels, overrides horizontal_fov).
       cx (R): X principal point (in pixels). cx = ( width - 1 ) / 2
       cy (R): Y principal point (in pixels). cy = ( height - 1 ) / 2
-      s (R): XY axis skew.
+
+  lens_xy_skew (R): XY axis skew parameter used in the camera intrinsic matrix.
 
   lens_projection (S): Camera projection matrix P for overriding camera intrinsic matrix K values so that users can
                        configure P independently of K. This is useful when working with stereo cameras where P may be
@@ -185,17 +181,18 @@
                        enable_metrics:=False
                        update_rate:=30.0
                        triggered:=False
-                       hor_fov_deg:=60.0
                        visible_mask:=4294967295
                        image:='320 240 L16 4'
                        clip:='0.1 100.0'
                        save:='False /tmp'
                        gaussian_noise:='0.0 0.0'
-                       distortion:='0.0 0.0 0.0 0.0 0.0 0.5 0.5'
+                       distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       distortion_center:='0.5 0.5'
                        lens_single_elements:='stereographic true 90.0 256'
                        lens_custom_function:='1.0 1.0 0.0 1.0 tan'
-                       lens_intrinsics:='277.0 277.0 160.0 120.0 0.0'
+                       lens_intrinsics:='277.0 277.0 160.0 120.0'
                        lens_projection:='277.0 277.0 160.0 120.0 0.0 0.0'
+                       lens_xy_skew:=0.0
                        thermal_data:='253.15 673.15 3.0'
                        topic
                        info_topic
@@ -239,17 +236,18 @@
           <xacro:plugin_camera_common name="${name}"
                                       optical_frame="${optical_frame}"
                                       triggered="${triggered}"
-                                      hor_fov_deg="${hor_fov_deg}"
                                       visible_mask="${visible_mask}"
                                       image="${image}"
                                       clip="${clip}"
                                       save="${save}"
                                       gaussian_noise="${gaussian_noise}"
-                                      distortion="${distortion}"
+                                      distortion_k_p="${distortion_k_p}"
+                                      distortion_center="${distortion_center}"
                                       lens_single_elements="${lens_single_elements}"
                                       lens_custom_function="${lens_custom_function}"
                                       lens_intrinsics="${lens_intrinsics}"
                                       lens_projection="${lens_projection}"
+                                      lens_xy_skew="${lens_xy_skew}"
                                       info_topic="${info_topic}"
                                       trigger_topic="${trigger_topic}" />
         </camera>
