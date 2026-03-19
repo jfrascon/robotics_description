@@ -2,7 +2,8 @@
 <robot name="set_props_plugin_lidar_3d_ring" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="set_props_plugin_lidar_3d_ring"
                params="prop_prefix
-                       lidar_3d_sim_cfg:=dict()">
+                       lidar_3d_sim_cfg:=dict()
+                       lidar_3d_bridge_channel_cfg:=dict()">
 
     <!--
     If lidar_3d_sim_cfg does not have the field 'enabled' or if it is set to False, then set all the simulation
@@ -19,6 +20,7 @@
       <xacro:property name="${prop_prefix}_sim_ver_res_deg"    value="0"     scope="parent"/>
       <xacro:property name="${prop_prefix}_sim_dist_span"      value="0 0"   scope="parent"/>
       <xacro:property name="${prop_prefix}_sim_gaussian_noise" value="0 0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_topic"          value=""      scope="parent"/>
     </xacro:unless>
 
     <!--
@@ -72,6 +74,10 @@
                       value="${lidar_3d_sim_cfg['gaussian_noise']}"/>
       <xacro:property name="${prop_prefix}_sim_gaussian_noise"
                       value="${sim_gaussian_noise['mean']} ${sim_gaussian_noise['stddev']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_topic"
+                      value="${lidar_3d_bridge_channel_cfg.get('gz_topic_name', '')}"
                       scope="parent"/>
     </xacro:if>
   </xacro:macro>

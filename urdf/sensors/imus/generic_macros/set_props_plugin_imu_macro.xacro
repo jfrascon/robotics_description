@@ -2,7 +2,8 @@
 <robot name="set_props_plugin_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="set_props_plugin_imu"
                params="prop_prefix
-                       imu_sim_cfg:=dict()">
+                       imu_sim_cfg:=dict()
+                       imu_bridge_channel_cfg:=dict()">
 
 
     <!--
@@ -42,6 +43,9 @@
                       scope="parent"/>
       <xacro:property name="${prop_prefix}_sim_use_orientation"
                       value="False"
+                      scope="parent"/>
+      <xacro:property name="${prop_prefix}_sim_topic"
+                      value=""
                       scope="parent"/>
     </xacro:unless>
 
@@ -131,6 +135,10 @@
 
       <xacro:property name="${prop_prefix}_sim_use_orientation"
                       value="${imu_sim_cfg['use_orientation']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_sim_topic"
+                      value="${imu_bridge_channel_cfg.get('gz_topic_name', '')}"
                       scope="parent"/>
     </xacro:if>
   </xacro:macro>
