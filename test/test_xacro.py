@@ -13,6 +13,7 @@ from ament_index_python.packages import get_package_share_directory
 
 xacro_files = []
 robots_dir = os.path.join(get_package_share_directory('robotics_description'), 'urdf', 'robots')
+test_xacros_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_xacros')
 # robots_dir = os.path.join(package_dir, "urdf", "robots")
 
 for root, _, files in os.walk(robots_dir):
@@ -34,6 +35,13 @@ for root, _, files in os.walk(robots_dir):
             xacro_files.append(os.path.join(root, file))
 
 print(f'DEBUG [pytest setup]: Found {len(xacro_files)} testable xacro files: {xacro_files}')
+
+if os.path.isdir(test_xacros_dir):
+    for file in os.listdir(test_xacros_dir):
+        if file.endswith('.xacro'):
+            xacro_files.append(os.path.join(test_xacros_dir, file))
+
+print(f'DEBUG [pytest setup]: Found {len(xacro_files)} total xacro test cases: {xacro_files}')
 
 
 def check_meshes(urdf_file):

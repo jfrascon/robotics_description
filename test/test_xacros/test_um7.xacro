@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot name="test_um7" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/um7_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/set_props_plugin_imu_macro.xacro"/>
+
+  <xacro:property name="sim_cfg"
+                  value="${xacro.load_yaml('$(find robotics_description)/config/sensors/imus/example_um7_simulation.yaml')}"/>
+  <xacro:property name="bridge_cfg"
+                  value="${xacro.load_yaml('$(find robotics_description)/config/sensors/imus/example_um7_bridge.yaml')}"/>
+
+  <xacro:set_props_plugin_imu prop_prefix="imu"
+                              imu_sim_cfg="${sim_cfg}"
+                              imu_bridge_channel_cfg="${bridge_cfg['um7']}"/>
+
+  <link name="base_link"/>
+
+  <xacro:um7 name="imu"
+             parent_frame="base_link"
+             joint_parent_fr_root_fr="0 0 0 0 0 0"
+             use_sim="${imu_sim_enabled}"
+             sim_use_gravity="${imu_sim_use_gravity}"
+             sim_always_on="${imu_sim_always_on}"
+             sim_update_rate="${imu_sim_update_rate}"
+             sim_ang_vel_gaussian_noise="${imu_sim_ang_vel_gaussian_noise}"
+             sim_ang_vel_gaussian_noise_bias="${imu_sim_ang_vel_gaussian_noise_bias}"
+             sim_ang_vel_gaussian_noise_dynamic_bias="${imu_sim_ang_vel_gaussian_noise_dynamic_bias}"
+             sim_lin_acc_gaussian_noise="${imu_sim_lin_acc_gaussian_noise}"
+             sim_lin_acc_gaussian_noise_bias="${imu_sim_lin_acc_gaussian_noise_bias}"
+             sim_lin_acc_gaussian_noise_dynamic_bias="${imu_sim_lin_acc_gaussian_noise_dynamic_bias}"
+             sim_use_orientation="${imu_sim_use_orientation}"
+             sim_topic="${imu_sim_topic}"/>
+</robot>

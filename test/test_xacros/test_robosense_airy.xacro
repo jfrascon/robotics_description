@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<robot name="test_robosense_airy" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_airy_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_3d_ring_macro.xacro"/>
+
+  <xacro:property name="sim_cfg"
+                  value="${xacro.load_yaml('$(find robotics_description)/config/sensors/lidars/example_robosense_airy_simulation.yaml')}"/>
+  <xacro:property name="bridge_cfg"
+                  value="${xacro.load_yaml('$(find robotics_description)/config/sensors/lidars/example_robosense_airy_bridge.yaml')}"/>
+
+  <xacro:set_props_plugin_lidar_3d_ring prop_prefix="lidar3d"
+                                        lidar_3d_sim_cfg="${sim_cfg}"
+                                        lidar_3d_bridge_channel_cfg="${bridge_cfg['robosense_airy']}"/>
+
+  <link name="base_link"/>
+
+  <xacro:robosense_airy name="lidar3d"
+                        parent_frame="base_link"
+                        joint_parent_fr_root_fr="0 0 0 0 0 0"
+                        use_sim="${lidar3d_sim_enabled}"
+                        sim_always_on="${lidar3d_sim_always_on}"
+                        sim_visualize="${lidar3d_sim_visualize}"
+                        sim_update_rate="${lidar3d_sim_update_rate}"
+                        sim_hor_fov_deg="${lidar3d_sim_hor_fov_deg}"
+                        sim_hor_res_deg="${lidar3d_sim_hor_res_deg}"
+                        sim_ver_fov_deg="${lidar3d_sim_ver_fov_deg}"
+                        sim_ver_res_deg="${lidar3d_sim_ver_res_deg}"
+                        sim_dist_span="${lidar3d_sim_dist_span}"
+                        sim_gaussian_noise="${lidar3d_sim_gaussian_noise}"
+                        sim_topic="${lidar3d_sim_topic}"/>
+</robot>

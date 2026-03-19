@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot name="test_steerable_wheel" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/steerable_wheel_macro.xacro"/>
+
+  <link name="base_link"/>
+
+  <xacro:steerable_wheel name="test_steerable_wheel"
+                         parent_frame="base_link"
+                         use_visual="false"
+                         use_inertial="true"
+                         radius="0.15"
+                         length="0.08"
+                         mass="2.0"
+                         joint_parent_fr_wheel_fr="0.0 0.0 0.15 0.0 0.0 0.0"/>
+</robot>
