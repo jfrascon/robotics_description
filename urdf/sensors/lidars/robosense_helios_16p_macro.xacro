@@ -1,4 +1,43 @@
 <?xml version="1.0"?>
+<!--
+Convention for parameter types:
+R means real number (float or double)
+I means integer
+S means string
+B means boolean
+
+name (S): name of the lidar, used to name the links and joints.
+prefix (S): optional prefix for the names of the links and joints.
+namespace (S): ROS / Gazebo namespace used to build default simulation topics.
+parent_frame (S): name of the parent frame to which the lidar's root frame is attached.
+use_visual (B): if true, include visual element.
+use_collision (B): if true, include collision element.
+use_inertial (B): if true, include inertial element.
+use_v_mesh (B): if true, use the standard mesh for the visual element. If false, prefer the low-resolution mesh when
+    requested, otherwise use a primitive cylinder.
+use_low_res_v_mesh (B): if true and use_v_mesh is false, use the low-resolution mesh for the visual element.
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is not empty, the provided color is applied to the object used in the visual element.
+           If color is empty, the mesh color is preserved when available.
+use_c_mesh (B): if true, use the standard mesh for the collision element.
+use_low_res_c_mesh (B): if true and use_c_mesh is false, use the low-resolution mesh for the collision element.
+joint_parent_fr_root_fr (S): Pose of the lidar's root frame w.r.t the parent's frame.
+    joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+use_sim (B): if true, include the Gazebo 3D lidar plugin.
+sim_always_on (B): if true, the lidar is always active in simulation.
+sim_visualize (B): if true, Gazebo visualizes the lidar rays in simulation.
+sim_update_rate (R): update rate of the lidar in simulation.
+sim_hor_fov_deg (S): horizontal field of view, in degrees, as 'min max'.
+sim_hor_res_deg (R): horizontal angular resolution, in degrees.
+sim_ver_fov_deg (S): vertical field of view, in degrees, as 'min max'.
+sim_ver_res_deg (R): vertical angular resolution, in degrees.
+sim_dist_span (S): measurable distance span, in meters, as 'min max'.
+sim_gaussian_noise (S): Gaussian noise parameters for range measurements as 'mean stddev'.
+sim_topic (S): Topic used by the Gazebo 3D lidar plugin in simulation. If empty, the default topic
+    '<lidar_namespace>/scan' is used. If it starts with '/', it is treated as absolute. Otherwise, it is resolved
+    inside the lidar namespace. If it ends with '/points', that suffix is removed before passing the topic to the
+    plugin, because Gazebo publishes the point cloud on '<topic>/points' automatically.
+-->
 <robot name="robosense_helios_16p" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="robosense_helios_16p"
                params="name
@@ -23,7 +62,8 @@
                        sim_ver_fov_deg
                        sim_ver_res_deg
                        sim_dist_span
-                       sim_gaussian_noise:='0 0'">
+                       sim_gaussian_noise:='0 0'
+                       sim_topic:=''">
 
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
@@ -143,6 +183,20 @@
       You then decide which topic transfer from Gazebo to ROS by using the proper rosgz bridge (or both).
       -->
       <xacro:make_namespace prop_id="lidar_namespace" namespace="${namespace}" name="${name}"/>
+      <!-- Default base topic when the caller does not override it. -->
+      <xacro:property name="default_lidar_topic" value="${lidar_namespace + '/scan'}"/>
+
+      <!-- '/' alone is not a valid topic. -->
+      <xacro:if value="${sim_topic == '/'}">
+        ${xacro.fatal("The xacro parameter 'sim_topic' cannot be '/'")}
+      </xacro:if>
+
+      <!-- Relative topics are resolved inside the lidar namespace; absolute topics are preserved. -->
+      <xacro:property name="lidar_gz_topic"
+                      value="${default_lidar_topic if sim_topic == '' else (sim_topic if sim_topic.startswith('/') else lidar_namespace + '/' + sim_topic)}"/>
+      <!-- The plugin appends '/points' for the point cloud topic, so it must receive the base topic. -->
+      <xacro:property name="lidar_topic"
+                      value="${lidar_gz_topic[:-7] if lidar_gz_topic.endswith('/points') else lidar_gz_topic}"/>
 
       <xacro:plugin_lidar_3d_ring
         sensor_name="${prefix}${name}_gz"
@@ -156,7 +210,7 @@
         ver_res_deg="${sim_ver_res_deg}"
         dist_span="${sim_dist_span}"
         gaussian_noise="${sim_gaussian_noise}"
-        topic="${lidar_namespace}/scan"/>
+        topic="${lidar_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>

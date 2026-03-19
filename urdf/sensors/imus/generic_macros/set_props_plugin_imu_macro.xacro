@@ -2,17 +2,7 @@
 <robot name="set_props_plugin_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="set_props_plugin_imu"
                params="prop_prefix
-                       imu_sim_cfg:=dict()
-                       default_sim_use_gravity:=True
-                       default_sim_always_on:=True
-                       default_sim_update_rate:=100
-                       default_sim_ang_vel_gaussian_noise:='0 0 0 0 0 0'
-                       default_sim_ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
-                       default_sim_ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
-                       default_sim_lin_acc_gaussian_noise:='0 0 0 0 0 0'
-                       default_sim_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
-                       default_sim_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
-                       default_sim_use_orientation:=True">
+                       imu_sim_cfg:=dict()">
 
 
     <!--
@@ -57,138 +47,90 @@
 
     <!--
     If imu_sim_cfg has the field 'enabled' set to True, then set all the simulation properties according to the
-    values in imu_sim_cfg, or to the default values if a specific field is not found.
+    values in imu_sim_cfg. The configuration is expected to be complete.
     -->
     <xacro:if value="${imu_sim_cfg.get('enabled', False)}">
       <xacro:property name="${prop_prefix}_sim_enabled"
                       value="True"
                       scope="parent"/>
       <xacro:property name="${prop_prefix}_sim_use_gravity"
-                      value="${imu_sim_cfg.get('use_gravity', default_sim_use_gravity)}"
+                      value="${imu_sim_cfg['use_gravity']}"
                       scope="parent"/>
       <xacro:property name="${prop_prefix}_sim_always_on"
-                      value="${imu_sim_cfg.get('always_on', default_sim_always_on)}"
+                      value="${imu_sim_cfg['always_on']}"
                       scope="parent"/>
       <xacro:property name="${prop_prefix}_sim_update_rate"
-                      value="${imu_sim_cfg.get('update_rate', default_sim_update_rate)}"
+                      value="${imu_sim_cfg['update_rate']}"
                       scope="parent"/>
 
       <xacro:property name="sim_ang_vel_gaussian_noise"
-                      value="${imu_sim_cfg.get('ang_vel_gaussian_noise', dict())}"/>
-
-      <xacro:if value="${sim_ang_vel_gaussian_noise == dict()}">
-        <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise"
-                        value="${default_sim_ang_vel_gaussian_noise}"
-                        scope="parent"/>
-      </xacro:if>
-      <xacro:if value="${sim_ang_vel_gaussian_noise != dict()}">
-        <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise"
-                        value="${' '.join([str(sim_ang_vel_gaussian_noise['mean_x']),
-                                           str(sim_ang_vel_gaussian_noise['stddev_x']),
-                                           str(sim_ang_vel_gaussian_noise['mean_y']),
-                                           str(sim_ang_vel_gaussian_noise['stddev_y']),
-                                           str(sim_ang_vel_gaussian_noise['mean_z']),
-                                           str(sim_ang_vel_gaussian_noise['stddev_z'])])}"
-                        scope="parent"/>
-      </xacro:if>
+                      value="${imu_sim_cfg['ang_vel_gaussian_noise']}"/>
+      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise"
+                      value="${' '.join([str(sim_ang_vel_gaussian_noise['mean_x']),
+                                         str(sim_ang_vel_gaussian_noise['stddev_x']),
+                                         str(sim_ang_vel_gaussian_noise['mean_y']),
+                                         str(sim_ang_vel_gaussian_noise['stddev_y']),
+                                         str(sim_ang_vel_gaussian_noise['mean_z']),
+                                         str(sim_ang_vel_gaussian_noise['stddev_z'])])}"
+                      scope="parent"/>
 
       <xacro:property name="sim_ang_vel_gaussian_noise_bias"
-                      value="${imu_sim_cfg.get('ang_vel_gaussian_noise_bias', dict())}"/>
-
-      <xacro:if value="${sim_ang_vel_gaussian_noise_bias == dict()}">
-        <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_bias"
-                        value="${default_sim_ang_vel_gaussian_noise_bias}"
-                        scope="parent"/>
-      </xacro:if>
-      <xacro:if value="${sim_ang_vel_gaussian_noise_bias != dict()}">
-        <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_bias"
-                        value="${' '.join([str(sim_ang_vel_gaussian_noise_bias['mean_x']),
-                                           str(sim_ang_vel_gaussian_noise_bias['stddev_x']),
-                                           str(sim_ang_vel_gaussian_noise_bias['mean_y']),
-                                           str(sim_ang_vel_gaussian_noise_bias['stddev_y']),
-                                           str(sim_ang_vel_gaussian_noise_bias['mean_z']),
-                                           str(sim_ang_vel_gaussian_noise_bias['stddev_z'])])}"
-                        scope="parent"/>
-      </xacro:if>
+                      value="${imu_sim_cfg['ang_vel_gaussian_noise_bias']}"/>
+      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_bias"
+                      value="${' '.join([str(sim_ang_vel_gaussian_noise_bias['mean_x']),
+                                         str(sim_ang_vel_gaussian_noise_bias['stddev_x']),
+                                         str(sim_ang_vel_gaussian_noise_bias['mean_y']),
+                                         str(sim_ang_vel_gaussian_noise_bias['stddev_y']),
+                                         str(sim_ang_vel_gaussian_noise_bias['mean_z']),
+                                         str(sim_ang_vel_gaussian_noise_bias['stddev_z'])])}"
+                      scope="parent"/>
 
       <xacro:property name="sim_ang_vel_gaussian_noise_dynamic_bias"
-                      value="${imu_sim_cfg.get('ang_vel_gaussian_noise_dynamic_bias', dict())}"/>
-
-      <xacro:if value="${sim_ang_vel_gaussian_noise_dynamic_bias == dict()}">
-        <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_dynamic_bias"
-                        value="${default_sim_ang_vel_gaussian_noise_dynamic_bias}"
-                        scope="parent"/>
-      </xacro:if>
-      <xacro:if value="${sim_ang_vel_gaussian_noise_dynamic_bias != dict()}">
-        <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_dynamic_bias"
-                        value="${' '.join([str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_x']),
-                                           str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_x']),
-                                           str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_y']),
-                                           str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_y']),
-                                           str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_z']),
-                                           str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_z'])])}"
-                        scope="parent"/>
-      </xacro:if>
+                      value="${imu_sim_cfg['ang_vel_gaussian_noise_dynamic_bias']}"/>
+      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_dynamic_bias"
+                      value="${' '.join([str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_x']),
+                                         str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_x']),
+                                         str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_y']),
+                                         str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_y']),
+                                         str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_z']),
+                                         str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_z'])])}"
+                      scope="parent"/>
 
       <xacro:property name="sim_lin_acc_gaussian_noise"
-                      value="${imu_sim_cfg.get('lin_acc_gaussian_noise', dict())}"/>
-
-      <xacro:if value="${sim_lin_acc_gaussian_noise == dict()}">
-        <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise"
-                        value="${default_sim_lin_acc_gaussian_noise}"
-                        scope="parent"/>
-      </xacro:if>
-      <xacro:if value="${sim_lin_acc_gaussian_noise != dict()}">
-        <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise"
-                        value="${' '.join([str(sim_lin_acc_gaussian_noise['mean_x']),
-                                           str(sim_lin_acc_gaussian_noise['stddev_x']),
-                                           str(sim_lin_acc_gaussian_noise['mean_y']),
-                                           str(sim_lin_acc_gaussian_noise['stddev_y']),
-                                           str(sim_lin_acc_gaussian_noise['mean_z']),
-                                           str(sim_lin_acc_gaussian_noise['stddev_z'])])}"
-                        scope="parent"/>
-      </xacro:if>
+                      value="${imu_sim_cfg['lin_acc_gaussian_noise']}"/>
+      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise"
+                      value="${' '.join([str(sim_lin_acc_gaussian_noise['mean_x']),
+                                         str(sim_lin_acc_gaussian_noise['stddev_x']),
+                                         str(sim_lin_acc_gaussian_noise['mean_y']),
+                                         str(sim_lin_acc_gaussian_noise['stddev_y']),
+                                         str(sim_lin_acc_gaussian_noise['mean_z']),
+                                         str(sim_lin_acc_gaussian_noise['stddev_z'])])}"
+                      scope="parent"/>
 
       <xacro:property name="sim_lin_acc_gaussian_noise_bias"
-                      value="${imu_sim_cfg.get('lin_acc_gaussian_noise_bias', dict())}"/>
-
-      <xacro:if value="${sim_lin_acc_gaussian_noise_bias == dict()}">
-        <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_bias"
-                        value="${default_sim_lin_acc_gaussian_noise_bias}"
-                        scope="parent"/>
-      </xacro:if>
-      <xacro:if value="${sim_lin_acc_gaussian_noise_bias != dict()}">
-        <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_bias"
-                        value="${' '.join([str(sim_lin_acc_gaussian_noise_bias['mean_x']),
-                                           str(sim_lin_acc_gaussian_noise_bias['stddev_x']),
-                                           str(sim_lin_acc_gaussian_noise_bias['mean_y']),
-                                           str(sim_lin_acc_gaussian_noise_bias['stddev_y']),
-                                           str(sim_lin_acc_gaussian_noise_bias['mean_z']),
-                                           str(sim_lin_acc_gaussian_noise_bias['stddev_z'])])}"
-                        scope="parent"/>
-      </xacro:if>
+                      value="${imu_sim_cfg['lin_acc_gaussian_noise_bias']}"/>
+      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_bias"
+                      value="${' '.join([str(sim_lin_acc_gaussian_noise_bias['mean_x']),
+                                         str(sim_lin_acc_gaussian_noise_bias['stddev_x']),
+                                         str(sim_lin_acc_gaussian_noise_bias['mean_y']),
+                                         str(sim_lin_acc_gaussian_noise_bias['stddev_y']),
+                                         str(sim_lin_acc_gaussian_noise_bias['mean_z']),
+                                         str(sim_lin_acc_gaussian_noise_bias['stddev_z'])])}"
+                      scope="parent"/>
 
       <xacro:property name="sim_lin_acc_gaussian_noise_dynamic_bias"
-                      value="${imu_sim_cfg.get('lin_acc_gaussian_noise_dynamic_bias', dict())}"/>
-
-      <xacro:if value="${sim_lin_acc_gaussian_noise_dynamic_bias == dict()}">
-        <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_dynamic_bias"
-                        value="${default_sim_lin_acc_gaussian_noise_dynamic_bias}"
-                        scope="parent"/>
-      </xacro:if>
-      <xacro:if value="${sim_lin_acc_gaussian_noise_dynamic_bias != dict()}">
-        <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_dynamic_bias"
-                        value="${' '.join([str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_x']),
-                                           str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_x']),
-                                           str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_y']),
-                                           str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_y']),
-                                           str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_z']),
-                                           str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_z'])])}"
-                        scope="parent"/>
-      </xacro:if>
+                      value="${imu_sim_cfg['lin_acc_gaussian_noise_dynamic_bias']}"/>
+      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_dynamic_bias"
+                      value="${' '.join([str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_x']),
+                                         str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_x']),
+                                         str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_y']),
+                                         str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_y']),
+                                         str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_z']),
+                                         str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_z'])])}"
+                      scope="parent"/>
 
       <xacro:property name="${prop_prefix}_sim_use_orientation"
-                      value="${imu_sim_cfg.get('use_orientation', default_sim_use_orientation)}"
+                      value="${imu_sim_cfg['use_orientation']}"
                       scope="parent"/>
     </xacro:if>
   </xacro:macro>

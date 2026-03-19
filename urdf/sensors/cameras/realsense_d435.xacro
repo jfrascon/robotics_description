@@ -17,7 +17,7 @@ prefix (S): optional prefix for the names of the links and joints.
 
 parent_frame (S): name of the parent frame to which the cameras's root frame is attached.
 
-use_visual (B): if true, include visual element..
+use_visual (B): if true, include visual element.
 
 use_collision (B): if true, include collision element.
 
@@ -38,7 +38,7 @@ use_c_mesh (B): if true, use the camera's mesh for the collision element. If fal
 joint_parent_fr_root_fr (S): Pose of the camera's root frame w.r.t the parent's frame.
     joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
-use_sim (B): if true, include gazebo camera plugins.
+use_sim (B): if true, include Gazebo camera plugins.
 
 use_gravity (B): if true, the camera is affected by gravity in simulation.
 
@@ -201,7 +201,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                        color_cam_sim_update_rate
                        color_cam_sim_image
                        color_cam_sim_lens_single_elements
+                       color_cam_sim_lens_custom_function:=''
                        color_cam_sim_lens_intrinsics:=''
+                       color_cam_sim_lens_projection:=''
                        color_cam_sim_lens_xy_skew:=0.0
                        color_cam_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        color_cam_sim_distortion_center:='0.5 0.5'
@@ -218,7 +220,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                        infrared_cam_sim_update_rate
                        infrared_cam_sim_image
                        infrared_cam_sim_lens_single_elements
+                       infrared_cam_sim_lens_custom_function:=''
                        infrared_cam_sim_lens_intrinsics:=''
+                       infrared_cam_sim_lens_projection:=''
                        infrared_cam_sim_lens_xy_skew:=0.0
                        infrared_cam_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        infrared_cam_sim_distortion_center:='0.5 0.5'
@@ -236,7 +240,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                        depth_cam_sim_update_rate
                        depth_cam_sim_image
                        depth_cam_sim_lens_single_elements
+                       depth_cam_sim_lens_custom_function:=''
                        depth_cam_sim_lens_intrinsics:=''
+                       depth_cam_sim_lens_projection:=''
                        depth_cam_sim_lens_xy_skew:=0.0
                        depth_cam_sim_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        depth_cam_sim_distortion_center:='0.5 0.5'
@@ -438,9 +444,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                              update_rate="${color_cam_sim_update_rate}"
                              image="${color_cam_sim_image}"
                              lens_single_elements="${color_cam_sim_lens_single_elements}"
-                             lens_custom_function=""
+                             lens_custom_function="${color_cam_sim_lens_custom_function}"
                              lens_intrinsics="${color_cam_sim_lens_intrinsics}"
-                             lens_projection=""
+                             lens_projection="${color_cam_sim_lens_projection}"
                              lens_xy_skew="${color_cam_sim_lens_xy_skew}"
                              distortion_k_p="${color_cam_sim_distortion_k_p}"
                              distortion_center="${color_cam_sim_distortion_center}"
@@ -465,9 +471,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                              update_rate="${infrared_cam_sim_update_rate}"
                              image="${infrared_cam_sim_image}"
                              lens_single_elements="${infrared_cam_sim_lens_single_elements}"
-                             lens_custom_function=""
+                             lens_custom_function="${infrared_cam_sim_lens_custom_function}"
                              lens_intrinsics="${infrared_cam_sim_lens_intrinsics}"
-                             lens_projection=""
+                             lens_projection="${infrared_cam_sim_lens_projection}"
                              lens_xy_skew="${infrared_cam_sim_lens_xy_skew}"
                              distortion_k_p="${infrared_cam_sim_distortion_k_p}"
                              distortion_center="${infrared_cam_sim_distortion_center}"
@@ -490,9 +496,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                              update_rate="${infrared_cam_sim_update_rate}"
                              image="${infrared_cam_sim_image}"
                              lens_single_elements="${infrared_cam_sim_lens_single_elements}"
-                             lens_custom_function=""
+                             lens_custom_function="${infrared_cam_sim_lens_custom_function}"
                              lens_intrinsics="${infrared_cam_sim_lens_intrinsics}"
-                             lens_projection=""
+                             lens_projection="${infrared_cam_sim_lens_projection}"
                              lens_xy_skew="${infrared_cam_sim_lens_xy_skew}"
                              distortion_k_p="${infrared_cam_sim_distortion_k_p}"
                              distortion_center="${infrared_cam_sim_distortion_center}"
@@ -519,9 +525,9 @@ depth_cam_sim_depth_clip (S): These limits are the ones used to generate the dep
                                    update_rate="${depth_cam_sim_update_rate}"
                                    image="${depth_cam_sim_image}"
                                    lens_single_elements="${depth_cam_sim_lens_single_elements}"
-                                   lens_custom_function=""
+                                   lens_custom_function="${depth_cam_sim_lens_custom_function}"
                                    lens_intrinsics="${depth_cam_sim_lens_intrinsics}"
-                                   lens_projection=""
+                                   lens_projection="${depth_cam_sim_lens_projection}"
                                    lens_xy_skew="${depth_cam_sim_lens_xy_skew}"
                                    distortion_k_p="${depth_cam_sim_distortion_k_p}"
                                    distortion_center="${depth_cam_sim_distortion_center}"

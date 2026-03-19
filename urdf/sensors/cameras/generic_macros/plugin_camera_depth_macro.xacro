@@ -5,21 +5,22 @@
   - rgbd camera (type = 'rgbd_camera' or 'rgbd') or
   - depth camera (type = 'depth').
 
-  The base <topic> you set is used as a prefix. Gazebo publishes a depth image on:
+  The string in ${topic} is used as a prefix. Gazebo publishes a depth image on:
   ${topic}/depth_image
-  This depth stream is always float32 and is controlled by the <depth_camera> tag (near/far, output, etc.),
-  NOT by <image><format>.
 
   If type='rgbd_camera' (or 'rgbd'):
   The camera plugin publishes the topics:
   ${topic}/image        -> color stream, encoded according to <image><format>
-  ${topic}/depth_image  -> depth stream (float32), independent of <image><format>
+  ${topic}/depth_image  -> depth stream (always format float32) is controlled by the <depth_camera> tag.
+                           The format defined in <image><format> does not apply.
   So here <image><format> defines the REAL color data you see in the Gz GUI (when <visualize> is true) and the data
   type published on ${topic}/image.
 
   If type='depth_camera' (or 'depth'):
   The camera plugin only publishes the topic:
-  ${topic}/depth_image  -> depth stream (float32), independent of <image><format>
+  ${topic}/depth_image  -> depth stream (always format float32) is controlled by the <depth_camera> tag.
+                           The format defined in <image><format> does not apply.
+
   The <image> block is a visual auxiliary channel associated with the camera. it only affects how the camera view looks
   in the Gz GUI (when <visualize> is true).  It does NOT change the depth stream.
 

@@ -9,7 +9,7 @@ B means boolean
 name (S): name of the imu, used to name the links and joints.
 prefix (S): optional prefix for the names of the links and joints.
 parent_frame (S): name of the parent frame to which the imu's root frame is attached.
-use_visual (B): if true, include visual element..
+use_visual (B): if true, include visual element.
 use_collision (B): if true, include collision element.
 use_inertial (B): if true, include inertial element.
 use_v_mesh (B): if true, use the mesh for the visual element. If false, use a box shape.
@@ -23,7 +23,7 @@ color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual
 use_c_mesh (B): if true, use the mesh for the collision element. If false, use a box shape.
 joint_parent_fr_root_fr (S): Pose of the imu's root frame w.r.t the parent's frame.
     joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
-use_sim (B): if true, include the gazebo imu plugin.
+use_sim (B): if true, include the Gazebo IMU plugin.
 sim_use_gravity (B): if true, the imu measures gravity in simulation.
 sim_always_on (B): if true, the imu is always on in simulation.
 sim_update_rate (R): update rate of the imu in simulation.
@@ -40,6 +40,9 @@ sim_lin_acc_gaussian_noise_bias (S): Gaussian noise bias parameters for linear a
 sim_lin_acc_gaussian_noise_dynamic_bias (S): Gaussian noise dynamic bias parameters for linear acceleration measurements.
     sim_lin_acc_gaussian_noise_dynamic_bias (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
 sim_use_orientation (B): if true, the imu plugin provides orientation data in simulation.
+sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. If empty, the default topic
+    '<imu_namespace>/data' is used. If it starts with '/', it is treated as absolute. Otherwise, it is resolved
+    inside the imu namespace.
 -->
 <robot name="um7" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="um7"
@@ -64,7 +67,8 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
                        sim_lin_acc_gaussian_noise:='0 0 0 0 0 0'
                        sim_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
                        sim_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
-                       sim_use_orientation:=True">
+                       sim_use_orientation:=True
+                       sim_topic:=''">
 
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
@@ -151,6 +155,17 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
       <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
 
       <xacro:make_namespace prop_id="imu_namespace" namespace="${namespace}" name="${name}"/>
+      <!-- Default topic used when the caller does not override it. -->
+      <xacro:property name="default_imu_topic" value="${imu_namespace}/data"/>
+
+      <!-- '/' alone is not a valid topic. -->
+      <xacro:if value="${sim_topic == '/'}">
+        ${xacro.fatal("The xacro parameter 'sim_topic' cannot be '/'")}
+      </xacro:if>
+
+      <!-- Relative topics are resolved inside the imu namespace; absolute topics are preserved. -->
+      <xacro:property name="imu_topic"
+                      value="${default_imu_topic if sim_topic == '' else (sim_topic if sim_topic.startswith('/') else imu_namespace + '/' + sim_topic)}"/>
 
       <xacro:plugin_imu
         sensor_name="${prefix}${name}_gz"
@@ -165,7 +180,7 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
         lin_acc_gaussian_noise_bias="${sim_lin_acc_gaussian_noise_bias}"
         lin_acc_gaussian_noise_dynamic_bias="${sim_lin_acc_gaussian_noise_dynamic_bias}"
         use_orientation="${sim_use_orientation}"
-        topic="${imu_namespace}/data"/>
+        topic="${imu_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>
