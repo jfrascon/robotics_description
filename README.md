@@ -1,65 +1,145 @@
 # robotics_description
 
-Reusable URDF/Xacro assets for ROS 2.
+This package provides a collection of xacro macros to build robot descriptions across projects.
+The xacro macros are located under the `urdf/` directory, and are organized into categories, according to their purpose:
 
-This package is a shared component library to build robot descriptions across projects. The generic part provides reusable macro blocks for consistent naming (`namespace`/`prefix`), visual and collision definitions, inertial definitions, and common mechanical elements such as wheels and forklift forks. Sensor URDF/Xacro files are grouped by type under `urdf/sensors` (`lidars`, `imus`, `cameras`), and that is the place where specific sensor models are incorporated over time.
+- `common/`: very generic macros. They do not define any specific robot component, but rather common operations such as **compute inertia for basic shapes**, **expand a topic with a namespace**, **create visual/collision/inertial elements for a <link>**, etc.
+- `extras/`: to be honest, components that are no sensors, like a `fork`, for example. Other components will be added here over time.
+- `gz_system_plugins/`: macros to set up Gazebo system plugins for simulation.
+- `sensors/`: macros for specific sensors. There are subdirectories for each sensor type (`lidars/`, `imus/`, `cameras/`), and specific sensor models are added here over time. Thera are also generic macros for each sensor type, reusable across specific sensor models of the same type.
+- `wheels/`: macros for different types of wheels, such as `regular wheels`, `steerable wheels`, `caster wheels`, etc.
 
-Current specific sensor models are: `robosense_airy`, `robosense_helios_16p`, `um7`, and `realsense_d435`. Associated meshes are stored under `meshes/`, and example simulation parameters are provided under `config/sensors/`.
+If a specific sensor model needs a mesh, it is stored under the `meshes/` directory, inside a subdirectory for the sensor type (for example, `meshes/lidars/robosense_helios_16/`).
 
-Example integration of `robosense_helios_16p` (some properties are scalar, others are space-separated sequences like `"min max"`):
+There is a `doc/` directory with documentation that could be useful for users, like `how_to_compute_inertia_w_meshlab.md`. It is expected that this documentation will grow over time as more resources are added to the package.
+
+When a xacro is too specific, like the [`robosense_helios_16_macro.xacro`](urdf/sensors/lidars/robosense_helios_16_macro.xacro) for example, it already contains the Gazebo plugin within it. Just check out the xacro macro parameters to see how to configure the macro in general and its Gazebo plugin in particular. Great care has been taken into make the interface of the xacro macros as consistent as possible across different sensor types and models, so the mental burden of using different macros for different sensors is minimized.
+
+However, some general macros, like the [`fork_simple_macro.xacro`](urdf/extras/fork_simple/fork_simple_macro.xacro) or the [`steerable_wheel_macro.xacro`](urdf/wheels/steerable_wheel_macro.xacro) for example, do not have any Gazebo plugin within them, because there is not a specific Gazebo plugin in the [SDF specification](https://sdformat.org/spec/) for these items per se. Instead, this kind of components can be associated to different Gazebo system plugins, depending on the specific simulation setup and requirements. For example, the `fork_simple_macro.xacro` defines a simple fork component that depending on the robot description where it is used, can be associated to a `JointPositionController` Gazebo plugin to control the position of the fork, either by using messages of type `actuator_msgs/msg/Actuators` or messages of type `std_msgs/msg/Float64`, either controlled with a `PID` controller or with `velocity commands`, etc.,
+
+You can identify the components that do not have a Gazebo plugin within them, in other words, that are linked to Gazebo system plugins, if you go to their folder an inside a subdirectory called `generic_macros` you seer xacro macro wrappers around Gazebo system plugin.
+For example, in the case of the `fork_simple_macro.xacro`, you can find:
+- [`plugin_fork_joint_am_pos_pid_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_am_pos_pid_macro.xacro)
+- [`plugin_fork_joint_am_pos_velcmd_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_am_pos_velcmd_macro.xacro)
+- [`plugin_fork_joint_f64_pos_pid_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_f64_pos_pid_macro.xacro)
+- [`plugin_fork_joint_f64_pos_velcmd_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_f64_pos_velcmd_macro.xacro)
+
+Many specific sensor macros already embed their Gazebo plugin. For that reason, their interfaces usually expose several simulation parameters, such as topics, update rates, noise models, field-of-view limits, and similar plugin-specific settings. You can always pass those parameters one by one when invoking the macro, which keeps the call site explicit and gives you full control.
+
+In practice, however, these simulation parameters are often maintained in a YAML file. To make that workflow easier, this package also provides helper macros whose names start with `set_props_`. These helpers take a simulation configuration dictionary, usually loaded from one of those YAML files, and expand it into individual Xacro properties with the exact names expected by the corresponding macro. This means you can choose the style that better fits your project: pass simulation arguments explicitly, or load them from YAML and bridge both representations through a `set_props_...` macro.
+
+Under the folder `config` you can find example simulation configuration files for the Gazebo plugins associated to the different components. These files are not consumed automatically by the Xacro macros, but they show the kind of simulation dictionaries that can later be loaded and adapted to your own robot configuration before passing them, directly or through a `set_props_...` helper, to the corresponding macro.
+
+Example integration of `robosense_helios_16` following the pattern used in `robot_forklift_simple_3sw/urdf/v1.xacro`:
 
 ```xml
-<xacro:property name="robot_prefix"                   value="my_robot_"/>
-<xacro:property name="robot_namespace"                value="/test/my_robot"/>
-<xacro:property name="use_sim_mode"                   value="True"/>
-<xacro:property name="joint_parent_fr_root_fr"        value="0.0 0.0 0.12 0.0 0.0 0.0"/>
+# Load the simulation YAML once and extract the section for this lidar.
+<xacro:property name="sim_cfg"
+                value="${xacro.load_yaml(sim_file)}"/>
+# Key `top_lidar` is expected to be present in the YAML, but if not, an empty
+# dictionary is used as default value to avoid errors.
+<xacro:property name="top_lidar_sim_cfg"
+                value="${sim_cfg.get('top_lidar', dict())}"/>
 
-<xacro:property name="front_lidar_use_visual"         value="True"/>
-<xacro:property name="front_lidar_use_collision"      value="True"/>
-<xacro:property name="front_lidar_use_inertial"       value="True"/>
-<xacro:property name="front_lidar_use_v_mesh"         value="False"/>
-<xacro:property name="front_lidar_use_low_res_v_mesh" value="True"/>
-<xacro:property name="front_lidar_color"              value="0.1 0.1 0.1 1.0"/>
-<xacro:property name="front_lidar_use_c_mesh"         value="False"/>
-<xacro:property name="front_lidar_use_low_res_c_mesh" value="True"/>
+# Expand the YAML dictionary into individual Xacro properties such as:
+# - top_lidar_sim_enabled
+# - top_lidar_sim_update_rate
+# - top_lidar_sim_hor_fov_deg
+# ...
+# - top_lidar_sim_base_topic
+<xacro:set_props_plugin_lidar_3d_ring prop_prefix="top_lidar_sim"
+                                      sim_cfg="${top_lidar_sim_cfg}"/>
 
-<xacro:property name="front_lidar_sim_enabled"        value="True"/>
-<xacro:property name="front_lidar_sim_always_on"      value="True"/>
-<xacro:property name="front_lidar_sim_visualize"      value="False"/>
-<xacro:property name="front_lidar_sim_update_rate"    value="10"/>
-<xacro:property name="front_lidar_sim_hor_fov_deg"    value="-180 180"/>
-<xacro:property name="front_lidar_sim_hor_res_deg"    value="0.2"/>
-<xacro:property name="front_lidar_sim_ver_fov_deg"    value="-15 15"/>
-<xacro:property name="front_lidar_sim_ver_res_deg"    value="2"/>
-<xacro:property name="front_lidar_sim_dist_span"      value="0.2 150"/>
-<xacro:property name="front_lidar_sim_gaussian_noise" value="0 0.01"/>
-
-<xacro:robosense_helios_16p name="front_lidar"
-                            prefix="${robot_prefix}"
-                            namespace="${robot_namespace}"
-                            parent_frame="${robot_prefix}front_platform_link"
-                            use_visual="${front_lidar_use_visual}"
-                            use_collision="${front_lidar_use_collision}"
-                            use_inertial="${front_lidar_use_inertial}"
-                            use_v_mesh="${front_lidar_use_v_mesh}"
-                            use_low_res_v_mesh="${front_lidar_use_low_res_v_mesh}"
-                            color="${front_lidar_color}"
-                            use_c_mesh="${front_lidar_use_c_mesh}"
-                            use_low_res_c_mesh="${front_lidar_use_low_res_c_mesh}"
-                            joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
-                            use_sim="${use_sim_mode}"
-                            sim_always_on="${front_lidar_sim_always_on}"
-                            sim_visualize="${front_lidar_sim_visualize}"
-                            sim_update_rate="${front_lidar_sim_update_rate}"
-                            sim_hor_fov_deg="${front_lidar_sim_hor_fov_deg}"
-                            sim_hor_res_deg="${front_lidar_sim_hor_res_deg}"
-                            sim_ver_fov_deg="${front_lidar_sim_ver_fov_deg}"
-                            sim_ver_res_deg="${front_lidar_sim_ver_res_deg}"
-                            sim_dist_span="${front_lidar_sim_dist_span}"
-                            sim_gaussian_noise="${front_lidar_sim_gaussian_noise}"/>
+# Instantiate the sensor macro. Visual/collision/inertial arguments can still
+# be set explicitly at the call site, while simulation arguments come from the
+# properties produced by set_props_plugin_lidar_3d_ring.
+<xacro:robosense_helios_16
+    name="top_lidar"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}top_platform_link"
+    use_visual="${top_lidar_use_visual}"
+    use_collision="${top_lidar_use_collision}"
+    use_inertial="${top_lidar_use_inertial}"
+    use_v_mesh="${top_lidar_use_v_mesh}"
+    v_mesh_use_low_res="${top_lidar_v_mesh_use_low_res}"
+    color="${top_lidar_color}"
+    use_c_mesh="${top_lidar_use_c_mesh}"
+    c_mesh_use_low_res="${top_lidar_c_mesh_use_low_res}"
+    joint_parent_fr_root_fr="0.0 0.0 ${top_platform_size_z} 0.0 0.0 0.0"
+    sim_enabled="${top_lidar_sim_enabled and use_sim_mode}"
+    sim_always_on="${top_lidar_sim_always_on}"
+    sim_visualize="${top_lidar_sim_visualize}"
+    sim_update_rate="${top_lidar_sim_update_rate}"
+    sim_hor_fov_deg="${top_lidar_sim_hor_fov_deg}"
+    sim_hor_res_deg="${top_lidar_sim_hor_res_deg}"
+    sim_ver_fov_deg="${top_lidar_sim_ver_fov_deg}"
+    sim_ver_res_deg="${top_lidar_sim_ver_res_deg}"
+    sim_dist_span="${top_lidar_sim_dist_span}"
+    sim_gaussian_noise="${top_lidar_sim_gaussian_noise}"
+    namespace="${robot_namespace}"
+    sim_base_topic="${top_lidar_sim_base_topic}"/>
 ```
 
-Validation is covered by `test/test_xacro.py`, which checks Xacro-to-URDF generation and mesh references.
+If you prefer, you can also define the simulation properties one by one instead of loading them from YAML and using a `set_props_...` helper:
+
+```xml
+# Define only the simulation properties you want to control explicitly.
+<xacro:property name="top_lidar_sim_enabled"     value="True"/>
+<xacro:property name="top_lidar_sim_always_on"   value="True"/>
+<xacro:property name="top_lidar_sim_visualize"   value="False"/>
+<xacro:property name="top_lidar_sim_update_rate" value="10.0"/>
+# ... other simulation properties ...
+<xacro:property name="top_lidar_sim_base_topic"  value="sensors/top_lidar"/>
+
+# Instantiate the same macro and inject those properties directly.
+# The remaining simulation arguments follow the same pattern and can be added
+# one by one if needed.
+<xacro:robosense_helios_16
+    name="top_lidar"
+    prefix="${robot_prefix}"
+    parent_frame="${robot_prefix}top_platform_link"
+    use_visual="${top_lidar_use_visual}"
+    use_collision="${top_lidar_use_collision}"
+    use_inertial="${top_lidar_use_inertial}"
+    use_v_mesh="${top_lidar_use_v_mesh}"
+    v_mesh_use_low_res="${top_lidar_v_mesh_use_low_res}"
+    color="${top_lidar_color}"
+    use_c_mesh="${top_lidar_use_c_mesh}"
+    c_mesh_use_low_res="${top_lidar_c_mesh_use_low_res}"
+    joint_parent_fr_root_fr="0.0 0.0 ${top_platform_size_z} 0.0 0.0 0.0"
+    sim_enabled="${top_lidar_sim_enabled and use_sim_mode}"
+    sim_always_on="${top_lidar_sim_always_on}"
+    sim_visualize="${top_lidar_sim_visualize}"
+    sim_update_rate="${top_lidar_sim_update_rate}"
+    ...
+    sim_base_topic="${top_lidar_sim_base_topic}"/>
+```
+
+## Tests
+
+The main validation entry point for this package is:
+- `test/test_xacro.py`
+
+This test suite exists because most files in `robotics_description` are reusable macros, not complete robot descriptions. To validate them, the package includes small test cases under `test/test_xacros/` that instantiate those macros with valid arguments and example simulation settings.
+
+For each collected test Xacro, the test suite performs:
+- Xacro expansion to make sure the file can be rendered into URDF.
+- `check_urdf` validation on the generated URDF.
+- mesh validation to make sure every `package://` mesh reference points to an
+  existing file.
+
+To run the tests from the workspace root:
+
+```bash
+colcon test --merge-install --packages-select robotics_description
+colcon test-result --all --verbose
+```
+
+For direct debugging with full output:
+
+```bash
+python3 -m pytest -s -v src/0_deps/robotics_description/test/test_xacro.py
+```
 
 ## Xacro guard pattern
 

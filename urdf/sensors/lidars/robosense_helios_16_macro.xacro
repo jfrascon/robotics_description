@@ -88,8 +88,8 @@ Topic used by the GZ `gpu_lidar` plugin in simulation. This field is required.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
 -->
-<robot name="robosense_helios_16p" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="robosense_helios_16p"
+<robot name="robosense_helios_16" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="robosense_helios_16"
                params="name
                        prefix:=''
                        parent_frame
@@ -135,7 +135,7 @@ namespace.
     To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
     <xacro:property name="mesh"
-                    value="robotics_description/meshes/sensors/lidars/robosense_helios_16p/mesh.stl"/>
+                    value="robotics_description/meshes/sensors/lidars/robosense_helios_16/mesh.stl"/>
 
     <!--
     The mesh represents a cylinder with its symmetry axis along the z-axis.
@@ -145,7 +145,7 @@ namespace.
     To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
     <xacro:property name="low_res_mesh"
-                    value="robotics_description/meshes/sensors/lidars/robosense_helios_16p/mesh_low_res.dae"/>
+                    value="robotics_description/meshes/sensors/lidars/robosense_helios_16/mesh_low_res.dae"/>
 
     <!-- Scale for both meshes, standard mesh and low resolition mesh -->
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>

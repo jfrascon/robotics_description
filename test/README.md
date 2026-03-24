@@ -23,7 +23,7 @@ Current explicit test cases in `test/test_xacros/`:
 - `test_realsense_d435.xacro`
 - `test_realsense_d435_rgbd.xacro`
 - `test_robosense_airy.xacro`
-- `test_robosense_helios_16p.xacro`
+- `test_robosense_helios_16.xacro`
 - `test_steerable_wheel.xacro`
 - `test_um7.xacro`
 - `test_wheel.xacro`
