@@ -7,15 +7,13 @@ The main test entry point is:
 
 ## What is tested
 
-`test_xacro.py` validates two kinds of Xacro files:
+`test_xacro.py` validates the explicit test cases under `test/test_xacros/`.
 
-1. Complete robot descriptions under `urdf/robots/`
-   - Only `.xacro` files that do not end with `_macro.xacro` are collected here.
-   - These are expected to be directly renderable into a complete URDF model.
-
-2. Explicit macro test cases under `test/test_xacros/`
-   - These are small Xacro files that instantiate reusable sensor macros with valid example configurations.
-   - They exist because most sensor macros are not standalone URDFs and therefore cannot be tested directly.
+These are small Xacro files that instantiate reusable macros with valid
+arguments and, when needed, example simulation configurations. They exist
+because most files in `robotics_description` are reusable macro building
+blocks, not standalone robot descriptions that can be rendered and validated
+directly on their own.
 
 Current explicit test cases in `test/test_xacros/`:
 - `test_fork_simple.xacro`
