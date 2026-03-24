@@ -1,4 +1,60 @@
 <?xml version="1.0"?>
+<!--
+RealSense D435 links-and-joints macro.
+
+This file defines the physical URDF structure of the RealSense D435:
+- the body link
+- the attachment joint to the parent frame
+- and, optionally, the nominal depth, color, infra1, and infra2 frames
+
+It does not define Gazebo sensor plugins.
+Those are added by higher-level macros such as:
+- `realsense_d435_split_macro.xacro`
+- `realsense_d435_rgbd_macro.xacro`
+
+Base file used to create this file:
+https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/realsense2_description/urdf/_d435.urdf.xacro
+
+Convention for parameter types:
+R means real number
+I means integer
+S means string
+B means boolean
+
+name (S): name of the realsense, used to name the links and joints.
+
+prefix (S): optional prefix for the names of the links and joints.
+
+parent_frame (S): name of the parent frame to which the camera root frame is attached.
+
+use_visual (B): if true, include visual element.
+
+use_collision (B): if true, include collision element.
+
+use_inertial (B): if true, include inertial element.
+
+use_v_mesh (B): if true, use the camera mesh for the visual element. If false, use a box shape.
+
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if `use_visual` is true.
+           If `color` is not empty, the provided color is applied to the object used in the visual
+           element, either a mesh or a box shape.
+           If `color` is empty:
+               If a mesh is used and has its own color, the mesh color is displayed.
+               If a mesh is used with no color data associated, or a box shape is used, a default
+               whitish color is used.
+
+use_c_mesh (B): if true, use the camera mesh for the collision element. If false, use a box shape.
+
+use_sensor_frames_and_joints (B): if true, create the depth, color, infra1, and infra2 frames using the
+nominal extrinsics of the RealSense model.
+If false, this macro only creates the mechanical body link and its attachment joint. This is useful
+when calibrated extrinsics are expected to be published elsewhere, for example by a driver or TF
+publisher.
+
+joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the parent frame.
+    joint_parent_fr_root_fr = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+
+-->
 
 <robot name="realsense_d435_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="realsense_d435_links_joints"
@@ -11,21 +67,22 @@
                        use_v_mesh:=True
                        color:='0.5 0.5 0.5 1.0'
                        use_c_mesh:=False
-                       use_nominal_extrinsics:=False
+                       use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
     <!--
-    The following values are approximate, and the camera node publishing TF values with actual calibrated camera
-    extrinsic values.
+    These offsets are approximate.
+    If a camera node or driver publishes calibrated TF values, those calibrated extrinsics should be
+    preferred over these nominal ones.
     -->
     <xacro:property name="cam_depth_to_infra1_offset" value="0.0"/>
     <xacro:property name="cam_depth_to_infra2_offset" value="-0.050"/>
     <xacro:property name="cam_depth_to_color_offset"  value="0.015"/>
 
     <!--
-    The following values model the aluminum peripherial case for the D435 camera, with the camera joint represented by
-    the actual peripherial camera tripod mount.
+    These dimensions model the aluminum outer case of the D435 camera.
+    The camera attachment joint is represented at the physical tripod-mount location of the camera.
     -->
     <xacro:property name="size_x"                       value="0.02505"/>
     <xacro:property name="size_y"                       value="0.090"/>
@@ -40,18 +97,18 @@
     <xacro:property name="mesh_x_offset"
                     value="${cam_mount_from_center_offset - zero_depth_to_glass - glass_to_front}"/>
 
-    <!-- The following offset is relative the the physical D435 camera peripherial camera tripod mount. -->
+    <!-- This offset is expressed relative to the physical D435 tripod mount. -->
     <xacro:property name="cam_depth_px" value="${cam_mount_from_center_offset}"/>
     <xacro:property name="cam_depth_py" value="0.0175"/>
     <xacro:property name="cam_depth_pz" value="${size_z * 0.5}"/>
 
     <!--
-    The frame of the mesh is located at its geometric center (See MeshLab), so it coincides with the frame of a box
-    shape.
-    Therefore, just one origin is needed no matter if use_<v|c>_mesh is true or false.
-    Scale is 1 1 1.
-    The mesh does not have color information, so a color is encouraged.
-    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    The mesh frame is located at its geometric center, so it coincides with the frame of the
+    equivalent box shape.
+    Because of that, a single origin is enough whether `use_v_mesh` / `use_c_mesh` is true or false.
+    The mesh scale is `1 1 1`.
+    The mesh does not include color information, so providing `color` is recommended.
+    Mesh paths follow the usual `<package>/<path_within_package>` convention.
     -->
     <xacro:property name="mesh"
                     value="robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
@@ -59,12 +116,11 @@
     <xacro:property name="origin"
                     value="${(-size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
 
-    <!-- root frame for the camera -->
+    <!-- Root frame of the camera. -->
     <link name="${prefix}${name}_bottom_screw_frame"/>
 
     <!--
-    Definition of the joint '${prefix}${name}_joint', that joins the ${prefix}${name}_bottom_screw_frame to its
-    parent frame.
+    Fixed joint that attaches `${prefix}${name}_bottom_screw_frame` to `parent_frame`.
     -->
     <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
 
@@ -111,10 +167,10 @@
     </joint>
 
     <!--
-    Use the nominal extrinsics between camera frames if the calibrated extrinsics aren't being published. e.g. running
-    the device in simulation
+    Create the nominal camera frames only when calibrated extrinsics are not expected to be
+    published elsewhere, for example when the device is used in simulation.
     -->
-    <xacro:if value="${use_nominal_extrinsics}">
+    <xacro:if value="${use_sensor_frames_and_joints}">
       <!-- camera depth joints and links -->
       <link name="${prefix}${name}_depth_frame"/>
 

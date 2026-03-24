@@ -1,175 +1,151 @@
 <?xml version="1.0"?>
 <robot name="plugin_camera_thermal" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <!--
-  This macro implements a thermal camera sensor for Gazebo (type='thermal_camera' or 'thermal').
-  It behaves like a camera that renders a thermal (temperature) image, and it requires the ThermalSensor system plugin
-  to map scene temperatures into pixel values.
+  Wrapper for a Gazebo `thermal_camera` sensor.
 
-  The base <topic> you provide is used for publishing the thermal image stream, and ${info_topic} is used for the
-  corresponding camera_info.
-  The same thermal image is rendered in the Gazebo GUI when <visualize> is enabled.
+  This macro fixes the sensor type to `thermal_camera`.
+  It publishes:
+  - `${topic}/image` for the thermal image
+  - `info_topic` for the `camera_info` message
 
-  Thermal parameters:
-  The shorthand parameter thermal_data = 'min_temp max_temp resolution' is expanded into:
-    <min_temp>...</min_temp>
-    <max_temp>...</max_temp>
-    <resolution>...</resolution>
-  inside the gz-sim-thermal-sensor-system plugin.
+  This wrapper also configures the Gazebo thermal sensor system plugin that converts scene
+  temperatures into image values.
 
-  min_temp / max_temp: temperatures in Kelvin that define the valid output range.
-  resolution: controls how temperatures are quantized into pixel values (i.e., the Kelvin-per-step mapping for the
-  thermal image). Smaller values give finer thermal detail.
+  The shorthand parameter `thermal_data = 'min_temp max_temp resolution'` is expanded into:
+  - `<min_temp>`
+  - `<max_temp>`
+  - `<resolution>`
 
-  Additionally, in a thermal camera the <image><format> field does NOT change the physical thermal mapping produced by
-  the ThermalSensor plugin. The temperature-to-pixel conversion is governed by min_temp, max_temp, and resolution, and
-  remains the same regardless of the chosen visual format.
+  Those three values control the thermal mapping itself:
+  - `min_temp` and `max_temp` define the temperature range, in Kelvin
+  - `resolution` defines how temperatures are quantized into pixel values
 
-  So what does <image><format> do in a thermal camera?
-  It only configures the pixel encoding of the published thermal image and its GUI rendering (width, height, and
-  format). In other words, it defines how the already computed thermal values are stored and visualized.
-  Changing <image><format> does not change the underlying thermal data, only how it is encoded for display / transport.
+  In this wrapper, `<image><format>` does not change the physical meaning of the thermal data.
+  The thermal meaning of each pixel is defined by `min_temp`, `max_temp`, and `resolution`.
+  The `<image>` block only controls how the already computed thermal image is encoded and how
+  Gazebo renders it.
 
-  What format makes sense to use, then?
-  The recommended formats are L16 (default) or L8, because thermal images are naturally single-channel intensity maps
-  with quantized temperature values. L16 provides more range/precision than L8.
+  So, in a thermal camera:
+  - the thermal sensor system decides the temperature represented by each pixel
+  - the `<image>` block only controls the image encoding and GUI rendering
 
-  Float formats (R_FLOAT16 / R_FLOAT32) represent single-channel floating-point scalar fields; however, the thermal
-  sensor output is already defined and quantized by the thermal plugin, so using float formats here is generally not
-  meaningful. They are therefore discouraged unless you have a very specific scalar-imaging use case.
+  Formats such as `L16` and `L8` are the most natural choices because thermal images are normally
+  single-channel intensity maps. Float formats are supported, but they are unusual here and rarely
+  useful.
 
-  This macro can be used from sdformat 1.9 (possible even earlier) onwards: i.e, it can be used from Gazebo Fortress
-  (officially bonded with ROS2 Humble) and later versions of Gazebo.
+  This macro can be used with SDFormat 1.9 and later.
 
-  The sdformat specifications for a camera sensor found at:
-  http://sdformat.org/spec?ver=1.11&elem=sensor#sensor_camera (for version 1.11)
-
-  sdformat specification 1.11 is parsed by the library libsdformat14, available since Gazebo Harmonic.
+  SDFormat reference:
+  http://sdformat.org/spec?ver=1.11&elem=sensor#sensor_camera
+  SDFormat 1.11 is parsed by `libsdformat14`, available since Gazebo Harmonic.
 
   Convention for parameter types:
-  R means real number (float or double)
-  I means integer
-  S means string
-  B means boolean
+  - `R`: real number (`float` or `double`)
+  - `I`: integer
+  - `S`: string
+  - `B`: boolean
 
-  Parameter formats:
+  Parameters:
+  `name (S)`: unique name of the camera.
 
-  name (S): A unique name for the camera.
+  `reference_frame (S)`: frame where the Gazebo sensor is attached.
 
-  reference_frame(S): Name of the frame where the camera plugin is attached.
+  `optical_frame (S)`: optical frame name used in the `camera_info` message header.
 
-  optical_frame (S): Name of the optical frame of the camera. It will be used in the camera_info message header.
+  `use_gravity (B)`: if `true`, the camera is affected by gravity.
 
-  use_gravity (B): If true, the camera will be affected by gravity.
+  `always_on (B)`: if `true`, the sensor updates continuously according to `update_rate`.
 
-  always_on (B): If True the sensor will always be updated according to the update rate.
+  `visualize (B)`: if `true`, Gazebo shows the sensor in the GUI.
 
-  visualize (B): If True the sensor is visualized in the GUI.
+  `enable_metrics (B)`: if `true`, the sensor publishes performance metrics.
 
-  enable_metrics (B): If True, the sensor will publish performance metrics.
+  `update_rate (R)`: sensor update frequency. If omitted, the sensor updates every cycle.
 
-  update_rate (R): The frequency at which the sensor data is generated. If left unspecified, the sensor will generate
-                   data every cycle.
+  `triggered (B)`: if `true`, the camera is triggered by a topic instead of publishing freely.
 
-  triggered (B): If true, the camera is triggered by a topic.
+  `namespace (S)`: namespace used to resolve relative Gazebo topics configured for the simulated
+    streams. If a topic already starts with `/`, it is kept as an absolute topic.
 
-  visible_mask (I): Visibility mask of a camera. When (camera's visibility_mask & visual's visibility_flags) evaluates
-                    to non-zero, the visual will be visible to the camera.
+  `trigger_topic (S)`: topic that triggers the camera when `triggered` is enabled.
+    namespace is applied to this topic as well if it is relative.
 
-  image (S): The image size in pixels and format
-      image = 'width (I) height (I) format (S) anti_aliasing (I)'
-      width (I): Width of the image in pixels.
-      height (I): Height of the image in pixels.
-      format (S) = L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8  | BAYER_GRBG8 |
-                   | R_FLOAT16 | R_FLOAT32 (these last two formats are hardly used)
-          The <format> field describes the format used for the data published in the color image message ${topic}/image.
-          It is also the format Gazebo uses to render the color image in the GUI when <visualize> is enabled in the
-          sensor.
-          If you choose R8G8B8 you publish an RGB image, if you choose L8 you publish a monochrome image, etc.
-          Float formats (R_FLOAT16 / R_FLOAT32) in <image><format> denote single-channel floating-point image formats,
-          where each pixel stores a continuous scalar value (not RGB). Use them for HDR/physical magnitude maps (e.g.,
-          intensity, radiance, scientific data); FLOAT16 is lighter, FLOAT32 more precise. Therefore, their use in
-          <image><format> is probably limited for segmentation cameras, but they are supported if you have a specific
-          use case.
+  `topic (S)`: topic used by the sensor output.
+    namespace is applied to this topic as well if it is relative.
 
-      anti_aliasing (I): Value used for anti-aliasing.
+  `info_topic (S)`: topic used for the `camera_info` message.
+    namespace is applied to this topic as well if it is relative.
 
-  clip (S): The near and far clip planes. Objects closer or farther than these planes are not rendered
-      clip = 'near (R) far (R)'
-      near (R): Near clipping distance of the view frustum.
-      far (R): Far clipping distance of the view frustum.
+  `visible_mask (I)`: bitmask that controls which visuals this camera can see.
+    A visual is rendered when:
+    `(visible_mask & visual.visibility_flags) != 0`
 
-  save (S): Enable or disable saving of camera frames.
-      save = 'enable (B) path (S)'
-      enable (B): If true, saving of camera frames is enabled.
-      path (S): The path name which will hold the frame data. If path name is relative, then directory is relative to
-                current working directory.
+  `image (S)`: image size and format.
+    Format: `image = 'width (I) height (I) format (S) anti_aliasing (I)'`
+    - `width (I)`: image width in pixels
+    - `height (I)`: image height in pixels
+    - `format (S)`: one of:
+      `L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8 | BAYER_GRBG8 | R_FLOAT16 | R_FLOAT32`
 
-  gaussian_noise (S): The properties of the noise model that should be applied to generated images.
-      gaussian_noise = 'mean (R) stddev (R)'
-      mean (R): Mean of the Gaussian noise.
-      stddev (R): Standard deviation of the Gaussian noise.
+      In this wrapper, `<image><format>` controls the image published on `${topic}/image`.
+      It also controls how Gazebo renders that thermal image when `<visualize>` is enabled.
 
-  distortion_k_p (S): Lens distortion coefficients applied to camera images.
-      distortion_k_p (S) = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R)'
+      If you choose `L8` or `L16`, the thermal image is published as a single-channel image.
+      Float formats are single-channel floating-point images and are usually only meaningful for
+      special use cases.
 
-  distortion_center (S): The normalized coordinates of the distortion center or principal point.
-      distortion_center (S) = 'center_x_norm (R) center_y_norm (R)'
+    - `anti_aliasing (I)`: anti-aliasing level
 
-  lens_single_elements (S): Single element lens.
-      lens_single_elements (S) = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'
-      type (S): Type of the lens mapping. Supported values are: gnomonical, stereographic, equidistant, equisolid_angle,
-                orthographic, custom.
-                For gnomonical (perspective) projection, it is recommended to specify a horizontal_fov <= 90°.
-      scale_to_hfov (B): If true the image will be scaled to fit horizontal FOV, otherwise it will be shown according to
-                         projection type parameters.
-      cutoff_angle_deg (R): Everything outside of the specified angle will be hidden, 90° by default. (In degrees)
-      env_texture_size (I): Resolution of the environment cube map used to draw the world.
+  `clip (S)`: near and far clipping planes used when Gazebo renders the image.
+    Format: `clip = 'near (R) far (R)'`
+    - `near (R)`: near clipping distance of the camera frustum
+    - `far (R)`: far clipping distance of the camera frustum
 
-  lens_custom_function (S): Definition of custom mapping function in a form of r=c1*f*fun(theta/c2 + c3).
-                            See https://en.wikipedia.org/wiki/Fisheye_lens#Mapping_function
-      lens_custom_function (S) = 'c1 (R) c2 (R) c3 (R) f (R) fun (S)'
-      c1 (R): Linear scaling constant.
-      c2 (R): Angle scaling constant.
-      c3 (R): Angle offset constant.
-      f (R): Focal length of the optical system. Note: It's not a focal length of the lens in a common sense!
-             This value is ignored if 'scale_to_fov' is set to true
-      fun (S): Mapping function. Supported values are: 'tan', 'sin' and 'id'.
+  `save (S)`: enable or disable frame saving.
+    Format: `save = 'enabled (B) path (S)'`
+    - `enabled (B)`: if `true`, frame saving is enabled
+    - `path (S)`: output directory. If it is relative, it is interpreted relative to the current
+      working directory
 
-  lens_intrinsics (S): Camera intrinsic parameters for setting a custom perspective projection matrix (cannot be used
-                       with WideAngleCamera since this class uses image stitching from 6 different cameras for achieving
-                       a wide field of view).
-                       The focal lengths can be computed using
-                       focal_length_in_pixels = (img_width_pixels * 0.5) / tan(field_of_view_in_degrees * 0.5 * PI/180)
-      lens_intrinsics (S) = 'fx (R) fy (R) cx (R) cy (R)'
-      fx (R): X focal length (in pixels, overrides horizontal_fov). fx = fy = width / ( 2 * tan (hfov / 2 ) )
-      fy (R): Y focal length (in pixels, overrides horizontal_fov).
-      cx (R): X principal point (in pixels). cx = ( width - 1 ) / 2
-      cy (R): Y principal point (in pixels). cy = ( height - 1 ) / 2
+  `gaussian_noise (S)`: Gaussian noise model applied to generated images.
+    Format: `gaussian_noise = 'mean (R) stddev (R)'`
+    - `mean (R)`: Gaussian mean
+    - `stddev (R)`: Gaussian standard deviation
 
-  lens_xy_skew (R): XY axis skew parameter used in the camera intrinsic matrix.
+  `distortion_k_p (S)`: lens distortion coefficients.
+    Format:
+    `distortion_k_p = 'k1 (R) k2 (R) k3 (R) p1 (R) p2 (R)'`
 
-  lens_projection (S): Camera projection matrix P for overriding camera intrinsic matrix K values so that users can
-                       configure P independently of K. This is useful when working with stereo cameras where P may be
-                       different from K due to the transform between the two cameras.
-      lens_projection (S) = 'p_fx p_fy p_cx p_cy tx ty'
-      p_fx (R): X focal length for projection matrix(in pixels, overrides fx)
-      p_fy (R): Y focal length for projection matrix(in pixels, overrides fy)
-      p_cx (R): X principal point for projection matrix(in pixels, overrides cx)
-      p_cy (R): Y principal point for projection matrix(in pixels, overrides cy)
-      tx (R): X translation for projection matrix (in pixels)
-      ty (R): Y translation for projection matrix (in pixels)
+  `distortion_center (S)`: normalized coordinates of the distortion center.
+    Format:
+    `distortion_center = 'center_x_norm (R) center_y_norm (R)'`
 
-  thermal_data (S): Thermal camera parameters.
-      thermal_data (S) = 'min_temp (R) max_temp (R) resolution (R)'
-      min_temp (R): Minimum temperature (in Kelvin) that the thermal camera can sense.
-      max_temp (R): Maximum temperature (in Kelvin) that the thermal camera can sense.
-      resolution (R): Temperature resolution (in Kelvin per step) of the thermal camera.
+  `lens_single_elements (S)`: single-element lens model.
+    Format:
+    `lens_single_elements = 'type (S) scale_to_hfov (B) cutoff_angle_deg (R) env_texture_size (I)'`
 
-  topic (S): Name of the topic on which data is published. This is necessary for visualization.
+  `lens_custom_function (S)`: custom mapping function used only when
+    `lens_single_elements.type == 'custom'`.
+    Format:
+    `lens_custom_function = 'c1 (R) c2 (R) c3 (R) f (R) fun (S)'`
 
-  info_topic (aka camera_info_topic) (S): Name of the camera info topic.
+  `lens_intrinsics (S)`: intrinsic camera matrix parameters.
+    Format:
+    `lens_intrinsics = 'fx (R) fy (R) cx (R) cy (R)'`
 
-  trigger_topic (S): Name of the topic that will trigger the camera if enabled.
+  `lens_xy_skew (R)`: skew term of the intrinsic matrix.
+
+  `lens_projection (S)`: projection matrix parameters that override the intrinsic matrix when
+    needed.
+    Format:
+    `lens_projection = 'p_fx p_fy p_cx p_cy tx ty'`
+
+  `thermal_data (S)`: thermal mapping parameters.
+    Format:
+    `thermal_data = 'min_temp (R) max_temp (R) resolution (R)'`
+    - `min_temp (R)`: minimum sensed temperature, in Kelvin
+    - `max_temp (R)`: maximum sensed temperature, in Kelvin
+    - `resolution (R)`: temperature resolution, in Kelvin per step
   -->
   <xacro:macro name="plugin_camera_thermal"
                params="name
@@ -194,10 +170,12 @@
                        lens_projection:='277.0 277.0 160.0 120.0 0.0 0.0'
                        lens_xy_skew:=0.0
                        thermal_data:='253.15 673.15 3.0'
+                       namespace:=''
                        topic
                        info_topic
                        trigger_topic:=''" >
 
+    <xacro:include filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
     <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
 
     <xacro:property name='thermal_sequence' value='${thermal_data.split()}'/>
@@ -210,6 +188,10 @@
     <xacro:property name='thermal_max_temp' value='${thermal_sequence[1]}'/>
     <xacro:property name='thermal_resolution' value='${thermal_sequence[2]}'/>
 
+    <xacro:resolve_topic prop_id="resolved_topic"
+                         topic="${topic}"
+                         namespace="${namespace}"/>
+
     <gazebo reference="${reference_frame}">
       <gravity>${use_gravity}</gravity>
       <sensor type="thermal_camera" name="${name}_gz_sensor">
@@ -217,14 +199,7 @@
         <visualize>${visualize}</visualize>
         <enable_metrics>${enable_metrics}</enable_metrics>
         <update_rate>${update_rate}</update_rate>
-        <topic>${topic}</topic>
-
-        <!-- Thermal sensor system plugin (Kelvin range + mapping resolution) -->
-        <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::ThermalSensor">
-          <min_temp>${thermal_min_temp}</min_temp>
-          <max_temp>${thermal_max_temp}</max_temp>
-          <resolution>${thermal_resolution}</resolution>
-        </plugin>
+        <topic>${resolved_topic}</topic>
 
         <!--
         If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
@@ -248,9 +223,17 @@
                                       lens_intrinsics="${lens_intrinsics}"
                                       lens_projection="${lens_projection}"
                                       lens_xy_skew="${lens_xy_skew}"
+                                      namespace="${namespace}"
                                       info_topic="${info_topic}"
                                       trigger_topic="${trigger_topic}" />
         </camera>
+
+        <!-- Thermal sensor system plugin (Kelvin range + mapping resolution) -->
+        <plugin filename="gz-sim-thermal-sensor-system" name="gz::sim::systems::ThermalSensor">
+          <min_temp>${thermal_min_temp}</min_temp>
+          <max_temp>${thermal_max_temp}</max_temp>
+          <resolution>${thermal_resolution}</resolution>
+        </plugin>
       </sensor>
     </gazebo>
   </xacro:macro>

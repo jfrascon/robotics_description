@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<robot name="resolve_topic" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
+  Resolve a topic name against a namespace and store the result in a property in the parent scope.
+
+  Behavior:
+  - if `topic` is empty, the macro fails
+  - if `topic` is exactly `/`, the macro fails
+  - if `topic` starts with `/`, it is treated as an absolute topic and kept as-is
+  - otherwise, if `namespace` is empty, the topic is kept relative
+  - otherwise, the topic is prefixed with `namespace`, trimming a trailing `/` from the namespace
+
+  Parameters:
+  - `prop_id`: name of the property that will be created in the parent scope
+  - `topic`: topic to resolve
+  - `namespace`: namespace used to resolve relative topics
+  -->
+  <xacro:macro name="resolve_topic" params="prop_id topic namespace">
+    <xacro:if value="${topic == '/'}">
+      ${xacro.fatal("A topic cannot be '/'")}
+    </xacro:if>
+
+    <xacro:if value="${topic == ''}">
+      ${xacro.fatal("A topic cannot be ''")}
+    </xacro:if>
+
+    <xacro:property name="${prop_id}"
+                    value="${topic if topic.startswith('/') else (namespace.rstrip('/') + '/' + topic if namespace != '' else topic)}"
+                    scope="parent"/>
+  </xacro:macro>
+</robot>

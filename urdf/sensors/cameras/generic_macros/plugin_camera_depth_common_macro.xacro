@@ -1,26 +1,48 @@
 <?xml version="1.0"?>
-<robot name="plugin_camera_depth" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_camera_depth_common" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <!--
-  Wrapper for a depth-only camera sensor in Gazebo.
+  Shared implementation for Gazebo camera sensors that produce depth data.
 
-  This macro fixes the sensor type to `depth_camera` and delegates the implementation to
-  `plugin_camera_depth_common`.
+  Supported sensor types:
+  - `rgbd_camera` (or `rgbd`)
+  - `depth_camera` (or `depth`)
 
-  It publishes:
+  If `type='rgbd_camera'` (or `rgbd`), Gazebo publishes:
+  - `[${namespace}/]${topic}/image` for the color image
+  - `[${namespace}/]${topic}/depth_image` for the depth image
+  - `[${namespace}/]${topic}/points` for the point cloud
+  - `[${namespace}/]${info_topic}` for the camera_info message
+
+  IMPORTANT:
+  The suffixes '/image', '/depth_image', and '/points' are added by the Gazebo plugin
+  implementation to the given topic `[${namespace}/]${topic}`. There is no way to avoid them.
+
+  If `type='depth_camera'` (or `depth`), Gazebo publishes:
   - `[${namespace}/]${topic}` for the depth image
-  - `[${namespace}/]${info_topic}` for the `camera_info` message
+  - `[${namespace}/]${info_topic}` for the camera_info message
 
-  It does not publish a normal color image topic.
+  IMPORTANT:
+  No suffix is added to topic given to the Gazebo plugin, `[${namespace}/]${topic}`
+  The topic given to the Gazebo plugin is used as-is.
 
-  In this wrapper:
-  - the `<depth_camera>` block is the part that defines and produces the depth data
-  - the `<image>` block does not create a visible color topic for the user
-  - the `<image>` block is still needed because Gazebo uses it as part of the camera model to
-    define image size, lens parameters, projection, distortion, noise, and internal rendering
+  In both sensor types, the depth data is defined and produced by the `<depth_camera>` block.
 
-  In other words, `<image>` still matters in a depth-only camera, but not because this macro
-  publishes `${topic}/image`. It matters because Gazebo still needs a camera model with optical
-  properties, even when the only published image stream is the depth image.
+  The `<image>` block plays a different role depending on the sensor type:
+  - In an RGB-D camera, it defines the color image published on `[${namespace}/]${topic}/image`.
+  - In a depth-only camera, it does not publish a normal color image topic. In that case it is
+    still part of the internal camera model used by Gazebo.
+
+  In both sensor types, Gazebo also uses the `<image>` block for optical and rendering settings
+  such as image size, lens parameters, projection, distortion, and noise.
+  Those settings affect how Gazebo models and renders the camera, but they do not change the depth
+  data itself.
+
+  Visual formats such as `L8`, `L16`, `R8G8B8`, `B8G8R8`, and the `BAYER_*8` family are the most
+  natural choices for `<image><format>` because they describe visible images.
+  Float formats (`R_FLOAT16` and `R_FLOAT32`) describe single-channel floating-point images, not
+  RGB images. They can still be useful for special cases such as HDR or scientific scalar maps, but
+  they do not affect the depth output and are usually not what you want for the RGB stream of an
+  RGB-D camera.
 
   The value of `<depth_camera><output>` is fixed to `depths`. The SDFormat documentation does not
   make other output modes clear for this sensor type.
@@ -41,12 +63,17 @@
   For example, `_deg` means degrees, while plain angles are assumed to be in radians.
 
   Parameters:
+  `type (S)`: sensor type. Supported values are:
+    - `'rgbd_camera'` or `'rgbd'`
+    - `'depth_camera'` or `'depth'`
+
   `name (S)`: unique name of the camera.
 
-  `reference_frame (S)`: frame where the Gazebo sensor is attached. Example: `depth_frame`.
+  `reference_frame (S)`: frame where the Gazebo sensor is attached.
+    Examples: `rgbd_frame`, `depth_frame`.
 
   `optical_frame (S)`: optical frame name used in the `camera_info` message header.
-    Example: `depth_optical_frame`.
+    Examples: `rgbd_optical_frame`, `depth_optical_frame`.
 
   `use_gravity (B)`: if `true`, the camera is affected by gravity.
 
@@ -70,8 +97,10 @@
   `trigger_topic (S)`: topic that triggers the camera when `triggered` is enabled.
      namespace is applied to this topic as well if it is relative.
 
-  `topic (S)`: topic used by the depth outputs.
-     namespace is applied to this topic as well if it is relative.
+  `topic (S)`: Depending on the sensor type, this topic acts as a base topic or as a final topic.
+      Consult the documentation at the top of this file for details on the expected topics published
+      by the Gazebo plugin.
+      namespace is applied to this topic as well if it is relative.
 
   `info_topic (S)`: topic used for the `camera_info` message.
     namespace is applied to this topic as well if it is relative.
@@ -81,7 +110,7 @@
     `(visible_mask & visual.visibility_flags) != 0`
     A value such as `0xFFFFFFFF` usually means "see everything".
 
-  `clip (S)`: near and far clipping planes used when Gazebo renders the camera model.
+  `clip (S)`: near and far clipping planes used when Gazebo renders the image.
     Format: `clip = 'near (R) far (R)'`
     - `near (R)`: near clipping distance of the camera frustum
     - `far (R)`: far clipping distance of the camera frustum
@@ -156,12 +185,12 @@
     - `format (S)`: one of:
       `L8 | L16 | R8G8B8 | B8G8R8 | BAYER_RGGB8 | BAYER_BGGR8 | BAYER_GBRG8 | BAYER_GRBG8 | R_FLOAT16 | R_FLOAT32`
 
-      In this wrapper, `<image><format>` does not create a color topic such as `${topic}/image`.
-      Instead, it describes the internal image representation that Gazebo uses as part of the
-      camera model and GUI rendering.
+      This format controls the image published on `[${namespace}/]${topic}/image` when the sensor
+      type is `rgbd_camera`, since it includes a color stream.
+      It also controls how Gazebo renders the image in the GUI when `<visualize>` is enabled.
 
-      If you choose `R8G8B8`, Gazebo uses an RGB internal image.
-      If you choose `L8`, Gazebo uses a monochrome internal image.
+      If you choose `R8G8B8`, you get an RGB image.
+      If you choose `L8`, you get a monochrome image.
       Float formats are single-channel floating-point images and are usually only meaningful for
       special use cases.
 
@@ -236,8 +265,9 @@
     - `mean (R)`: Gaussian mean
     - `stddev (R)`: Gaussian standard deviation
 -->
-  <xacro:macro name="plugin_camera_depth"
-               params="name
+  <xacro:macro name="plugin_camera_depth_common"
+               params="type
+                       name
                        reference_frame
                        optical_frame
                        use_gravity:=True
@@ -264,34 +294,69 @@
                        info_topic
                        trigger_topic:=''">
 
-    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_common_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_common_macro.xacro"/>
 
-    <xacro:plugin_camera_depth_common type="depth_camera"
-                                      name="${name}"
-                                      reference_frame="${reference_frame}"
-                                      optical_frame="${optical_frame}"
-                                      use_gravity="${use_gravity}"
-                                      always_on="${always_on}"
-                                      visualize="${visualize}"
-                                      enable_metrics="${enable_metrics}"
-                                      save="${save}"
-                                      triggered="${triggered}"
-                                      visible_mask="${visible_mask}"
-                                      clip="${clip}"
-                                      depth_clip="${depth_clip}"
-                                      update_rate="${update_rate}"
-                                      image="${image}"
-                                      lens_single_elements="${lens_single_elements}"
-                                      lens_custom_function="${lens_custom_function}"
-                                      lens_intrinsics="${lens_intrinsics}"
-                                      lens_xy_skew="${lens_xy_skew}"
-                                      lens_projection="${lens_projection}"
-                                      distortion_k_p="${distortion_k_p}"
-                                      distortion_center="${distortion_center}"
-                                      gaussian_noise="${gaussian_noise}"
-                                      namespace="${namespace}"
-                                      topic="${topic}"
-                                      info_topic="${info_topic}"
-                                      trigger_topic="${trigger_topic}"/>
+    <xacro:if value="${type != 'depth_camera' and type != 'depth' and type != 'rgbd_camera' and type != 'rgbd'}">
+      ${xacro.fatal("Invalid depth camera type")}
+    </xacro:if>
+
+    <xacro:property name="depth_clip_seq" value="${depth_clip.split()}"/>
+
+    <xacro:if value="${len(depth_clip_seq) != 2}">
+      ${xacro.fatal("Invalid depth_clip parameter format. Expected format: 'near (R) far (R)'")}
+    </xacro:if>
+
+    <xacro:property name="depth_near_clip" value="${depth_clip_seq[0]}"/>
+    <xacro:property name="depth_far_clip"  value="${depth_clip_seq[1]}"/>
+
+    <xacro:resolve_topic prop_id="resolved_topic"
+                         topic="${topic}"
+                         namespace="${namespace}"/>
+
+    <gazebo reference="${reference_frame}">
+      <gravity>${use_gravity}</gravity>
+      <sensor type="${type}" name="${name}_gz_sensor">
+        <always_on>${always_on}</always_on>
+        <visualize>${visualize}</visualize>
+        <enable_metrics>${enable_metrics}</enable_metrics>
+        <update_rate>${update_rate}</update_rate>
+        <topic>${resolved_topic}</topic>
+
+        <!--
+        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
+        '<model>::<parent_frame>::${reference_frame}', which is probably what you do not want.
+        -->
+        <gz_frame_id>${optical_frame}</gz_frame_id>
+
+        <camera name="${name}">
+            <xacro:plugin_camera_common name="${name}"
+                                        optical_frame="${optical_frame}"
+                                        save="${save}"
+                                        triggered="${triggered}"
+                                        namespace="${namespace}"
+                                        trigger_topic="${trigger_topic}"
+                                        info_topic="${info_topic}"
+                                        visible_mask="${visible_mask}"
+                                        clip="${clip}"
+                                        image="${image}"
+                                        lens_single_elements="${lens_single_elements}"
+                                        lens_custom_function="${lens_custom_function}"
+                                        lens_intrinsics="${lens_intrinsics}"
+                                        lens_projection="${lens_projection}"
+                                        lens_xy_skew="${lens_xy_skew}"
+                                        distortion_k_p="${distortion_k_p}"
+                                        distortion_center="${distortion_center}"
+                                        gaussian_noise="${gaussian_noise}"/>
+            <depth_camera>
+                <output>depths</output>
+                <clip>
+                    <near>${depth_near_clip}</near>
+                    <far>${depth_far_clip}</far>
+                </clip>
+            </depth_camera>
+        </camera>
+      </sensor>
+    </gazebo>
   </xacro:macro>
 </robot>

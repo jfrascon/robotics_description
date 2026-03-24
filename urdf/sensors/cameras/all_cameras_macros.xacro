@@ -6,6 +6,6 @@
     <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/set_props_plugin_camera_segmentation_macro.xacro"/>
     <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/set_props_plugin_camera_thermal_macro.xacro"/>
     <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/set_props_plugin_camera_bounding_box_macro.xacro"/>
-    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_split_macro.xacro"/>
     <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_rgbd_macro.xacro"/>
 </robot>

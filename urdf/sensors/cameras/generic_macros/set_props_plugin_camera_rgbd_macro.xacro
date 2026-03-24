@@ -1,120 +1,130 @@
 <?xml version="1.0"?>
 <robot name="set_props_plugin_camera_rgbd" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="set_props_plugin_camera_rgbd"
-               params="prop_id
-                       camera_type
-                       camera_sim_cfg:=dict()
-                       image_bridge_channel_cfg:=dict()
-                       camera_info_bridge_channel_cfg:=dict()
-                       depth_image_bridge_channel_cfg:=dict()
-                       points_bridge_channel_cfg:=dict()
-                       trigger_bridge_channel_cfg:=dict()">
-    <xacro:property name="prop_prefix" value="${prop_id + '_sim_' + camera_type}"/>
+               params="prop_prefix
+                       sim_cfg:=dict()">
 
-    <xacro:unless value="${camera_sim_cfg.get('enabled', False)}">
-      <xacro:property name="${prop_prefix}_enabled"                  value="False"               scope="parent"/>
-      <xacro:property name="${prop_prefix}_always_on"                value="False"               scope="parent"/>
-      <xacro:property name="${prop_prefix}_visualize"                value="False"               scope="parent"/>
-      <xacro:property name="${prop_prefix}_enable_metrics"           value="False"               scope="parent"/>
-      <xacro:property name="${prop_prefix}_save"                     value="false /tmp"          scope="parent"/>
-      <xacro:property name="${prop_prefix}_triggered"                value="False"               scope="parent"/>
-      <xacro:property name="${prop_prefix}_visible_mask"             value="0"                   scope="parent"/>
-      <xacro:property name="${prop_prefix}_clip"                     value="0 0"                 scope="parent"/>
-      <xacro:property name="${prop_prefix}_depth_clip"               value="0.0 0.0"             scope="parent"/>
-      <xacro:property name="${prop_prefix}_update_rate"              value="0"                   scope="parent"/>
-      <xacro:property name="${prop_prefix}_image"                    value="0 0 L8 0"            scope="parent"/>
-      <xacro:property name="${prop_prefix}_lens_single_elements"     value="unknown false 0 0"   scope="parent"/>
-      <xacro:property name="${prop_prefix}_lens_custom_function"     value=""                    scope="parent"/>
-      <xacro:property name="${prop_prefix}_lens_intrinsics"          value="0.0 0.0 0.0 0.0"     scope="parent"/>
-      <xacro:property name="${prop_prefix}_lens_xy_skew"             value="0.0"                 scope="parent"/>
-      <xacro:property name="${prop_prefix}_lens_projection"          value=""                    scope="parent"/>
-      <xacro:property name="${prop_prefix}_distortion_k_p"           value="0.0 0.0 0.0 0.0 0.0" scope="parent"/>
-      <xacro:property name="${prop_prefix}_distortion_center"        value="0.5 0.5"             scope="parent"/>
-      <xacro:property name="${prop_prefix}_gaussian_noise"           value="0.0 0.0"             scope="parent"/>
-      <xacro:property name="${prop_prefix}_image_topic"              value=""                    scope="parent"/>
-      <xacro:property name="${prop_prefix}_camera_info_topic"        value=""                    scope="parent"/>
-      <xacro:property name="${prop_prefix}_depth_image_topic"        value=""                    scope="parent"/>
-      <xacro:property name="${prop_prefix}_points_topic"             value=""                    scope="parent"/>
-      <xacro:property name="${prop_prefix}_trigger_topic"            value=""                    scope="parent"/>
+    <xacro:unless value="${sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_enabled"              value="False"               scope="parent"/>
+      <xacro:property name="${prop_prefix}_use_gravity"          value="False"               scope="parent"/>
+      <xacro:property name="${prop_prefix}_always_on"            value="False"               scope="parent"/>
+      <xacro:property name="${prop_prefix}_visualize"            value="False"               scope="parent"/>
+      <xacro:property name="${prop_prefix}_enable_metrics"       value="False"               scope="parent"/>
+      <xacro:property name="${prop_prefix}_save"                 value="false /tmp"          scope="parent"/>
+      <xacro:property name="${prop_prefix}_triggered"            value="False"               scope="parent"/>
+      <xacro:property name="${prop_prefix}_visible_mask"         value="0"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_clip"                 value="0 0"                 scope="parent"/>
+      <xacro:property name="${prop_prefix}_depth_clip"           value="0.0 0.0"             scope="parent"/>
+      <xacro:property name="${prop_prefix}_update_rate"          value="0"                   scope="parent"/>
+      <xacro:property name="${prop_prefix}_image"                value="0 0 R8G8B8 0"        scope="parent"/>
+      <xacro:property name="${prop_prefix}_lens_single_elements" value="unknown false 0 0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_lens_custom_function" value=""                    scope="parent"/>
+      <xacro:property name="${prop_prefix}_lens_intrinsics"      value="0.0 0.0 0.0 0.0"     scope="parent"/>
+      <xacro:property name="${prop_prefix}_lens_xy_skew"         value="0.0"                 scope="parent"/>
+      <xacro:property name="${prop_prefix}_lens_projection"      value=""                    scope="parent"/>
+      <xacro:property name="${prop_prefix}_distortion_k_p"       value="0.0 0.0 0.0 0.0 0.0" scope="parent"/>
+      <xacro:property name="${prop_prefix}_distortion_center"    value="0.5 0.5"             scope="parent"/>
+      <xacro:property name="${prop_prefix}_gaussian_noise"       value="0.0 0.0"             scope="parent"/>
+      <xacro:property name="${prop_prefix}_base_topic"           value=""                    scope="parent"/>
+      <xacro:property name="${prop_prefix}_trigger_topic"        value=""                    scope="parent"/>
     </xacro:unless>
 
-    <xacro:if value="${camera_sim_cfg.get('enabled', False)}">
-      <xacro:property name="${prop_prefix}_enabled"            value="True"                           scope="parent"/>
-      <xacro:property name="${prop_prefix}_always_on"          value="${camera_sim_cfg['always_on']}" scope="parent"/>
-      <xacro:property name="${prop_prefix}_visualize"          value="${camera_sim_cfg['visualize']}" scope="parent"/>
-      <xacro:property name="${prop_prefix}_enable_metrics"     value="${camera_sim_cfg['enable_metrics']}" scope="parent"/>
+    <xacro:if value="${sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_enabled"
+                      value="True"
+                      scope="parent"/>
 
-      <xacro:property name="sim_save" value="${camera_sim_cfg['save']}"/>
+      <xacro:property name="${prop_prefix}_use_gravity"
+                      value="${sim_cfg['use_gravity']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_always_on"
+                      value="${sim_cfg['always_on']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_visualize"
+                      value="${sim_cfg['visualize']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_enable_metrics"
+                      value="${sim_cfg['enable_metrics']}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_save" value="${sim_cfg['save']}"/>
       <xacro:property name="${prop_prefix}_save"
                       value="${sim_save['enabled']} ${sim_save['path']}"
                       scope="parent"/>
 
-      <xacro:property name="${prop_prefix}_triggered"    value="${camera_sim_cfg['triggered']}"    scope="parent"/>
-      <xacro:property name="${prop_prefix}_visible_mask" value="${camera_sim_cfg['visible_mask']}" scope="parent"/>
+      <xacro:property name="${prop_prefix}_triggered"
+                      value="${sim_cfg['triggered']}"
+                      scope="parent"/>
 
-      <xacro:property name="sim_clip" value="${camera_sim_cfg['clip']}"/>
+      <xacro:property name="${prop_prefix}_visible_mask"
+                      value="${sim_cfg['visible_mask']}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_clip" value="${sim_cfg['clip']}"/>
       <xacro:property name="${prop_prefix}_clip"
                       value="${sim_clip['near']} ${sim_clip['far']}"
                       scope="parent"/>
 
-      <xacro:property name="sim_depth_clip" value="${camera_sim_cfg['depth_clip']}"/>
+      <xacro:property name="sim_depth_clip" value="${sim_cfg['depth_clip']}"/>
       <xacro:property name="${prop_prefix}_depth_clip"
                       value="${sim_depth_clip['near']} ${sim_depth_clip['far']}"
                       scope="parent"/>
 
-      <xacro:property name="${prop_prefix}_update_rate" value="${camera_sim_cfg['update_rate']}" scope="parent"/>
+      <xacro:property name="${prop_prefix}_update_rate"
+                      value="${sim_cfg['update_rate']}"
+                      scope="parent"/>
 
-      <xacro:property name="sim_image" value="${camera_sim_cfg['image']}"/>
+      <xacro:property name="sim_image" value="${sim_cfg['image']}"/>
       <xacro:property name="${prop_prefix}_image"
                       value="${sim_image['width']} ${sim_image['height']} ${sim_image['format']} ${sim_image['anti_aliasing']}"
                       scope="parent"/>
 
-      <xacro:property name="sim_lens_single_elements" value="${camera_sim_cfg['lens_single_elements']}"/>
+      <xacro:property name="sim_lens_single_elements" value="${sim_cfg['lens_single_elements']}"/>
       <xacro:property name="${prop_prefix}_lens_single_elements"
                       value="${sim_lens_single_elements['type']} ${sim_lens_single_elements['scale_to_hfov']} ${sim_lens_single_elements['cutoff_angle_deg']} ${sim_lens_single_elements['env_texture_size']}"
                       scope="parent"/>
 
       <xacro:property name="${prop_prefix}_lens_custom_function"
-                      value="${camera_sim_cfg['lens_custom_function']}"
+                      value="${sim_cfg['lens_custom_function']}"
                       scope="parent"/>
 
-      <xacro:property name="sim_lens_intrinsics" value="${camera_sim_cfg['lens_intrinsics']}"/>
+      <xacro:property name="sim_lens_intrinsics" value="${sim_cfg['lens_intrinsics']}"/>
       <xacro:property name="${prop_prefix}_lens_intrinsics"
                       value="${sim_lens_intrinsics['fx']} ${sim_lens_intrinsics['fy']} ${sim_lens_intrinsics['cx']} ${sim_lens_intrinsics['cy']}"
                       scope="parent"/>
 
-      <xacro:property name="${prop_prefix}_lens_xy_skew"        value="${camera_sim_cfg['lens_xy_skew']}"    scope="parent"/>
-      <xacro:property name="${prop_prefix}_lens_projection"     value="${camera_sim_cfg['lens_projection']}" scope="parent"/>
+      <xacro:property name="${prop_prefix}_lens_xy_skew"
+                      value="${sim_cfg['lens_xy_skew']}"
+                      scope="parent"/>
 
-      <xacro:property name="sim_distortion_k_p" value="${camera_sim_cfg['distortion_k_p']}"/>
+      <xacro:property name="${prop_prefix}_lens_projection"
+                      value="${sim_cfg['lens_projection']}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_distortion_k_p" value="${sim_cfg['distortion_k_p']}"/>
       <xacro:property name="${prop_prefix}_distortion_k_p"
                       value="${sim_distortion_k_p['k1']} ${sim_distortion_k_p['k2']} ${sim_distortion_k_p['k3']} ${sim_distortion_k_p['p1']} ${sim_distortion_k_p['p2']}"
                       scope="parent"/>
 
-      <xacro:property name="sim_distortion_center" value="${camera_sim_cfg['distortion_center']}"/>
+      <xacro:property name="sim_distortion_center" value="${sim_cfg['distortion_center']}"/>
       <xacro:property name="${prop_prefix}_distortion_center"
                       value="${sim_distortion_center['center_x_norm']} ${sim_distortion_center['center_y_norm']}"
                       scope="parent"/>
 
-      <xacro:property name="sim_gaussian_noise" value="${camera_sim_cfg['gaussian_noise']}"/>
+      <xacro:property name="sim_gaussian_noise" value="${sim_cfg['gaussian_noise']}"/>
       <xacro:property name="${prop_prefix}_gaussian_noise"
                       value="${sim_gaussian_noise['mean']} ${sim_gaussian_noise['stddev']}"
                       scope="parent"/>
 
-      <xacro:property name="${prop_prefix}_image_topic"
-                      value="${image_bridge_channel_cfg.get('gz_topic_name', '')}"
+      <xacro:property name="${prop_prefix}_base_topic"
+                      value="${sim_cfg['base_topic']}"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_camera_info_topic"
-                      value="${camera_info_bridge_channel_cfg.get('gz_topic_name', '')}"
-                      scope="parent"/>
-      <xacro:property name="${prop_prefix}_depth_image_topic"
-                      value="${depth_image_bridge_channel_cfg.get('gz_topic_name', '')}"
-                      scope="parent"/>
-      <xacro:property name="${prop_prefix}_points_topic"
-                      value="${points_bridge_channel_cfg.get('gz_topic_name', '')}"
-                      scope="parent"/>
+
       <xacro:property name="${prop_prefix}_trigger_topic"
-                      value="${trigger_bridge_channel_cfg.get('gz_topic_name', '')}"
+                      value="${sim_cfg['trigger_topic']}"
                       scope="parent"/>
     </xacro:if>
   </xacro:macro>

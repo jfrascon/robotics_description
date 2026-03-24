@@ -7,5 +7,6 @@
   <xacro:include filename="$(find robotics_description)/urdf/common/inertial_macros.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/common/make_namespace_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/common/make_prefix_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/common/visual_collision_macros.xacro"/>
 </robot>
