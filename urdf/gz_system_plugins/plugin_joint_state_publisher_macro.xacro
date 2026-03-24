@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!--
+This file defines the public `plugin_joint_state_publisher` wrapper.
+The goal of this wrapper is to emit the XML for a Gazebo Sim
+`JointStatePublisher` plugin attached to a model.
+
+This wrapper publishes one `gz::sim::systems::JointStatePublisher` `<plugin>`
+block.
+
+The caller has to decide:
+- The topic on which joint states are published through `topic`.
+- Which `<joint_name>` elements are inserted into the plugin block through
+  the `joint_names` block.
+
+If no `joint_names` block is inserted, Gazebo publishes all joints of the
+model. This wrapper does not resolve namespaces or select joints by itself.
+
+To find the reference for the system Gazebo plugins:
+1. Go to: https://gazebosim.org/libs/
+2. Click in the link 'API & Tutorials' for the 'Sim' section.
+3. Click in the link 'gz::sim::systems'
+
+At the time of writing this text (March 2026), the link 'gz::sim::systems' points to the
+URL 'https://gazebosim.org/api/sim/10/namespacegz_1_1sim_1_1systems.html', for API reference 10.1.1
+
+https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1JointStatePublisher.html
+-->
+<robot name="plugin_joint_state_publisher" xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_joint_state_publisher" params="topic *joint_names">
+    <plugin filename="gz-sim-joint-state-publisher-system"
+            name="gz::sim::systems::JointStatePublisher">
+      <topic>${topic}</topic>
+      <xacro:insert_block name="joint_names"/>
+    </plugin>
+  </xacro:macro>
+</robot>

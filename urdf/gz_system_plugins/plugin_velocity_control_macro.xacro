@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!--
+This file defines the public `plugin_velocity_control` wrapper.
+The goal of this wrapper is to emit the XML for a Gazebo Sim
+`VelocityControl` plugin attached to a model.
+
+This wrapper publishes one `gz::sim::systems::VelocityControl` `<plugin>`
+block.
+
+The caller has to decide:
+- The topic on which the plugin receives twist commands through `topic`.
+- The initial linear velocity vector through `initial_linear`.
+- The initial angular velocity vector through `initial_angular`.
+
+This wrapper does not resolve namespaces or choose topic names. Those
+responsibilities belong in a higher-level robot macro.
+
+To find the reference for the system Gazebo plugins:
+1. Go to: https://gazebosim.org/libs/
+2. Click in the link 'API & Tutorials' for the 'Sim' section.
+3. Click in the link 'gz::sim::systems'
+
+At the time of writing this text (March 2026), the link 'gz::sim::systems' points to the
+URL 'https://gazebosim.org/api/sim/10/namespacegz_1_1sim_1_1systems.html', for API reference 10.1.1
+
+https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1VelocityControl.html
+-->
+<robot name="plugin_velocity_control" xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_velocity_control"
+               params="topic
+                       initial_linear:='0 0 0'
+                       initial_angular:='0 0 0'">
+    <plugin filename="gz-sim-velocity-control-system"
+            name="gz::sim::systems::VelocityControl">
+      <topic>${topic}</topic>
+      <initial_linear>${initial_linear}</initial_linear>
+      <initial_angular>${initial_angular}</initial_angular>
+    </plugin>
+  </xacro:macro>
+</robot>

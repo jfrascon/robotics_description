@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!--
+This file defines the public `plugin_joint_position_controller_f64_pos_velcmd` wrapper.
+The goal of this wrapper is to emit the XML for a Gazebo Sim
+`JointPositionController` plugin for one specific integration pattern:
+commands arrive in `std_msgs/msg/Float64`, there is no actuator number because
+that message carries a single scalar command, and that scalar is interpreted
+as a target joint position.
+The controller runs in velocity-command position mode, so Gazebo uses
+velocity commands internally to drive the joint to that target position.
+
+This wrapper is a thin specialization of the generic
+`plugin_joint_position_controller` macro.
+It decides only the transport type and the control mode:
+- `use_actuator_msg` is fixed to `false`, so this wrapper uses
+  `std_msgs/msg/Float64` as the command transport.
+  The field `actuator_number` is not used.
+- `use_velocity_commands` is fixed to `true`, so this wrapper enables the
+  velocity-command path in the generic macro and does not use PID fields.
+
+The caller still has to decide:
+- Which joint this plugin controls through `joint_name`.
+- The maximum joint speed limit that will be published through `cmd_max`.
+- The initial commanded position that will be published through `initial_position`.
+- The command topic that will be published through `topic`.
+-->
+<robot name="plugin_joint_position_controller_f64_pos_velcmd" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_macro.xacro"/>
+
+  <xacro:macro name="plugin_joint_position_controller_f64_pos_velcmd"
+               params="joint_name
+                       joint_index:=0
+                       cmd_max
+                       initial_position
+                       topic">
+    <!--
+    This wrapper forwards the caller-provided plugin fields unchanged and only
+    fixes the transport type and control mode to the Float64 +
+    velocity-command combination described above.
+    -->
+    <xacro:plugin_joint_position_controller
+      joint_name="${joint_name}"
+      joint_index="${joint_index}"
+      use_actuator_msg="False"
+      use_velocity_commands="True"
+      cmd_max="${cmd_max}"
+      initial_position="${initial_position}"
+      topic="${topic}"/>
+  </xacro:macro>
+</robot>

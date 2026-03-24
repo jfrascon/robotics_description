@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!--
+The `plugin_wheel_rotation_joint_am_vel` macro defines a Gazebo Sim `JointController`
+system plugin for one wheel rotation joint.
+
+This variant uses:
+- `actuator_msgs/msg/Actuators` as the command transport
+- velocity mode for `JointController` (`use_force_commands` is false)
+- velocity commands from `velocity[actuator_number]`
+
+The `joint_limits` parameter is expected in the same format used by the wheel macro:
+- `joint_limits = 'velocity (R) effort (R)'`
+
+This macro uses that parameter to:
+- validate the expected limits format
+- keep the plugin macro aligned with the rotation-joint contract used by the wheel description
+
+The macro does not create links or joints. It only emits the `<plugin>` block that can be
+injected from a robot macro or xacro file.
+
+Reference:
+https://gazebosim.org/api/sim/9/classgz_1_1sim_1_1systems_1_1JointController.html
+-->
+<robot name="plugin_wheel_rotation_joint_am_vel" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_wheel_rotation_joint_am_vel"
+               params="joint_name
+                       joint_limits
+                       initial_velocity:='0.0'
+                       namespace
+                       topic
+                       actuator_number">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_am_vel_macro.xacro"/>
+
+    <xacro:property name="joint_limits_seq" value="${joint_limits.split()}"/>
+
+    <xacro:if value="${len(joint_limits_seq) != 2}">
+      ${xacro.fatal("plugin_wheel_rotation_joint_am_vel: joint_limits must have 2 elements: 'velocity (R) effort (R)'")}
+    </xacro:if>
+
+    <xacro:resolve_topic prop_id="resolved_topic"
+                         topic="${topic}"
+                         namespace="${namespace}"/>
+
+    <xacro:plugin_joint_controller_am_vel
+      joint_name="${joint_name}"
+      actuator_number="${actuator_number}"
+      initial_velocity="${initial_velocity}"
+      topic="${resolved_topic}"/>
+  </xacro:macro>
+</robot>

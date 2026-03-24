@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<!--
+This file defines the public `plugin_joint_controller_am_force` wrapper.
+The goal of this wrapper is to emit the XML for a Gazebo Sim
+`JointController` plugin for one specific integration pattern: commands arrive
+in `actuator_msgs/msg/Actuators`, the plugin reads the commanded velocity from
+`velocity[actuator_number]`, and the controller runs in force-command mode.
+The incoming command is still a target velocity.
+This wrapper does not send a force through the actuator message.
+Instead, Gazebo uses the PID fields to convert that target velocity into the
+force applied to the joint.
+
+This wrapper is a thin specialization of the generic
+`plugin_joint_controller` macro. It decides only the transport type and the
+control mode:
+- `use_actuator_msg` is fixed to `true`, so this wrapper publishes the
+  `<use_actuator_msg>true</use_actuator_msg>` field and also publishes
+  `<actuator_number>`.
+- `use_force_commands` is fixed to `true`, so this wrapper enables the
+  force-command path in the generic macro and publishes the PID-related fields.
+
+The caller still has to decide:
+- Which joint this plugin controls through `joint_name`.
+- Which actuator entry the plugin reads through `actuator_number`.
+- The PID gains and PID limits that will be published in the plugin XML.
+- Whether braking is disabled through `disable_braking`.
+- The initial velocity that will be published through `initial_velocity`.
+- The command topic that will be published through `topic`.
+-->
+<robot name="plugin_joint_controller_am_force"
+       xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:gz="http://gazebosim.org/schema">
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_macro.xacro"/>
+
+  <xacro:macro name="plugin_joint_controller_am_force"
+               params="joint_name
+                       actuator_number
+                       p_gain
+                       i_gain
+                       d_gain
+                       i_max
+                       i_min
+                       cmd_max
+                       cmd_min
+                       cmd_offset
+                       disable_braking
+                       initial_velocity:='0.0'
+                       topic">
+    <!--
+    This wrapper forwards the caller-provided plugin fields unchanged and only
+    fixes the transport type and control mode to the actuator-message +
+    force-command combination described above.
+    -->
+    <xacro:plugin_joint_controller
+      joint_name="${joint_name}"
+      use_actuator_msg="True"
+      actuator_number="${actuator_number}"
+      use_force_commands="True"
+      p_gain="${p_gain}"
+      i_gain="${i_gain}"
+      d_gain="${d_gain}"
+      i_max="${i_max}"
+      i_min="${i_min}"
+      cmd_max="${cmd_max}"
+      cmd_min="${cmd_min}"
+      cmd_offset="${cmd_offset}"
+      disable_braking="${disable_braking}"
+      initial_velocity="${initial_velocity}"
+      topic="${topic}"/>
+  </xacro:macro>
+</robot>

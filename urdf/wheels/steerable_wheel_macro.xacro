@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-This macro models one steerable wheel assembly: a steering joint/link plus a rotating wheel link/joint.
+This macro models one steerable wheel assembly: a steering joint plus a rotating wheel link/joint.
 
 Convention for parameter types:
 R means real number (with decimal point)
@@ -38,16 +38,16 @@ radius (R): wheel radius. Used for primitive visual (when v_mesh is empty), alwa
 length (R): wheel length along the rotation axis (+Y). Used for primitive visual (when v_mesh is empty), always used
             for collision, and used for inertia if use_inertial is true.
 mass (R): mass of the wheel. Used only if use_inertial is true.
-steerable_joint_type (S): type of the joint connecting the wheel's steerable link to the parent frame.
-    steerable_joint_type (S) = 'revolute' | 'fixed'.
+steering_joint_type (S): type of the joint connecting the wheel's steerable link to the parent frame.
+    steering_joint_type (S) = 'revolute' | 'fixed'.
     If 'fixed' is used, the wheel will not be able to steer in simulation.
-steerable_joint_steerable_limits (S): limits of the steerable joint.
-    steerable_joint_steerable_limits (S) = 'lower_limit (R) upper_limit (R) velocity (R) effort (R)'.
-    lower_limit (R): lower position limit of the steerable joint (radians).
-    upper_limit (R): upper position limit of the steerable joint (radians).
-    velocity (R): velocity limit of the steerable joint (radians/second).
-    effort (R): effort limit of the steerable joint (newton-meters).
-    Used only if steerable_joint_type is 'revolute'.
+steering_joint_limits (S): limits of the steering joint.
+    steering_joint_limits (S) = 'lower_limit (R) upper_limit (R) velocity (R) effort (R)'.
+    lower_limit (R): lower position limit of the steering joint (radians).
+    upper_limit (R): upper position limit of the steering joint (radians).
+    velocity (R): velocity limit of the steering joint (radians/second).
+    effort (R): effort limit of the steering joint (newton-meters).
+    Used only if steering_joint_type is 'revolute'.
 rotation_joint_type (S): type of the joint connecting the wheel to the parent frame.
     rotation_joint_type (S) = 'continuous' | 'fixed'.
     If 'fixed' is used, the wheel will not be able to rotate in simulation.
@@ -80,7 +80,7 @@ joint_parent_fr_wheel_fr (S): Pose of '${prefix}${name}_steerable_link' w.r.t th
     The rotation frame changes its orientation with respect to the steerable frame when the wheel spins.
     This parameter does not define any offset between steerable and rotation frames.
 
-Explanation of the default values for the field 'steerable_joint_steerable_limits: "-3.14159265 3.14159265 100 100000"'
+Explanation of the default values for the field 'steering_joint_limits: "-3.14159265 3.14159265 100 100000"'
 and 'rotation_joint_limits: "100 100000"':
 ======================================================================================================================
 The 'effort' and 'velocity' limits for these joints are intentionally set to extremely high, non-physical values.
@@ -90,17 +90,17 @@ factor in the joint's performance. This allows developers to test high-level con
 trajectory following) without being constrained by the physical limitations of real-world motors.
 in essence, the software logic is tested in isolation.
 
-steerable_joint_steerable_limits.lower_limit = "-3.14159265" (radians).
+steering_joint_limits.lower_limit = "-3.14159265" (radians).
 This allows the wheel to steer a full -180 degrees.
 
-steerable_joint_steerable_limits.upper_limit = "3.14159265" (radians).
+steering_joint_limits.upper_limit = "3.14159265" (radians).
 This allows the wheel to steer a full +180 degrees.
 
-steerable_joint_steerable_limits.velocity = "100" (radians/second).
+steering_joint_limits.velocity = "100" (radians/second).
 This means the wheel can orient itself extremely quickly.
 
-steerable_joint_steerable_limits.effort = "100000" (newton-meters).
-For a steerable joint, this represents the maximum torque the joint can apply to change its orientation. It is not
+steering_joint_limits.effort = "100000" (newton-meters).
+For a steering joint, this represents the maximum torque the joint can apply to change its orientation. It is not
 an important value for most robot applications, as steering usually requires much less torque than driving. However,
 setting it to a very high value ensures that the steering action is not limited by the simulator.
 
@@ -132,8 +132,8 @@ velocity: 10 to 30 rad/s
                        radius
                        length
                        mass
-                       steerable_joint_type:=revolute
-                       steerable_joint_steerable_limits:='-3.14159265 3.14159265 100.0 100000.0'
+                       steering_joint_type:=revolute
+                       steering_joint_limits:='-3.14159265 3.14159265 100.0 100000.0'
                        rotation_joint_type:=continuous
                        rotation_joint_limits:='100.0 100000.0'
                        max_contacts:=10
@@ -173,30 +173,30 @@ velocity: 10 to 30 rad/s
       <xacro:null_inertia/>
     </link>
 
-    <xacro:if value="${steerable_joint_type not in ('revolute', 'fixed')}">
-      ${xacro.fatal("The field 'steerable_joint_type' must be either 'revolute' or 'fixed'")}
+    <xacro:if value="${steering_joint_type not in ('revolute', 'fixed')}">
+      ${xacro.fatal("The field 'steering_joint_type' must be either 'revolute' or 'fixed'")}
     </xacro:if>
 
     <!-- Parsed as [x, y, z, roll, pitch, yaw]. -->
     <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
 
-    <joint name="${prefix}${name}_steerable_joint" type="${steerable_joint_type}">
+    <joint name="${prefix}${name}_steering_joint" type="${steering_joint_type}">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_steerable_link"/>
       <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
 
-      <xacro:if value="${steerable_joint_type == 'revolute'}">
-        <xacro:property name="sj_limits_seq" value="${steerable_joint_steerable_limits.split()}"/>
+      <xacro:if value="${steering_joint_type == 'revolute'}">
+        <xacro:property name="steering_joint_limits_seq" value="${steering_joint_limits.split()}"/>
 
-        <xacro:if value="${len(sj_limits_seq) != 4}">
-            ${xacro.fatal("steerable_wheel: steerable_joint_steerable_limits must have 4 elements: 'lower_limit (R) upper_limit (R) velocity (R) effort (R)'")}
+        <xacro:if value="${len(steering_joint_limits_seq) != 4}">
+            ${xacro.fatal("steerable_wheel: steering_joint_limits must have 4 elements: 'lower_limit (R) upper_limit (R) velocity (R) effort (R)'")}
         </xacro:if>
 
         <axis xyz="0 0 1"/>
-        <limit lower="${sj_limits_seq[0]}"
-               upper="${sj_limits_seq[1]}"
-               velocity="${sj_limits_seq[2]}"
-               effort="${sj_limits_seq[3]}"/>
+        <limit lower="${steering_joint_limits_seq[0]}"
+               upper="${steering_joint_limits_seq[1]}"
+               velocity="${steering_joint_limits_seq[2]}"
+               effort="${steering_joint_limits_seq[3]}"/>
       </xacro:if>
     </joint>
 

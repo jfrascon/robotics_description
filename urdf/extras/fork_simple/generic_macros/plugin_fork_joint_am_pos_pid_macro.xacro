@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<!--
+The `plugin_fork_joint_am_pos_pid` macro defines a Gazebo Sim `JointPositionController`
+system plugin for one fork prismatic joint.
+
+This variant uses:
+- `actuator_msgs/msg/Actuators` as the command transport
+- position commands from `position[actuator_number]`
+- PID-based position control (`use_velocity_commands` is false)
+
+The `joint_limits` parameter is expected in the same format used by the fork macro:
+- `joint_limits = 'lower (R) upper (R) velocity (R) effort (R)'`
+
+This macro uses that parameter to:
+- validate the expected limits format
+- compute the default initial position as the middle point between the lower and upper limits
+
+PID-related parameters:
+- `i_max`: upper saturation limit for the integral term of the PID controller
+- `i_min`: lower saturation limit for the integral term of the PID controller
+- `cmd_max`: upper saturation limit for the PID output command
+- `cmd_min`: lower saturation limit for the PID output command
+- `cmd_offset`: constant feed-forward term added to the PID output command
+
+This macro publishes no data and creates no links or joints. It only emits the `<plugin>` block
+that can be injected from a robot macro or xacro file.
+
+Reference:
+https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1JointPositionController.html
+-->
+<robot name="plugin_fork_joint_am_pos_pid" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_fork_joint_am_pos_pid"
+               params="joint_name
+                       joint_limits
+                       p_gain
+                       i_gain
+                       d_gain
+                       i_max
+                       i_min
+                       cmd_max
+                       cmd_min
+                       cmd_offset
+                       initial_position:=''
+                       namespace
+                       topic
+                       actuator_number">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_am_pos_pid_macro.xacro"/>
+
+    <xacro:property name="joint_limits_seq" value="${joint_limits.split()}"/>
+
+    <xacro:if value="${len(joint_limits_seq) != 4}">
+      ${xacro.fatal("plugin_fork_joint_am_pos_pid: joint_limits must have 4 elements: 'lower (R) upper (R) velocity (R) effort (R)'")}
+    </xacro:if>
+
+    <xacro:property name="default_initial_position"
+                    value="${0.5 * (float(joint_limits_seq[0]) + float(joint_limits_seq[1]))}"/>
+
+    <xacro:property name="resolved_initial_position"
+                    value="${initial_position if initial_position != '' else default_initial_position}"/>
+
+    <xacro:resolve_topic prop_id="resolved_topic"
+                         topic="${topic}"
+                         namespace="${namespace}"/>
+
+    <xacro:plugin_joint_position_controller_am_pos_pid
+      joint_name="${joint_name}"
+      joint_index="0"
+      actuator_number="${actuator_number}"
+      p_gain="${p_gain}"
+      i_gain="${i_gain}"
+      d_gain="${d_gain}"
+      i_max="${i_max}"
+      i_min="${i_min}"
+      cmd_max="${cmd_max}"
+      cmd_min="${cmd_min}"
+      cmd_offset="${cmd_offset}"
+      initial_position="${resolved_initial_position}"
+      topic="${resolved_topic}"/>
+  </xacro:macro>
+</robot>

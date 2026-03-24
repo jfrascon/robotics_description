@@ -1,0 +1,132 @@
+<?xml version="1.0"?>
+<!--
+This file defines the public `plugin_odometry_publisher` wrapper.
+The goal of this wrapper is to emit the XML for a Gazebo Sim `OdometryPublisher` plugin attached to
+a model.
+
+This wrapper publishes one `gz::sim::systems::OdometryPublisher` `<plugin>`
+block.
+
+What this plugin publishes:
+- A `gz::msgs::Odometry` message on `odom_topic`.
+- A `gz::msgs::OdometryWithCovariance` message on `odom_covariance_topic`.
+- A transform from `odom_frame` to `robot_base_frame` on `tf_topic`.
+
+How to interpret that transform:
+- Gazebo uses the xml tags `odom_frame` and `robot_base_frame`.
+- The published pose and transform always describe
+  `T:${odom_frame} -> ${robot_base_frame}.
+- This means the plugin reports the pose of the robot base with respect to
+  the frame named in `odom_frame`.
+
+Why the name can be confusing:
+- The system is called `OdometryPublisher`, but it does not force
+  `odom_frame` to be the robot odometry frame in the ROS navigation sense.
+- You are free to choose `odom_frame`.
+- If you set `odom_frame` to a world-fixed frame such as `map`, `world`, or
+  `sim_world`, then the published pose is better understood as a
+  simulator-provided ground-truth localization signal.
+- If you set `odom_frame` to the robot odometry frame, then the same plugin
+  output can also play the role of odometry.
+
+How offsets are applied:
+- `xyz_offset` and `rpy_offset` shift the reported robot pose relative to the
+  robot body frame before publishing.
+- `xyz_global_offset` and `rpy_global_offset` shift the published fixed frame
+  relative to Gazebo's world frame.
+- When all offsets are zero, the published pose is expressed directly with
+  respect to Gazebo's world frame.
+
+Practical guidance:
+- Use a world-fixed name in `odom_frame` only if you really want this plugin
+  to publish global pose with respect to that frame.
+- Be careful when also using another system that publishes
+  `T:odom -> base`, such as a wheel-odometry pipeline.
+- Be especially careful if another node, for example `fake_localization`,
+  also applies offsets or publishes related transforms.
+- Use `/tf` as `tf_topic` only if you intentionally want this transform to be
+  inserted directly into the main TF stream.
+
+The caller has to decide:
+- The fixed odometry frame name through `odom_frame`.
+- The robot base frame name through `robot_base_frame`.
+- The publication frequency through `odom_publish_frequency`.
+- The odometry topics through `odom_topic` and `odom_covariance_topic`.
+- The TF topic through `tf_topic`.
+- Whether odometry is reported in 2D or 3D through `dimensions`.
+- The local and global pose offsets through the `*_offset` parameters.
+- The Gaussian noise value through `gaussian_noise`.
+
+This wrapper does not resolve namespaces or choose frame names. Those
+responsibilities belong in a higher-level robot macro.
+
+To find the reference for the system Gazebo plugins:
+1. Go to: https://gazebosim.org/libs/
+2. Click in the link 'API & Tutorials' for the 'Sim' section.
+3. Click in the link 'gz::sim::systems'
+
+At the time of writing this text (March 2026), the link 'gz::sim::systems' points to the
+URL 'https://gazebosim.org/api/sim/10/namespacegz_1_1sim_1_1systems.html', for API reference 10.1.1
+
+https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
+-->
+<robot name="plugin_odometry_publisher" xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_odometry_publisher"
+               params="odom_frame
+                       robot_base_frame
+                       odom_publish_frequency:=50
+                       odom_topic:=''
+                       odom_covariance_topic:=''
+                       tf_topic:=''
+                       dimensions:=2
+                       xyz_offset:='0 0 0'
+                       rpy_offset:='0 0 0'
+                       xyz_global_offset:='0 0 0'
+                       rpy_global_offset:='0 0 0'
+                       gaussian_noise:=0">
+    <xacro:if value="${dimensions not in (2, 3)}">
+      ${xacro.fatal("plugin_odometry_publisher: dimensions must be 2 or 3")}
+    </xacro:if>
+
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <!--
+      The published odometry and transform always describe
+      `T:odom_frame -> robot_base_frame`.
+      -->
+      <odom_frame>${odom_frame}</odom_frame>
+      <robot_base_frame>${robot_base_frame}</robot_base_frame>
+
+      <!--
+      Offsets are applied before the final odometry messages and transform are
+      published.
+      -->
+      <xyz_offset>${xyz_offset}</xyz_offset>
+      <rpy_offset>${rpy_offset}</rpy_offset>
+      <xyz_global_offset>${xyz_global_offset}</xyz_global_offset>
+      <rpy_global_offset>${rpy_global_offset}</rpy_global_offset>
+
+      <!--
+      Gazebo uses `gaussian_noise` to populate the covariance information of
+      the published odometry-with-covariance message.
+      -->
+      <gaussian_noise>${gaussian_noise}</gaussian_noise>
+      <odom_publish_frequency>${odom_publish_frequency}</odom_publish_frequency>
+
+      <xacro:if value="${odom_topic != ''}">
+        <odom_topic>${odom_topic}</odom_topic>
+      </xacro:if>
+
+      <xacro:if value="${odom_covariance_topic != ''}">
+        <odom_covariance_topic>${odom_covariance_topic}</odom_covariance_topic>
+      </xacro:if>
+
+      <xacro:if value="${tf_topic != ''}">
+        <tf_topic>${tf_topic}</tf_topic>
+      </xacro:if>
+
+      <dimensions>${dimensions}</dimensions>
+    </plugin>
+  </xacro:macro>
+</robot>

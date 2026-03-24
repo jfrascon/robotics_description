@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<!--
+This file defines the internal generic `plugin_joint_position_controller` macro.
+The goal of this macro is to emit the XML for a Gazebo Sim
+`JointPositionController` plugin, while leaving the decision of what exact
+fields to emit to higher-level wrappers.
+
+Decisions you have to make:
+- Type of messages received for commands: `std_msgs/msg/Float64` or
+  `actuator_msgs/msg/Actuators`
+  This decision is taken by the `use_actuator_msg` parameter.
+  If the parameter is false, the plugin will expect one
+  `std_msgs/msg/Float64` message on the specified topic.
+  That Float64 value is always interpreted as a target joint position.
+  If the parameter is true, the plugin will expect
+  `actuator_msgs/msg/Actuators` messages on the specified topic.
+  In that case, the `actuator_number` parameter specifies which entry in the
+  `position[]` array the plugin should read.
+  That selected `position[actuator_number]` value is also interpreted as a
+  target joint position.
+- Control mode: velocity-command mode or PID-based position mode
+  This decision is taken by the `use_velocity_commands` parameter.
+  If the parameter is false, the plugin runs in PID position mode.
+  The target position is still the input command.
+  The difference is that Gazebo uses the PID-related fields to convert the
+  position error into the command applied to the joint.
+  This macro validates each required PID field before publishing that field in
+  the plugin XML.
+  If the parameter is true, the plugin runs in velocity-command mode.
+  The target position is still the input command.
+  In this mode, Gazebo bypasses the PID controller and uses velocity commands
+  internally to drive the joint to that target position.
+  The maximum joint speed can be limited through the `cmd_max` parameter.
+
+Important interaction between both decisions:
+- `use_actuator_msg` only decides how the target position reaches the plugin.
+- `use_velocity_commands` only decides how that target position is applied to
+  the joint.
+- Neither option changes the meaning of the incoming command. The input is
+  always a target position.
+
+This macro is not expected to be called directly in a robot xacro file.
+It is designed to be called by the more specific wrapper macros
+`plugin_joint_position_controller_*`, which are responsible for deciding the
+exact field values to pass to this generic macro.
+
+To find the reference for the system Gazebo plugins:
+1. Go to: https://gazebosim.org/libs/
+2. Click in the link 'API & Tutorials' for the 'Sim' section.
+3. Click in the link 'gz::sim::systems'
+
+At the time of writing this text (March 2026), the link 'gz::sim::systems' points to the
+URL 'https://gazebosim.org/api/sim/10/namespacegz_1_1sim_1_1systems.html', for API reference 10.1.1
+
+https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1JointPositionController.html
+-->
+<robot name="plugin_joint_position_controller" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_joint_position_controller"
+               params="joint_name
+                       joint_index:=0
+                       use_actuator_msg
+                       actuator_number:=''
+                       use_velocity_commands
+                       p_gain:=''
+                       i_gain:=''
+                       d_gain:=''
+                       i_max:=''
+                       i_min:=''
+                       cmd_max
+                       cmd_min:=''
+                       cmd_offset:=''
+                       initial_position
+                       topic">
+
+    <!--
+    When `use_actuator_msg` is true, Gazebo expects commands in
+    `actuator_msgs/msg/Actuators`, so the plugin also needs an actuator index
+    to know which `position[]` entry in the message it should read.
+    When `use_actuator_msg` is false, that actuator index has no meaning for
+    the plugin and must not be emitted.
+    -->
+    <xacro:if value="${use_actuator_msg and actuator_number == ''}">
+      ${xacro.fatal("plugin_joint_position_controller: actuator_number must be provided when use_actuator_msg is true")}
+    </xacro:if>
+
+    <plugin filename="gz-sim-joint-position-controller-system" name="gz::sim::systems::JointPositionController">
+      <joint_name>${joint_name}</joint_name>
+      <joint_index>${joint_index}</joint_index>
+      <use_actuator_msg>${str(use_actuator_msg).lower()}</use_actuator_msg>
+
+      <xacro:if value="${use_actuator_msg}">
+        <actuator_number>${actuator_number}</actuator_number>
+      </xacro:if>
+
+      <use_velocity_commands>${str(use_velocity_commands).lower()}</use_velocity_commands>
+
+      <!--
+      PID-specific fields are only meaningful when the controller runs in
+      PID position mode.
+      In both modes, the command entering the plugin is a target position.
+      When `use_velocity_commands` is true, Gazebo bypasses the PID path and
+      uses velocity commands internally, so these PID fields are omitted.
+      When `use_velocity_commands` is false, Gazebo uses these PID fields to
+      turn the target position into the command applied to the joint.
+      -->
+      <xacro:unless value="${use_velocity_commands}">
+        <xacro:if value="${p_gain == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: p_gain must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <p_gain>${p_gain}</p_gain>
+
+        <xacro:if value="${i_gain == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: i_gain must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <i_gain>${i_gain}</i_gain>
+
+        <xacro:if value="${d_gain == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: d_gain must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <d_gain>${d_gain}</d_gain>
+
+        <xacro:if value="${i_max == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: i_max must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <i_max>${i_max}</i_max>
+
+        <xacro:if value="${i_min == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: i_min must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <i_min>${i_min}</i_min>
+
+        <xacro:if value="${cmd_min == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: cmd_min must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <cmd_min>${cmd_min}</cmd_min>
+
+        <xacro:if value="${cmd_offset == ''}">
+          ${xacro.fatal("plugin_joint_position_controller: cmd_offset must be provided when use_velocity_commands is false")}
+        </xacro:if>
+        <cmd_offset>${cmd_offset}</cmd_offset>
+      </xacro:unless>
+
+      <cmd_max>${cmd_max}</cmd_max>
+
+      <initial_position>${initial_position}</initial_position>
+      <topic>${topic}</topic>
+    </plugin>
+  </xacro:macro>
+</robot>

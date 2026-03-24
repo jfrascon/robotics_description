@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<robot name="test_gz_system_plugins" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_velocity_control_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_odometry_publisher_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_state_publisher_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_am_vel_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_f64_force_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_am_pos_velcmd_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_f64_pos_pid_macro.xacro"/>
+
+  <link name="base_link"/>
+  <link name="child_link"/>
+  <joint name="test_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="child_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+
+  <gazebo>
+    <xacro:plugin_velocity_control
+      topic="/cmd_vel"
+      initial_linear="0 0 0"
+      initial_angular="0 0 0"/>
+
+    <xacro:plugin_odometry_publisher
+      odom_frame="map"
+      robot_base_frame="base_link"
+      odom_publish_frequency="50"
+      odom_topic="/odom"
+      odom_covariance_topic="/odom_cov"
+      tf_topic="/tf_odom"
+      dimensions="2"
+      xyz_offset="0 0 0"
+      rpy_offset="0 0 0"
+      xyz_global_offset="0 0 0"
+      rpy_global_offset="0 0 0"
+      gaussian_noise="0"/>
+
+    <xacro:plugin_joint_state_publisher topic="/joint_states">
+      <joint_names>
+        <joint_name>test_joint</joint_name>
+      </joint_names>
+    </xacro:plugin_joint_state_publisher>
+
+    <xacro:plugin_joint_controller_am_vel
+      joint_name="test_joint"
+      actuator_number="0"
+      initial_velocity="0.0"
+      topic="/joint_commands_am_vel"/>
+
+    <xacro:plugin_joint_controller_f64_force
+      joint_name="test_joint"
+      p_gain="1.0"
+      i_gain="0.0"
+      d_gain="0.0"
+      i_max="1.0"
+      i_min="-1.0"
+      cmd_max="10.0"
+      cmd_min="-10.0"
+      cmd_offset="0.0"
+      disable_braking="False"
+      initial_velocity="0.0"
+      topic="/joint_commands_f64_force"/>
+
+    <xacro:plugin_joint_position_controller_am_pos_velcmd
+      joint_name="test_joint"
+      actuator_number="0"
+      cmd_max="1.0"
+      initial_position="0.0"
+      topic="/joint_position_am_velcmd"/>
+
+    <xacro:plugin_joint_position_controller_f64_pos_pid
+      joint_name="test_joint"
+      p_gain="1.0"
+      i_gain="0.0"
+      d_gain="0.0"
+      i_max="1.0"
+      i_min="-1.0"
+      cmd_max="10.0"
+      cmd_min="-10.0"
+      cmd_offset="0.0"
+      initial_position="0.0"
+      topic="/joint_position_f64_pid"/>
+  </gazebo>
+</robot>
