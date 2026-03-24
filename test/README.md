@@ -18,7 +18,8 @@ The main test entry point is:
    - They exist because most sensor macros are not standalone URDFs and therefore cannot be tested directly.
 
 Current explicit test cases in `test/test_xacros/`:
-- `test_fork_simple_0.xacro`
+- `test_fork_simple.xacro`
+- `test_gz_system_plugins.xacro`
 - `test_realsense_d435.xacro`
 - `test_realsense_d435_rgbd.xacro`
 - `test_robosense_airy.xacro`
@@ -44,10 +45,10 @@ For every collected Xacro file, the test performs:
 ## Why `test_xacros/` exists
 
 Many files in `urdf/sensors/...` are macros such as:
-- `realsense_d435_macro.xacro`
+- `realsense_d435_split_macro.xacro`
 - `realsense_d435_rgbd_macro.xacro`
 - `robosense_airy_macro.xacro`
-- `robosense_helios_16p_macro.xacro`
+- `robosense_helios_16_macro.xacro`
 - `steerable_wheel_macro.xacro`
 - `um7_macro.xacro`
 - `wheel_macro.xacro`

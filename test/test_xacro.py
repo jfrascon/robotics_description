@@ -6,35 +6,8 @@ import xml.etree.ElementTree as ET
 import pytest
 from ament_index_python.packages import get_package_share_directory
 
-# Get all robot xacro files
-# test_file_path = os.path.abspath(__file__)
-# test_dir = os.path.dirname(test_file_path)
-# package_dir = os.path.dirname(test_dir)
-
 xacro_files = []
-robots_dir = os.path.join(get_package_share_directory('robotics_description'), 'urdf', 'robots')
 test_xacros_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_xacros')
-# robots_dir = os.path.join(package_dir, "urdf", "robots")
-
-for root, _, files in os.walk(robots_dir):
-    for file in files:
-        # Only consider xacro files for fully operational robots, which do not end with the expression '_macro.xacro'.
-        # If a xacro file ends with '_macro.xacro' inside the 'robots' folder it probably defines a complete robot, but
-        # it needs to be instantiated properly with specific parameters to become a fully operational robot, and that
-        # particular robot model defined in that xacro file will not use the word 'macro' in the name.
-        # Most of the times, these macro xacro files in the 'robot' folder are complete robots that are combined
-        # with other xacro files to form unique robot model, in a file that does not end with '_macro.xacro', just
-        # 'xacro'.
-        # For example, the 'mecanum_rectangular_forklift_macro.xacro' file defines a complete robot, a forklift with
-        # rectangular base and mecanum wheels, but it is not a fully operational robot until it is instantiated with
-        # specific parameters in a file that does not end with '_macro.xacro'. On the other hand, the file
-        # 'forklift_artisteril.xacro' is a fully operational robot that uses the
-        # 'mecanum_rectangular_forklift_macro.xacro' file and uses other macro files, like the lidar_3d_ring to create a
-        # unique robot model, and therefore it does not end with '_macro.xacro'.
-        if file.endswith('.xacro') and not file.endswith('_macro.xacro'):
-            xacro_files.append(os.path.join(root, file))
-
-print(f'DEBUG [pytest setup]: Found {len(xacro_files)} testable xacro files: {xacro_files}')
 
 if os.path.isdir(test_xacros_dir):
     for file in os.listdir(test_xacros_dir):
@@ -135,7 +108,8 @@ def test_xacro_file(xacro_file):
         check_meshes(tmp_urdf_output_file)
 
     finally:
-        os.remove(tmp_urdf_output_file)
+        if os.path.exists(tmp_urdf_output_file):
+            os.remove(tmp_urdf_output_file)
 
 
 if __name__ == '__main__':
