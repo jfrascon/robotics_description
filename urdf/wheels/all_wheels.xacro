@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<robot name="all_wheels" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/wheel_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/steerable_wheel_macro.xacro"/>
+</robot>

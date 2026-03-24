@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<robot name="all_wheels_plugins" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/generic_macros/plugin_swheel_steering_joint_am_pos_pid_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/generic_macros/plugin_swheel_steering_joint_am_pos_velcmd_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/generic_macros/plugin_wheel_rotation_joint_am_force_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/generic_macros/plugin_wheel_rotation_joint_am_vel_macro.xacro"/>
+</robot>
