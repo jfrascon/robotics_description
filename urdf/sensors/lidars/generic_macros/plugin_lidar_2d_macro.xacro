@@ -1,5 +1,15 @@
 <?xml version="1.0"?>
 <robot name="plugin_lidar_2d" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
+  Wrapper for a Gazebo 2D lidar built on top of the generic 3D ring lidar macro.
+
+  This macro keeps the 2D-facing interface, but internally delegates to
+  `plugin_lidar_3d_ring` with a collapsed vertical scan:
+  - `ver_fov_deg='0 0'`
+  - `ver_res_deg='1.0'`
+
+  That produces exactly one vertical sample, which is the 2D lidar case.
+  -->
   <xacro:macro name="plugin_lidar_2d"
                params="sensor_name
                        reference_link
@@ -10,65 +20,22 @@
                        hor_res_deg
                        dist_span
                        gaussian_noise:='0 0'
+                       namespace:=''
                        topic">
-    <!--
-    According to the documentation at 'http://sdformat.org/spec?ver=1.7&elem=sensor#sensor_ray'
-    The 'gpu_ray' type is equivalent to the 'gpu_lidar' type.
-    It is preferred to use the 'gpu_lidar' type since 'gpu_ray' type will be deprecated at some point.
-    The 'gpu_ray' type is maintained for legacy support.
-    -->
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
 
-    <xacro:property name="hor_min_max_angles_deg" value="${hor_fov_deg.split()}"/>
-    <xacro:property name="hor_min_angle_deg"      value="${hor_min_max_angles_deg[0]}"/>
-    <xacro:property name="hor_max_angle_deg"      value="${hor_min_max_angles_deg[1]}"/>
-    <xacro:property name="hor_span_deg"           value="${float(hor_max_angle_deg) - float(hor_min_angle_deg)}"/>
-    <xacro:property name="hor_samples"            value="${int(hor_span_deg / hor_res_deg) + 1}"/>
-
-    <xacro:property name="min_max_dists"         value="${dist_span.split()}"/>
-    <xacro:property name="min_dist"              value="${min_max_dists[0]}"/>
-    <xacro:property name="max_dist"              value="${min_max_dists[1]}"/>
-
-    <xacro:property name="gaussian_noise_list"   value="${gaussian_noise.split()}"/>
-    <xacro:property name="gaussian_noise_mean"   value="${gaussian_noise_list[0]}"/>
-    <xacro:property name="gaussian_noise_stddev" value="${gaussian_noise_list[1]}"/>
-
-
-    <gazebo reference="${reference_link}">
-      <gravity>True</gravity>
-      <sensor type="lidar" name="${sensor_name}">
-        <always_on>${always_on}</always_on>
-        <visualize>${visualize}</visualize>
-        <update_rate>${update_rate}</update_rate>
-        <topic>${topic}</topic>
-        <!--
-        If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message the string
-        '<model>::${parent_frame}::${laser_id}_link', which is probably what you do not want.
-        -->
-        <gz_frame_id>${reference_link}</gz_frame_id>
-        <enable_metrics>False</enable_metrics>
-        <lidar>
-          <scan>
-            <horizontal>
-              <min_angle>${radians(float(hor_min_angle_deg))}</min_angle>
-              <max_angle>${radians(float(hor_max_angle_deg))}</max_angle>
-              <samples>${hor_samples}</samples>
-              <!-- DO NOT TOUCH IT, LEAVE IT TO 1.0 -->
-              <resolution>1.0</resolution>
-            </horizontal>
-          </scan>
-          <range>
-            <min>${min_dist}</min>
-            <max>${max_dist}</max>
-            <!-- DO NOT TOUCH, LEAVE IT TO 0.0 -->
-            <resolution>0.0</resolution>
-          </range>
-          <noise>
-            <type>gaussian</type>
-            <mean>${gaussian_noise_mean}</mean>
-            <stddev>${gaussian_noise_stddev}</stddev>
-          </noise>
-        </lidar>
-      </sensor>
-    </gazebo>
+    <xacro:plugin_lidar_3d_ring sensor_name="${sensor_name}"
+                                reference_link="${reference_link}"
+                                always_on="${always_on}"
+                                visualize="${visualize}"
+                                update_rate="${update_rate}"
+                                hor_fov_deg="${hor_fov_deg}"
+                                hor_res_deg="${hor_res_deg}"
+                                ver_fov_deg="0 0"
+                                ver_res_deg="1.0"
+                                dist_span="${dist_span}"
+                                gaussian_noise="${gaussian_noise}"
+                                namespace="${namespace}"
+                                base_topic="${topic}"/>
   </xacro:macro>
 </robot>

@@ -1,65 +1,76 @@
 <?xml version="1.0"?>
 <robot name="set_props_plugin_lidar_2d" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <!--
+  `prop_prefix` is used as the prefix for all the properties defined in this macro.
+  -->
+
   <xacro:macro name="set_props_plugin_lidar_2d"
                params="prop_prefix
-                       lidar_2d_sim_cfg:=dict()
-                       lidar_2d_bridge_channel_cfg:=dict()
-                       default_sim_always_on:=True
-                       default_sim_visualize:=False
-                       default_sim_update_rate:=10.0
-                       default_sim_hor_fov_deg:=dict(min=-180, max=180)
-                       default_sim_hor_res_deg:=0.2
-                       default_sim_dist_span:=dict(min=0.2, max=150.0)
-                       default_sim_gaussian_noise:=dict(mean=0.0, stddev=0.01)">
+                       sim_cfg:=dict()">
 
-  <!--
-  If lidar_2d_sim_cfg does not have the field 'enabled' or if it is set to False, then set all the simulation
-  properties to disable the simulation of the 2D lidar.
-  -->
-  <xacro:unless value="${lidar_2d_sim_cfg.get('enabled', False)}">
-    <xacro:property name="${prop_prefix}_sim_enabled"        value="False"                      scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_always_on"      value="False"                      scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_visualize"      value="False"                      scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_update_rate"    value="0"                          scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_hor_fov_deg"    value="dict(min=0, max=0)"         scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_hor_res_deg"    value="0"                          scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_dist_span"      value="dict(min=0, max=0)"         scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_gaussian_noise" value="dict(mean=0.0, stddev=0.0)" scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_topic"          value=""                           scope="parent"/>
-  </xacro:unless>
+    <!--
+    If sim_cfg does not have the field 'enabled' or if it is set to False, then set all
+    the simulation properties to disable the simulation of the 2D lidar.
+    -->
+    <xacro:unless value="${sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_enabled"        value="False" scope="parent"/>
+      <xacro:property name="${prop_prefix}_always_on"      value="False" scope="parent"/>
+      <xacro:property name="${prop_prefix}_visualize"      value="False" scope="parent"/>
+      <xacro:property name="${prop_prefix}_update_rate"    value="0"     scope="parent"/>
+      <xacro:property name="${prop_prefix}_hor_fov_deg"    value="0 0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_hor_res_deg"    value="0"     scope="parent"/>
+      <xacro:property name="${prop_prefix}_dist_span"      value="0 0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_gaussian_noise" value="0 0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_topic"          value=""      scope="parent"/>
+    </xacro:unless>
 
-  <!--
-  If lidar_2d_sim_cfg has the field 'enabled' set to True, then set all the simulation properties according to the
-  values in lidar_2d_sim_cfg, or to the default values if a specific field is not found.
-  -->
-  <xacro:if value="${lidar_2d_sim_cfg.get('enabled', False)}">
-    <xacro:property name="${prop_prefix}_sim_enabled"
-                    value="True"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_always_on"
-                    value="${lidar_2d_sim_cfg.get('always_on', default_sim_always_on)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_visualize"
-                    value="${lidar_2d_sim_cfg.get('visualize', default_sim_visualize)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_update_rate"
-                    value="${lidar_2d_sim_cfg.get('update_rate', default_sim_update_rate)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_hor_fov_deg"
-                    value="${lidar_2d_sim_cfg.get('horizontal_fov_deg', default_sim_hor_fov_deg)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_hor_res_deg"
-                    value="${lidar_2d_sim_cfg.get('horizontal_resolution_deg', default_sim_hor_res_deg)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_dist_span"
-                    value="${lidar_2d_sim_cfg.get('distance_span', default_sim_dist_span)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_gaussian_noise"
-                    value="${lidar_2d_sim_cfg.get('gaussian_noise', default_sim_gaussian_noise)}"
-                    scope="parent"/>
-    <xacro:property name="${prop_prefix}_sim_topic"
-                    value="${lidar_2d_bridge_channel_cfg.get('gz_topic_name', '')}"
-                    scope="parent"/>
+    <!--
+    If sim_cfg has the field 'enabled' set to True, then set all the simulation
+    properties according to the values in sim_cfg.
+    The configuration is expected to be complete.
+    -->
+    <xacro:if value="${sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_enabled"
+                      value="True"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_always_on"
+                      value="${sim_cfg['always_on']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_visualize"
+                      value="${sim_cfg['visualize']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_update_rate"
+                      value="${sim_cfg['update_rate']}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_hor_fov_deg"
+                      value="${sim_cfg['hor_fov_deg']}"/>
+      <xacro:property name="${prop_prefix}_hor_fov_deg"
+                      value="${sim_hor_fov_deg['min_angle']} ${sim_hor_fov_deg['max_angle']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_hor_res_deg"
+                      value="${sim_cfg['hor_res_deg']}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_dist_span"
+                      value="${sim_cfg['dist_span']}"/>
+      <xacro:property name="${prop_prefix}_dist_span"
+                      value="${sim_dist_span['min_dist']} ${sim_dist_span['max_dist']}"
+                      scope="parent"/>
+
+      <xacro:property name="sim_gaussian_noise"
+                      value="${sim_cfg['gaussian_noise']}"/>
+      <xacro:property name="${prop_prefix}_gaussian_noise"
+                      value="${sim_gaussian_noise['mean']} ${sim_gaussian_noise['stddev']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_topic"
+                      value="${sim_cfg['topic']}"
+                      scope="parent"/>
     </xacro:if>
   </xacro:macro>
 </robot>

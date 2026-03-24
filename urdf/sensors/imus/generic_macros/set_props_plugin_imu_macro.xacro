@@ -2,49 +2,58 @@
 <robot name="set_props_plugin_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="set_props_plugin_imu"
                params="prop_prefix
-                       imu_sim_cfg:=dict()
-                       imu_bridge_channel_cfg:=dict()">
-
+                       imu_sim_cfg:=dict()">
 
     <!--
     If imu_sim_cfg does not have the field 'enabled' or if it is set to False, then set all the simulation
     properties to disable the simulation of the imu.
     -->
     <xacro:unless value="${imu_sim_cfg.get('enabled', False)}">
-      <xacro:property name="${prop_prefix}_sim_enabled"
+      <xacro:property name="${prop_prefix}_enabled"
                       value="False"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_use_gravity"
+
+      <xacro:property name="${prop_prefix}_use_gravity"
                       value="False"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_always_on"
+
+      <xacro:property name="${prop_prefix}_always_on"
                       value="False"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_update_rate"
+
+      <xacro:property name="${prop_prefix}_update_rate"
                       value="0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise"
+
+      <xacro:property name="${prop_prefix}_ang_vel_gaussian_noise"
                       value="0 0 0 0 0 0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_bias"
+
+      <xacro:property name="${prop_prefix}_ang_vel_gaussian_noise_bias"
                       value="0 0 0 0 0 0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_dynamic_bias"
+
+      <xacro:property name="${prop_prefix}_ang_vel_gaussian_noise_dynamic_bias"
                       value="0 0 0 0 0 0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise"
+
+      <xacro:property name="${prop_prefix}_lin_acc_gaussian_noise"
                       value="0 0 0 0 0 0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_bias"
+
+      <xacro:property name="${prop_prefix}_lin_acc_gaussian_noise_bias"
                       value="0 0 0 0 0 0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_dynamic_bias"
+
+      <xacro:property name="${prop_prefix}_lin_acc_gaussian_noise_dynamic_bias"
                       value="0 0 0 0 0 0"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_use_orientation"
+
+      <xacro:property name="${prop_prefix}_use_orientation"
                       value="False"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_topic"
+
+      <xacro:property name="${prop_prefix}_topic"
                       value=""
                       scope="parent"/>
     </xacro:unless>
@@ -54,22 +63,25 @@
     values in imu_sim_cfg. The configuration is expected to be complete.
     -->
     <xacro:if value="${imu_sim_cfg.get('enabled', False)}">
-      <xacro:property name="${prop_prefix}_sim_enabled"
+      <xacro:property name="${prop_prefix}_enabled"
                       value="True"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_use_gravity"
+
+      <xacro:property name="${prop_prefix}_use_gravity"
                       value="${imu_sim_cfg['use_gravity']}"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_always_on"
+
+      <xacro:property name="${prop_prefix}_always_on"
                       value="${imu_sim_cfg['always_on']}"
                       scope="parent"/>
-      <xacro:property name="${prop_prefix}_sim_update_rate"
+
+      <xacro:property name="${prop_prefix}_update_rate"
                       value="${imu_sim_cfg['update_rate']}"
                       scope="parent"/>
 
       <xacro:property name="sim_ang_vel_gaussian_noise"
                       value="${imu_sim_cfg['ang_vel_gaussian_noise']}"/>
-      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise"
+      <xacro:property name="${prop_prefix}_ang_vel_gaussian_noise"
                       value="${' '.join([str(sim_ang_vel_gaussian_noise['mean_x']),
                                          str(sim_ang_vel_gaussian_noise['stddev_x']),
                                          str(sim_ang_vel_gaussian_noise['mean_y']),
@@ -80,7 +92,7 @@
 
       <xacro:property name="sim_ang_vel_gaussian_noise_bias"
                       value="${imu_sim_cfg['ang_vel_gaussian_noise_bias']}"/>
-      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_bias"
+      <xacro:property name="${prop_prefix}_ang_vel_gaussian_noise_bias"
                       value="${' '.join([str(sim_ang_vel_gaussian_noise_bias['mean_x']),
                                          str(sim_ang_vel_gaussian_noise_bias['stddev_x']),
                                          str(sim_ang_vel_gaussian_noise_bias['mean_y']),
@@ -91,7 +103,7 @@
 
       <xacro:property name="sim_ang_vel_gaussian_noise_dynamic_bias"
                       value="${imu_sim_cfg['ang_vel_gaussian_noise_dynamic_bias']}"/>
-      <xacro:property name="${prop_prefix}_sim_ang_vel_gaussian_noise_dynamic_bias"
+      <xacro:property name="${prop_prefix}_ang_vel_gaussian_noise_dynamic_bias"
                       value="${' '.join([str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_x']),
                                          str(sim_ang_vel_gaussian_noise_dynamic_bias['corr_time_x']),
                                          str(sim_ang_vel_gaussian_noise_dynamic_bias['stddev_y']),
@@ -102,7 +114,7 @@
 
       <xacro:property name="sim_lin_acc_gaussian_noise"
                       value="${imu_sim_cfg['lin_acc_gaussian_noise']}"/>
-      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise"
+      <xacro:property name="${prop_prefix}_lin_acc_gaussian_noise"
                       value="${' '.join([str(sim_lin_acc_gaussian_noise['mean_x']),
                                          str(sim_lin_acc_gaussian_noise['stddev_x']),
                                          str(sim_lin_acc_gaussian_noise['mean_y']),
@@ -113,7 +125,7 @@
 
       <xacro:property name="sim_lin_acc_gaussian_noise_bias"
                       value="${imu_sim_cfg['lin_acc_gaussian_noise_bias']}"/>
-      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_bias"
+      <xacro:property name="${prop_prefix}_lin_acc_gaussian_noise_bias"
                       value="${' '.join([str(sim_lin_acc_gaussian_noise_bias['mean_x']),
                                          str(sim_lin_acc_gaussian_noise_bias['stddev_x']),
                                          str(sim_lin_acc_gaussian_noise_bias['mean_y']),
@@ -124,7 +136,7 @@
 
       <xacro:property name="sim_lin_acc_gaussian_noise_dynamic_bias"
                       value="${imu_sim_cfg['lin_acc_gaussian_noise_dynamic_bias']}"/>
-      <xacro:property name="${prop_prefix}_sim_lin_acc_gaussian_noise_dynamic_bias"
+      <xacro:property name="${prop_prefix}_lin_acc_gaussian_noise_dynamic_bias"
                       value="${' '.join([str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_x']),
                                          str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_x']),
                                          str(sim_lin_acc_gaussian_noise_dynamic_bias['stddev_y']),
@@ -133,12 +145,11 @@
                                          str(sim_lin_acc_gaussian_noise_dynamic_bias['corr_time_z'])])}"
                       scope="parent"/>
 
-      <xacro:property name="${prop_prefix}_sim_use_orientation"
+      <xacro:property name="${prop_prefix}_use_orientation"
                       value="${imu_sim_cfg['use_orientation']}"
                       scope="parent"/>
-
-      <xacro:property name="${prop_prefix}_sim_topic"
-                      value="${imu_bridge_channel_cfg.get('gz_topic_name', '')}"
+      <xacro:property name="${prop_prefix}_topic"
+                      value="${imu_sim_cfg['topic']}"
                       scope="parent"/>
     </xacro:if>
   </xacro:macro>

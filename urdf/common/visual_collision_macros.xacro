@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!--
 Convention for parameter types:
-R means real number (float or double)
+R means real number
 I means integer
 S means string
 B means boolean

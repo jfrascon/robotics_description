@@ -5,10 +5,6 @@ The lidar_3d_ring_plugin macro defines a simulated 3D LIDAR sensor using the GPU
 This macro does not create new links or joints. Instead, it attaches a sensor to an existing link, defined by
 'reference_link'.
 
-IT IS IMPORTANT TO NOTE THAT GAZEBO WILL PUBLISH 2 TOPICS, THE ONE YOU PROVIDED IN THE PARAMETER 'topic', WITH
-TYPE LaserScan (2D) AND ANOTHER ONE, '${topic}/points', WITH TYPE PointCloud2 (3D).
-THERE IS NO WAY TO CHANGE THIS BEHAVIOR OF THE GAZEBO PLUGIN.
-
 Visualization in Gazebo can be toggled via 'visualize', and the sensor update rate is
 configurable with 'update_rate' (in Hz).
 
@@ -53,7 +49,7 @@ Reference: https://gazebosim.org/docs/harmonic/sensors/
 Mandatory parameters:
 - sensor_name has 1 value.
 - reference_link has 1 value.
-- topic has 1 value.
+- base_topic has 1 value.
 - update_rate has 1 value.
 - hor_fov_deg has 2 values between quotes in this order, 'min_hor_angle_deg max_hor_angle_deg'
 - hor_res_deg has 1 value.
@@ -74,7 +70,11 @@ Mandatory parameters:
                        ver_res_deg
                        dist_span
                        gaussian_noise:='0 0'
-                       topic">
+                       namespace:=''
+                       base_topic">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
+
     <!--
     According to the documentation at 'http://sdformat.org/spec?ver=1.7&elem=sensor#sensor_ray'
     The 'gpu_ray' type is equivalent to the 'gpu_lidar' type.
@@ -94,13 +94,33 @@ Mandatory parameters:
     <xacro:property name="ver_span_deg"           value="${float(ver_max_angle_deg) - float(ver_min_angle_deg)}"/>
     <xacro:property name="ver_samples"            value="${int(ver_span_deg / ver_res_deg) + 1}"/>
 
-    <xacro:property name="min_max_dists"         value="${dist_span.split()}"/>
-    <xacro:property name="min_dist"              value="${min_max_dists[0]}"/>
-    <xacro:property name="max_dist"              value="${min_max_dists[1]}"/>
+    <xacro:property name="min_max_dists"          value="${dist_span.split()}"/>
+    <xacro:property name="min_dist"               value="${min_max_dists[0]}"/>
+    <xacro:property name="max_dist"               value="${min_max_dists[1]}"/>
 
-    <xacro:property name="gaussian_noise_seq"    value="${gaussian_noise.split()}"/>
-    <xacro:property name="gaussian_noise_mean"   value="${gaussian_noise_seq[0]}"/>
-    <xacro:property name="gaussian_noise_stddev" value="${gaussian_noise_seq[1]}"/>
+    <xacro:property name="gaussian_noise_seq"     value="${gaussian_noise.split()}"/>
+    <xacro:property name="gaussian_noise_mean"    value="${gaussian_noise_seq[0]}"/>
+    <xacro:property name="gaussian_noise_stddev"  value="${gaussian_noise_seq[1]}"/>
+
+    <!--
+    GZ plugin `gpu_lidar` publish two topics in this plugin:
+    - '${topic_given_to_gpu_lidar_plugin}' with type `gz.msgs.LaserScan`
+    (definition at https://github.com/gazebosim/gz-msgs/blob/gz-msgs12/proto/gz/msgs/laserscan.proto)
+    that represents a 3D scan. However, according to the table at
+    https://github.com/gazebosim/ros_gz/tree/ros2/ros_gz_bridge#bridge-communication-between-ros-and-gazebo
+    this GZ message type maps to the ROS message types `sensor_msgs/msg/LaserScan`, used to
+    represent a 2D scan and `sensor_msgs/msg/Range`, to represent a single range measurement
+    sensor, like a proximity sensor (IR or sonar).
+    - '${topic_given_to_gpu_lidar_plugin}/points' with type `gz.msgs.PointCloudPacked`
+    (definition at https://github.com/gazebosim/gz-msgs/blob/gz-msgs12/proto/gz/msgs/pointcloud_packed.proto)
+    that represents a 3D point cloud. According to the table at
+    https://github.com/gazebosim/ros_gz/tree/ros2/ros_gz_bridge#bridge-communication-between-ros-and-gazebo
+    this GZ message type maps to the ROS message type `sensor_msgs/msg/PointCloud2`, used to represent a 3D point cloud.
+    -->
+
+    <xacro:resolve_topic prop_id="resolved_base_topic"
+                         topic="${base_topic}"
+                         namespace="${namespace}"/>
 
     <gazebo reference="${reference_link}">
       <gravity>True</gravity>
@@ -109,7 +129,7 @@ Mandatory parameters:
         <visualize>${visualize}</visualize>
         <update_rate>${update_rate}</update_rate>
 
-        <topic>${topic}</topic>
+        <topic>${resolved_base_topic}</topic>
         <!--
         If the label <gz_frame_id> is not set, Gazebo will use as the 'frame_id' for the message, the string
         '<model>::${parent_frame}::${laser_id}_link', which probably is not what you want.

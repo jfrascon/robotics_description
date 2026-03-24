@@ -6,28 +6,38 @@
 
   <xacro:property name="sim_cfg"
                   value="${xacro.load_yaml('$(find robotics_description)/config/sensors/imus/example_um7_simulation.yaml')}"/>
-  <xacro:property name="bridge_cfg"
-                  value="${xacro.load_yaml('$(find robotics_description)/config/sensors/imus/example_um7_bridge.yaml')}"/>
+  <xacro:property name="imu_test_sim_cfg"
+                  value="${dict(enabled=True,
+                                 use_gravity=True,
+                                 always_on=sim_cfg['always_on'],
+                                 update_rate=sim_cfg['update_rate'],
+                                 ang_vel_gaussian_noise=sim_cfg['ang_vel_gaussian_noise'],
+                                 ang_vel_gaussian_noise_bias=sim_cfg['ang_vel_gaussian_noise_bias'],
+                                 ang_vel_gaussian_noise_dynamic_bias=sim_cfg['ang_vel_gaussian_noise_dynamic_bias'],
+                                 lin_acc_gaussian_noise=sim_cfg['lin_acc_gaussian_noise'],
+                                 lin_acc_gaussian_noise_bias=sim_cfg['lin_acc_gaussian_noise_bias'],
+                                 lin_acc_gaussian_noise_dynamic_bias=sim_cfg['lin_acc_gaussian_noise_dynamic_bias'],
+                                 use_orientation=sim_cfg['use_orientation'],
+                                 topic=sim_cfg['topic'])}"/>
 
   <xacro:set_props_plugin_imu prop_prefix="imu"
-                              imu_sim_cfg="${sim_cfg}"
-                              imu_bridge_channel_cfg="${bridge_cfg['um7']}"/>
+                              imu_sim_cfg="${imu_test_sim_cfg}"/>
 
   <link name="base_link"/>
 
   <xacro:um7 name="imu"
              parent_frame="base_link"
              joint_parent_fr_root_fr="0 0 0 0 0 0"
-             use_sim="${imu_sim_enabled}"
-             sim_use_gravity="${imu_sim_use_gravity}"
-             sim_always_on="${imu_sim_always_on}"
-             sim_update_rate="${imu_sim_update_rate}"
-             sim_ang_vel_gaussian_noise="${imu_sim_ang_vel_gaussian_noise}"
-             sim_ang_vel_gaussian_noise_bias="${imu_sim_ang_vel_gaussian_noise_bias}"
-             sim_ang_vel_gaussian_noise_dynamic_bias="${imu_sim_ang_vel_gaussian_noise_dynamic_bias}"
-             sim_lin_acc_gaussian_noise="${imu_sim_lin_acc_gaussian_noise}"
-             sim_lin_acc_gaussian_noise_bias="${imu_sim_lin_acc_gaussian_noise_bias}"
-             sim_lin_acc_gaussian_noise_dynamic_bias="${imu_sim_lin_acc_gaussian_noise_dynamic_bias}"
-             sim_use_orientation="${imu_sim_use_orientation}"
-             sim_topic="${imu_sim_topic}"/>
+             sim_enabled="${imu_enabled}"
+             sim_use_gravity="${imu_use_gravity}"
+             sim_always_on="${imu_always_on}"
+             sim_update_rate="${imu_update_rate}"
+             sim_ang_vel_gaussian_noise="${imu_ang_vel_gaussian_noise}"
+             sim_ang_vel_gaussian_noise_bias="${imu_ang_vel_gaussian_noise_bias}"
+             sim_ang_vel_gaussian_noise_dynamic_bias="${imu_ang_vel_gaussian_noise_dynamic_bias}"
+             sim_lin_acc_gaussian_noise="${imu_lin_acc_gaussian_noise}"
+             sim_lin_acc_gaussian_noise_bias="${imu_lin_acc_gaussian_noise_bias}"
+             sim_lin_acc_gaussian_noise_dynamic_bias="${imu_lin_acc_gaussian_noise_dynamic_bias}"
+             sim_use_orientation="${imu_use_orientation}"
+             sim_topic="${imu_topic}"/>
 </robot>

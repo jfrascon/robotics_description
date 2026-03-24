@@ -4,15 +4,12 @@ always_on: True
 visualize: False
 update_rate: 10
 hor_fov_deg: { "min_angle": -180, "max_angle": 180 }
-hor_res_deg: 0.4
+hor_res_deg: 0.2
 ver_fov_deg: { "min_angle": -15, "max_angle": 15 }
-# On page 11 of the Robosense Airy it is stated that: Vertical range is 90 degrees, with 96 beams, so vertical
-# resolution is 0.947, but direct calculation gives 90/96 = 0.9375
-ver_res_deg: 0.9375
-# Blind zone: 0.1 m
-dist_span: { "min_dist": 0.1, "max_dist": 60 } # m
+ver_res_deg: 2
+dist_span: { "min_dist": 0.2, "max_dist": 150 } # m
 gaussian_noise: { "mean": 0, "stddev": 0.01 }
 # The Gazebo plugin will publish two topics:
 # Topic <base_topic> with messages of type gz.msgs.LaserScan
 # Topic <base_topic>/points with messages of type gz.msgs.PointCloudPacked
-base_topic: robosense_airy/scan
+base_topic: robosense_helios_16/scan
