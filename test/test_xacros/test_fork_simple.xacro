@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<robot name="test_fork_simple" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_macro.xacro"/>
+
+  <link name="base_link"/>
+
+  <xacro:fork_simple name="fork"
+                      parent_frame="base_link"
+                      use_inertial="True"
+                      color="0.0 0.0 0.0 1.0"
+                      limits="-0.01 0.8 20000.0 0.5"
+                      joint_parent_fr_root_fr="0 0 0 0 0 0"/>
+</robot>

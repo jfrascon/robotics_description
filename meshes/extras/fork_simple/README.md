@@ -63,15 +63,15 @@ Main parameters:
 
 The generated mesh is consumed by the generic macro:
 
-- [`urdf/extras/fork_simple/fork_simple_macro.xacro`](../../../urdf/extras/fork_simple/fork_simple_macro.xacro)
+- [`urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro`](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro)
 
 For each concrete fork model, create a dedicated macro that calls the generic [`fork_simple`
-macro](../../../urdf/extras/fork_simple/fork_simple_macro.xacro) with fixed parameters.
+macro](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro) with fixed parameters.
 Typical fixed values are the mesh path, geometry dimensions, mass, inertia tensor terms, and center of mass.
 
 Example:
 
-- `urdf/extras/fork_simple/fork_simple_0_macro.xacro`
+- `urdf/extras/fork_simple/fork_simple_macro.xacro`
 
 To make each fork model self-contained, traceable, and easy to regenerate, use one subfolder per model containing:
 
