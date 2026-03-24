@@ -1,12 +1,6 @@
 <?xml version="1.0"?>
 <robot name="test_gz_system_plugins" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_velocity_control_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_odometry_publisher_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_state_publisher_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_am_vel_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_f64_force_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_am_pos_velcmd_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_f64_pos_pid_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/all_gz_system_plugins.xacro"/>
 
   <link name="base_link"/>
   <link name="child_link"/>
