@@ -2,12 +2,24 @@ cmake_minimum_required(VERSION 3.5)
 project(robotics_description)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_python REQUIRED)
-ament_package_xml()
 
-install(
-  DIRECTORY config launch meshes urdf
-  DESTINATION share/${PROJECT_NAME})
+# This package publishes description resources such as Xacro files, meshes,
+# and example configuration files. It does not build or install C++ targets.
+set(resource_directories
+  config
+  doc
+  meshes
+  urdf
+)
+
+foreach(resource_directory IN LISTS resource_directories)
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${resource_directory}")
+    install(
+      DIRECTORY ${resource_directory}
+      DESTINATION share/${PROJECT_NAME}
+    )
+  endif()
+endforeach()
 
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
