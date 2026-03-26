@@ -6,7 +6,7 @@
 
   <description>Reusable URDF/Xacro robot descriptions, meshes, and macros for ROS 2</description>
 
-  <maintainer email="todo@todo.com">jfrascon</maintainer>
+  <maintainer email="eurecat@eurecat.org">jfrascon</maintainer>
   <license>BSD-3-Clause</license>
 
   <url type="website">https://github.com/jfrascon/robotics_description</url>
@@ -15,22 +15,10 @@
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
-  <exec_depend>joint_state_broadcaster</exec_depend>
-  <exec_depend>launch</exec_depend>
-  <exec_depend>launch_ros</exec_depend>
-  <exec_depend>python3-jinja2</exec_depend>
-  <exec_depend>python3-yaml</exec_depend>
-  <exec_depend>robot_state_publisher</exec_depend>
-  <exec_depend>ros2_control</exec_depend>
-  <exec_depend>ros2_controllers</exec_depend>
-  <exec_depend>rqt_controller_manager</exec_depend>
-  <exec_depend>rqt_joint_trajectory_controller</exec_depend>
-  <exec_depend>topic_based_ros2_control</exec_depend>
   <exec_depend>xacro</exec_depend>
 
+  <test_depend>ament_index_python</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
-  <test_depend>launch_testing_ament_cmake</test_depend>
-  <test_depend>launch_testing_ros</test_depend>
   <test_depend>liburdfdom-tools</test_depend>
   <test_depend>xacro</test_depend>
 
