@@ -14,8 +14,6 @@ if os.path.isdir(test_xacros_dir):
         if file.endswith('.xacro'):
             xacro_files.append(os.path.join(test_xacros_dir, file))
 
-print(f'DEBUG [pytest setup]: Found {len(xacro_files)} total xacro test cases: {xacro_files}')
-
 
 def check_meshes(urdf_file):
     """
