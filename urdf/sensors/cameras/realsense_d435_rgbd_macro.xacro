@@ -55,9 +55,6 @@ joint_parent_fr_root_fr (S):
 pose of the camera root frame with respect to the parent frame.
 Format: 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
-sim_enabled (B):
-if true, include Gazebo camera plugins.
-
 sim_rgbd_*:
 parameters for the RGB-D Gazebo sensor.
 
@@ -180,7 +177,6 @@ Gazebo topic used to trigger the second infrared camera.
                        use_c_mesh:=False
                        use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       sim_enabled:=False
                        sim_rgbd_enabled:=True
                        sim_rgbd_use_gravity:=True
                        sim_rgbd_always_on:=True
@@ -264,42 +260,42 @@ Gazebo topic used to trigger the second infrared camera.
                                        use_sensor_frames_and_joints="${use_sensor_frames_and_joints}"
                                        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
-    <xacro:if value="${sim_enabled}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+    <xacro:if value="${sim_rgbd_enabled and sim_rgbd_base_topic != ''}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_rgbd_macro.xacro"/>
+      <!--
+      When working with an `rgbd_camera` Gazebo plugin, the topics for image, depth_image, points and
+      camera_info all share the same base topic, so there is no need to pass `info_topic` separately
+      to the `plugin_camera_rgbd` macro.
+      -->
+      <xacro:plugin_camera_rgbd  name="${prefix}${name}_rgbd"
+                                 reference_frame="${prefix}${name}_depth_frame"
+                                 optical_frame="${prefix}${name}_depth_optical_frame"
+                                 use_gravity="${sim_rgbd_use_gravity}"
+                                 always_on="${sim_rgbd_always_on}"
+                                 visualize="${sim_rgbd_visualize}"
+                                 enable_metrics="${sim_rgbd_enable_metrics}"
+                                 save="${sim_rgbd_save}"
+                                 triggered="${sim_rgbd_triggered}"
+                                 visible_mask="${sim_rgbd_visible_mask}"
+                                 clip="${sim_rgbd_clip}"
+                                 depth_clip="${sim_rgbd_depth_clip}"
+                                 update_rate="${sim_rgbd_update_rate}"
+                                 image="${sim_rgbd_image}"
+                                 lens_single_elements="${sim_rgbd_lens_single_elements}"
+                                 lens_custom_function="${sim_rgbd_lens_custom_function}"
+                                 lens_intrinsics="${sim_rgbd_lens_intrinsics}"
+                                 lens_xy_skew="${sim_rgbd_lens_xy_skew}"
+                                 lens_projection="${sim_rgbd_lens_projection}"
+                                 distortion_k_p="${sim_rgbd_distortion_k_p}"
+                                 distortion_center="${sim_rgbd_distortion_center}"
+                                 gaussian_noise="${sim_rgbd_gaussian_noise}"
+                                 namespace="${namespace}"
+                                 base_topic="${sim_rgbd_base_topic}"
+                                 trigger_topic="${sim_rgbd_trigger_topic}"/>
+    </xacro:if>
 
-      <xacro:if value="${sim_rgbd_enabled and sim_rgbd_base_topic != ''}">
-        <!--
-        When working with an `rgbd_camera` Gazebo plugin, the topics for image, depth_image, points and
-        camera_info all share the same base topic, so there is no need to pass `info_topic` separately
-        to the `plugin_camera_rgbd` macro.
-        -->
-        <xacro:plugin_camera_rgbd  name="${prefix}${name}_rgbd"
-                                   reference_frame="${prefix}${name}_depth_frame"
-                                   optical_frame="${prefix}${name}_depth_optical_frame"
-                                   use_gravity="${sim_rgbd_use_gravity}"
-                                   always_on="${sim_rgbd_always_on}"
-                                   visualize="${sim_rgbd_visualize}"
-                                   enable_metrics="${sim_rgbd_enable_metrics}"
-                                   save="${sim_rgbd_save}"
-                                   triggered="${sim_rgbd_triggered}"
-                                   visible_mask="${sim_rgbd_visible_mask}"
-                                   clip="${sim_rgbd_clip}"
-                                   depth_clip="${sim_rgbd_depth_clip}"
-                                   update_rate="${sim_rgbd_update_rate}"
-                                   image="${sim_rgbd_image}"
-                                   lens_single_elements="${sim_rgbd_lens_single_elements}"
-                                   lens_custom_function="${sim_rgbd_lens_custom_function}"
-                                   lens_intrinsics="${sim_rgbd_lens_intrinsics}"
-                                   lens_xy_skew="${sim_rgbd_lens_xy_skew}"
-                                   lens_projection="${sim_rgbd_lens_projection}"
-                                   distortion_k_p="${sim_rgbd_distortion_k_p}"
-                                   distortion_center="${sim_rgbd_distortion_center}"
-                                   gaussian_noise="${sim_rgbd_gaussian_noise}"
-                                   namespace="${namespace}"
-                                   base_topic="${sim_rgbd_base_topic}"
-                                   trigger_topic="${sim_rgbd_trigger_topic}"/>
-      </xacro:if>
+    <xacro:if value="${sim_infra1_enabled or sim_infra2_enabled}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
 
       <xacro:if value="${sim_infra1_enabled and sim_infra1_image_topic != '' and
                         sim_infra1_camera_info_topic != ''}">

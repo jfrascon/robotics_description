@@ -9,20 +9,19 @@
                   value="${xacro.load_yaml('$(find robotics_description)/config/sensors/cameras/example_realsense_d435_rgbd_simulation.yaml')}"/>
 
   <xacro:set_props_plugin_camera_rgbd prop_prefix="rs_rgbd"
-                                      sim_cfg="${sim_cfg['realsense_d435_rgbd']}"/>
+                                      sim_cfg="${sim_cfg['rgbd']}"/>
 
   <xacro:set_props_plugin_camera prop_prefix="rs_infra1"
-                                 sim_cfg="${sim_cfg['realsense_d435_infra1']}"/>
+                                 sim_cfg="${sim_cfg['infra1']}"/>
 
   <xacro:set_props_plugin_camera prop_prefix="rs_infra2"
-                                 sim_cfg="${sim_cfg['realsense_d435_infra2']}"/>
+                                 sim_cfg="${sim_cfg['infra2']}"/>
 
   <link name="base_link"/>
 
   <xacro:realsense_d435_rgbd name="cam"
                              parent_frame="base_link"
                              use_sensor_frames_and_joints="True"
-                             sim_enabled="True"
                              sim_rgbd_enabled="${rs_rgbd_enabled}"
                              sim_rgbd_use_gravity="${rs_rgbd_use_gravity}"
                              sim_rgbd_always_on="${rs_rgbd_always_on}"

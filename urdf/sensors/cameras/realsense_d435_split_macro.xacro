@@ -56,9 +56,6 @@ joint_parent_fr_root_fr (S):
 pose of the camera root frame with respect to the parent frame.
 Format: 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
-sim_enabled (B):
-if true, include Gazebo camera plugins.
-
 sim_color_*:
 parameters for the color `camera` Gazebo sensor.
 
@@ -194,7 +191,6 @@ Gazebo topic used to trigger the second infrared camera.
                        use_c_mesh:=False
                        use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       sim_enabled:=False
                        sim_color_enabled:=True
                        sim_color_use_gravity:=True
                        sim_color_always_on:=True
@@ -301,12 +297,42 @@ Gazebo topic used to trigger the second infrared camera.
                                        use_sensor_frames_and_joints="${use_sensor_frames_and_joints}"
                                        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
-    <xacro:if value="${sim_enabled}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+    <xacro:if value="${sim_depth_enabled}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
 
+      <xacro:plugin_camera_depth name="${prefix}${name}_depth"
+                                 reference_frame="${prefix}${name}_depth_frame"
+                                 optical_frame="${prefix}${name}_depth_optical_frame"
+                                 use_gravity="${sim_depth_use_gravity}"
+                                 always_on="${sim_depth_always_on}"
+                                 visualize="${sim_depth_visualize}"
+                                 enable_metrics="${sim_depth_enable_metrics}"
+                                 save="${sim_depth_save}"
+                                 triggered="${sim_depth_triggered}"
+                                 visible_mask="${sim_depth_visible_mask}"
+                                 clip="${sim_depth_clip}"
+                                 depth_clip="${sim_depth_depth_clip}"
+                                 update_rate="${sim_depth_update_rate}"
+                                 image="${sim_depth_image}"
+                                 lens_single_elements="${sim_depth_lens_single_elements}"
+                                 lens_custom_function="${sim_depth_lens_custom_function}"
+                                 lens_intrinsics="${sim_depth_lens_intrinsics}"
+                                 lens_projection="${sim_depth_lens_projection}"
+                                 lens_xy_skew="${sim_depth_lens_xy_skew}"
+                                 distortion_k_p="${sim_depth_distortion_k_p}"
+                                 distortion_center="${sim_depth_distortion_center}"
+                                 gaussian_noise="${sim_depth_gaussian_noise}"
+                                 namespace="${namespace}"
+                                 topic="${sim_depth_image_topic}"
+                                 info_topic="${sim_depth_camera_info_topic}"
+                                 trigger_topic="${sim_depth_trigger_topic}"/>
+    </xacro:if>
+
+    <xacro:if value="${sim_color_enabled or sim_infra1_enabled or sim_infra2_enabled}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+
       <!--
-      If sim_enabled is true and topic and info_topic are not empty include the GZ plugin.
+      If sim_color_enabled is true and topic and info_topic are not empty include the GZ plugin.
       trigger_topic is only required if triggered is true, but this is check inside the plugin.
       If any of these fields is not true, the plugin is not included.
       -->
@@ -336,35 +362,6 @@ Gazebo topic used to trigger the second infrared camera.
                              topic="${sim_color_image_topic}"
                              info_topic="${sim_color_camera_info_topic}"
                              trigger_topic="${sim_color_trigger_topic}"/>
-      </xacro:if>
-
-      <xacro:if value="${sim_depth_enabled}">
-        <xacro:plugin_camera_depth name="${prefix}${name}_depth"
-                                   reference_frame="${prefix}${name}_depth_frame"
-                                   optical_frame="${prefix}${name}_depth_optical_frame"
-                                   use_gravity="${sim_depth_use_gravity}"
-                                   always_on="${sim_depth_always_on}"
-                                   visualize="${sim_depth_visualize}"
-                                   enable_metrics="${sim_depth_enable_metrics}"
-                                   save="${sim_depth_save}"
-                                   triggered="${sim_depth_triggered}"
-                                   visible_mask="${sim_depth_visible_mask}"
-                                   clip="${sim_depth_clip}"
-                                   depth_clip="${sim_depth_depth_clip}"
-                                   update_rate="${sim_depth_update_rate}"
-                                   image="${sim_depth_image}"
-                                   lens_single_elements="${sim_depth_lens_single_elements}"
-                                   lens_custom_function="${sim_depth_lens_custom_function}"
-                                   lens_intrinsics="${sim_depth_lens_intrinsics}"
-                                   lens_projection="${sim_depth_lens_projection}"
-                                   lens_xy_skew="${sim_depth_lens_xy_skew}"
-                                   distortion_k_p="${sim_depth_distortion_k_p}"
-                                   distortion_center="${sim_depth_distortion_center}"
-                                   gaussian_noise="${sim_depth_gaussian_noise}"
-                                   namespace="${namespace}"
-                                   topic="${sim_depth_image_topic}"
-                                   info_topic="${sim_depth_camera_info_topic}"
-                                   trigger_topic="${sim_depth_trigger_topic}"/>
       </xacro:if>
 
       <xacro:if value="${sim_infra1_enabled and sim_infra1_image_topic != '' and
