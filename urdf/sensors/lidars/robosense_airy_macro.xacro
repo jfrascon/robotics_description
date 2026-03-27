@@ -53,9 +53,6 @@ joint_parent_fr_root_fr (S):
 Pose of the lidar's root frame w.r.t the parent's frame.
 joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
-sim_enabled (B):
-if true, include the simulation plugins defined in this macro.
-
 sim_lidar_*:
 parameters for the GZ 3D lidar plugin.
 
@@ -149,7 +146,6 @@ namespace.
                        use_c_mesh:=False
                        c_mesh_use_low_res:=True
                        joint_parent_fr_root_fr
-                       sim_enabled:=False
                        sim_lidar_enabled:=True
                        sim_lidar_always_on:=True
                        sim_lidar_visualize:=False
@@ -307,10 +303,10 @@ namespace.
     </joint>
 
     <!--
-    If sim_enabled is true and sim_lidar_base_topic is not empty, include the GZ lidar plugin.
-    If either field is not true, the plugin is not included.
+    If sim_lidar_enabled is true and sim_lidar_base_topic is not empty, include the GZ lidar
+    plugin. If either field is not true, the plugin is not included.
     -->
-    <xacro:if value="${sim_enabled and sim_lidar_enabled and sim_lidar_base_topic != ''}">
+    <xacro:if value="${sim_lidar_enabled and sim_lidar_base_topic != ''}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
 
       <xacro:plugin_lidar_3d_ring
@@ -330,10 +326,10 @@ namespace.
     </xacro:if>
 
     <!--
-    If sim_enabled is true and sim_imu_topic is not empty, include the GZ IMU plugin.
+    If sim_imu_enabled is true and sim_imu_topic is not empty, include the GZ IMU plugin.
     If either field is not true, the plugin is not included.
     -->
-    <xacro:if value="${sim_enabled and sim_imu_enabled and sim_imu_topic != ''}">
+    <xacro:if value="${sim_imu_enabled and sim_imu_topic != ''}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
 
       <xacro:plugin_imu

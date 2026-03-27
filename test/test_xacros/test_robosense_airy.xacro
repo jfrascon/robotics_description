@@ -19,7 +19,6 @@
   <xacro:robosense_airy name="lidar3d"
                         parent_frame="base_link"
                         joint_parent_fr_root_fr="0 0 0 0 0 0"
-                        sim_enabled="True"
                         sim_lidar_enabled="${lidar3d_lidar_enabled}"
                         sim_lidar_always_on="${lidar3d_lidar_always_on}"
                         sim_lidar_visualize="${lidar3d_lidar_visualize}"
