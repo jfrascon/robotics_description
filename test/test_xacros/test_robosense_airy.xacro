@@ -3,27 +3,44 @@
   <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_airy_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_3d_ring_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/set_props_plugin_imu_macro.xacro"/>
 
   <xacro:property name="sim_cfg"
                   value="${xacro.load_yaml('$(find robotics_description)/config/sensors/lidars/example_robosense_airy_simulation.yaml')}"/>
 
-  <xacro:set_props_plugin_lidar_3d_ring prop_prefix="lidar3d"
-                                        sim_cfg="${sim_cfg}"/>
+  <xacro:set_props_plugin_lidar_3d_ring prop_prefix="lidar3d_lidar"
+                                        sim_cfg="${sim_cfg.get('lidar', dict())}"/>
+
+  <xacro:set_props_plugin_imu prop_prefix="lidar3d_imu"
+                              imu_sim_cfg="${sim_cfg.get('imu', dict())}"/>
 
   <link name="base_link"/>
 
   <xacro:robosense_airy name="lidar3d"
                         parent_frame="base_link"
                         joint_parent_fr_root_fr="0 0 0 0 0 0"
-                        sim_enabled="${lidar3d_enabled}"
-                        sim_always_on="${lidar3d_always_on}"
-                        sim_visualize="${lidar3d_visualize}"
-                        sim_update_rate="${lidar3d_update_rate}"
-                        sim_hor_fov_deg="${lidar3d_hor_fov_deg}"
-                        sim_hor_res_deg="${lidar3d_hor_res_deg}"
-                        sim_ver_fov_deg="${lidar3d_ver_fov_deg}"
-                        sim_ver_res_deg="${lidar3d_ver_res_deg}"
-                        sim_dist_span="${lidar3d_dist_span}"
-                        sim_gaussian_noise="${lidar3d_gaussian_noise}"
-                        sim_base_topic="${lidar3d_base_topic}"/>
+                        sim_enabled="True"
+                        sim_lidar_enabled="${lidar3d_lidar_enabled}"
+                        sim_lidar_always_on="${lidar3d_lidar_always_on}"
+                        sim_lidar_visualize="${lidar3d_lidar_visualize}"
+                        sim_lidar_update_rate="${lidar3d_lidar_update_rate}"
+                        sim_lidar_hor_fov_deg="${lidar3d_lidar_hor_fov_deg}"
+                        sim_lidar_hor_res_deg="${lidar3d_lidar_hor_res_deg}"
+                        sim_lidar_ver_fov_deg="${lidar3d_lidar_ver_fov_deg}"
+                        sim_lidar_ver_res_deg="${lidar3d_lidar_ver_res_deg}"
+                        sim_lidar_dist_span="${lidar3d_lidar_dist_span}"
+                        sim_lidar_gaussian_noise="${lidar3d_lidar_gaussian_noise}"
+                        sim_lidar_base_topic="${lidar3d_lidar_base_topic}"
+                        sim_imu_enabled="${lidar3d_imu_enabled}"
+                        sim_imu_use_gravity="${lidar3d_imu_use_gravity}"
+                        sim_imu_always_on="${lidar3d_imu_always_on}"
+                        sim_imu_update_rate="${lidar3d_imu_update_rate}"
+                        sim_imu_ang_vel_gaussian_noise="${lidar3d_imu_ang_vel_gaussian_noise}"
+                        sim_imu_ang_vel_gaussian_noise_bias="${lidar3d_imu_ang_vel_gaussian_noise_bias}"
+                        sim_imu_ang_vel_gaussian_noise_dynamic_bias="${lidar3d_imu_ang_vel_gaussian_noise_dynamic_bias}"
+                        sim_imu_lin_acc_gaussian_noise="${lidar3d_imu_lin_acc_gaussian_noise}"
+                        sim_imu_lin_acc_gaussian_noise_bias="${lidar3d_imu_lin_acc_gaussian_noise_bias}"
+                        sim_imu_lin_acc_gaussian_noise_dynamic_bias="${lidar3d_imu_lin_acc_gaussian_noise_dynamic_bias}"
+                        sim_imu_use_orientation="${lidar3d_imu_use_orientation}"
+                        sim_imu_topic="${lidar3d_imu_topic}"/>
 </robot>

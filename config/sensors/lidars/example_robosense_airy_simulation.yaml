@@ -1,18 +1,71 @@
-enabled: True
-use_gravity: True
-always_on: True
-visualize: False
-update_rate: 10
-hor_fov_deg: { "min_angle": -180, "max_angle": 180 }
-hor_res_deg: 0.4
-ver_fov_deg: { "min_angle": -15, "max_angle": 15 }
-# On page 11 of the Robosense Airy it is stated that: Vertical range is 90 degrees, with 96 beams, so vertical
-# resolution is 0.947, but direct calculation gives 90/96 = 0.9375
-ver_res_deg: 0.9375
-# Blind zone: 0.1 m
-dist_span: { "min_dist": 0.1, "max_dist": 60 } # m
-gaussian_noise: { "mean": 0, "stddev": 0.01 }
-# The Gazebo plugin will publish two topics:
-# Topic <base_topic> with messages of type gz.msgs.LaserScan
-# Topic <base_topic>/points with messages of type gz.msgs.PointCloudPacked
-base_topic: robosense_airy/scan
+lidar:
+  enabled: True
+  always_on: True
+  visualize: False
+  update_rate: 10
+  hor_fov_deg: { "min_angle": -180, "max_angle": 180 }
+  hor_res_deg: 0.4
+  ver_fov_deg: { "min_angle": -15, "max_angle": 15 }
+  # On page 11 of the Robosense Airy user manual it is stated that:
+  # Vertical range is 90 degrees, with 96 beams, so vertical resolution is 0.947.
+  # However, direct calculation gives 90 / 96 = 0.9375.
+  ver_res_deg: 0.9375
+  # Blind zone: 0.1 m.
+  dist_span: { "min_dist": 0.1, "max_dist": 60 } # m
+  gaussian_noise: { "mean": 0, "stddev": 0.01 }
+  # The Gazebo plugin will publish two topics:
+  # Topic <base_topic> with messages of type gz.msgs.LaserScan
+  # Topic <base_topic>/points with messages of type gz.msgs.PointCloudPacked
+  base_topic: robosense_airy/scan
+
+imu:
+  enabled: True
+  use_gravity: True
+  always_on: True
+  update_rate: 100.0
+  ang_vel_gaussian_noise:
+    mean_x: 0.0
+    stddev_x: 0.0002
+    mean_y: 0.0
+    stddev_y: 0.0002
+    mean_z: 0.0
+    stddev_z: 0.0002
+  ang_vel_gaussian_noise_bias:
+    mean_x: 0.0000075
+    stddev_x: 0.0000008
+    mean_y: 0.0000075
+    stddev_y: 0.0000008
+    mean_z: 0.0000075
+    stddev_z: 0.0000008
+  ang_vel_gaussian_noise_dynamic_bias:
+    stddev_x: 0.0
+    corr_time_x: 0.0
+    stddev_y: 0.0
+    corr_time_y: 0.0
+    stddev_z: 0.0
+    corr_time_z: 0.0
+  lin_acc_gaussian_noise:
+    mean_x: 0.0
+    stddev_x: 0.017
+    mean_y: 0.0
+    stddev_y: 0.017
+    mean_z: 0.0
+    stddev_z: 0.017
+  lin_acc_gaussian_noise_bias:
+    mean_x: 0.1
+    stddev_x: 0.001
+    mean_y: 0.1
+    stddev_y: 0.001
+    mean_z: 0.1
+    stddev_z: 0.001
+  lin_acc_gaussian_noise_dynamic_bias:
+    stddev_x: 0.0
+    corr_time_x: 0.0
+    stddev_y: 0.0
+    corr_time_y: 0.0
+    stddev_z: 0.0
+    corr_time_z: 0.0
+  use_orientation: True
+  # The Gazebo plugin will publish one topic:
+  # Topic <topic> with messages of type gz.msgs.IMU
+  topic: robosense_airy/imu

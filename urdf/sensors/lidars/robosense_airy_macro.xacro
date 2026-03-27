@@ -54,37 +54,84 @@ Pose of the lidar's root frame w.r.t the parent's frame.
 joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
 sim_enabled (B):
+if true, include the simulation plugins defined in this macro.
+
+sim_lidar_*:
+parameters for the GZ 3D lidar plugin.
+
+sim_lidar_enabled (B):
 if true, include the GZ 3D lidar plugin.
 
-sim_always_on (B):
+sim_lidar_always_on (B):
 if true, the lidar is always active in simulation.
 
-sim_visualize (B):
+sim_lidar_visualize (B):
 if true, GZ visualizes the lidar rays in simulation.
 
-sim_update_rate (R):
+sim_lidar_update_rate (R):
 update rate of the lidar in simulation.
 
-sim_hor_fov_deg (S):
+sim_lidar_hor_fov_deg (S):
 horizontal field of view, in degrees, as 'min max'.
 
-sim_hor_res_deg (R):
+sim_lidar_hor_res_deg (R):
 horizontal angular resolution, in degrees.
 
-sim_ver_fov_deg (S):
+sim_lidar_ver_fov_deg (S):
 vertical field of view, in degrees, as 'min max'.
 
-sim_ver_res_deg (R):
+sim_lidar_ver_res_deg (R):
 vertical angular resolution, in degrees.
 
-sim_dist_span (S):
+sim_lidar_dist_span (S):
 measurable distance span, in meters, as 'min max'.
 
-sim_gaussian_noise (S):
+sim_lidar_gaussian_noise (S):
 Gaussian noise parameters for range measurements as 'mean stddev'.
 
-sim_base_topic (S):
+sim_lidar_base_topic (S):
 Topic used by the GZ `gpu_lidar` plugin in simulation. This field is required.
+If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
+namespace.
+
+sim_imu_*:
+parameters for the GZ IMU plugin.
+
+sim_imu_enabled (B):
+if true, include the GZ IMU plugin.
+
+sim_imu_use_gravity (B):
+if true, the imu measures gravity in simulation.
+
+sim_imu_always_on (B):
+if true, the imu is always on in simulation.
+
+sim_imu_update_rate (R):
+update rate of the imu in simulation.
+
+sim_imu_ang_vel_gaussian_noise (S):
+Gaussian noise parameters for angular velocity measurements.
+
+sim_imu_ang_vel_gaussian_noise_bias (S):
+Gaussian noise bias parameters for angular velocity measurements.
+
+sim_imu_ang_vel_gaussian_noise_dynamic_bias (S):
+Gaussian noise dynamic bias parameters for angular velocity measurements.
+
+sim_imu_lin_acc_gaussian_noise (S):
+Gaussian noise parameters for linear acceleration measurements.
+
+sim_imu_lin_acc_gaussian_noise_bias (S):
+Gaussian noise bias parameters for linear acceleration measurements.
+
+sim_imu_lin_acc_gaussian_noise_dynamic_bias (S):
+Gaussian noise dynamic bias parameters for linear acceleration measurements.
+
+sim_imu_use_orientation (B):
+if true, the imu plugin provides orientation data in simulation.
+
+sim_imu_topic (S):
+Topic used by the GZ IMU plugin in simulation. This field is required.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
 -->
@@ -103,17 +150,30 @@ namespace.
                        c_mesh_use_low_res:=True
                        joint_parent_fr_root_fr
                        sim_enabled:=False
-                       sim_always_on:=True
-                       sim_visualize:=False
-                       sim_update_rate
-                       sim_hor_fov_deg
-                       sim_hor_res_deg
-                       sim_ver_fov_deg
-                       sim_ver_res_deg
-                       sim_dist_span
-                       sim_gaussian_noise:='0 0'
+                       sim_lidar_enabled:=True
+                       sim_lidar_always_on:=True
+                       sim_lidar_visualize:=False
+                       sim_lidar_update_rate
+                       sim_lidar_hor_fov_deg
+                       sim_lidar_hor_res_deg
+                       sim_lidar_ver_fov_deg
+                       sim_lidar_ver_res_deg
+                       sim_lidar_dist_span
+                       sim_lidar_gaussian_noise:='0 0'
+                       sim_imu_enabled:=False
+                       sim_imu_use_gravity:=True
+                       sim_imu_always_on:=True
+                       sim_imu_update_rate:=100
+                       sim_imu_ang_vel_gaussian_noise:='0 0 0 0 0 0'
+                       sim_imu_ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_imu_ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_imu_use_orientation:=True
                        namespace:=''
-                       sim_base_topic">
+                       sim_lidar_base_topic
+                       sim_imu_topic:=''">
 
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
@@ -231,27 +291,66 @@ namespace.
       <origin rpy="0 0 0" xyz="0 0 0"/>
     </joint>
 
+    <!-- Definition of the IMU link '${prefix}${name}_imu_link'. -->
+    <link name="${prefix}${name}_imu_link">
+      <xacro:null_inertia/>
+    </link>
+
     <!--
-    If sim_enabled is true and sim_base_topic is not empty, include the GZ plugin.
-    If either of fields is not true, the plugin is not included.
+    Definition of the joint '${prefix}${name}_imu_joint', that joins the imu link to the lidar data
+    link. The IMU frame is intentionally placed at the same pose as the lidar data frame.
     -->
-    <xacro:if value="${sim_enabled and sim_base_topic != ''}">
+    <joint name="${prefix}${name}_imu_joint" type="fixed">
+      <parent link="${prefix}${name}_link"/>
+      <child link="${prefix}${name}_imu_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
+
+    <!--
+    If sim_enabled is true and sim_lidar_base_topic is not empty, include the GZ lidar plugin.
+    If either field is not true, the plugin is not included.
+    -->
+    <xacro:if value="${sim_enabled and sim_lidar_enabled and sim_lidar_base_topic != ''}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
 
       <xacro:plugin_lidar_3d_ring
         sensor_name="${prefix}${name}_gz"
         reference_link="${prefix}${name}_link"
-        always_on="${sim_always_on}"
-        visualize="${sim_visualize}"
-        update_rate="${sim_update_rate}"
-        hor_fov_deg="${sim_hor_fov_deg}"
-        hor_res_deg="${sim_hor_res_deg}"
-        ver_fov_deg="${sim_ver_fov_deg}"
-        ver_res_deg="${sim_ver_res_deg}"
-        dist_span="${sim_dist_span}"
-        gaussian_noise="${sim_gaussian_noise}"
+        always_on="${sim_lidar_always_on}"
+        visualize="${sim_lidar_visualize}"
+        update_rate="${sim_lidar_update_rate}"
+        hor_fov_deg="${sim_lidar_hor_fov_deg}"
+        hor_res_deg="${sim_lidar_hor_res_deg}"
+        ver_fov_deg="${sim_lidar_ver_fov_deg}"
+        ver_res_deg="${sim_lidar_ver_res_deg}"
+        dist_span="${sim_lidar_dist_span}"
+        gaussian_noise="${sim_lidar_gaussian_noise}"
         namespace="${namespace}"
-        base_topic="${sim_base_topic}"/>
+        base_topic="${sim_lidar_base_topic}"/>
+    </xacro:if>
+
+    <!--
+    If sim_enabled is true and sim_imu_topic is not empty, include the GZ IMU plugin.
+    If either field is not true, the plugin is not included.
+    -->
+    <xacro:if value="${sim_enabled and sim_imu_enabled and sim_imu_topic != ''}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
+
+      <xacro:plugin_imu
+        sensor_name="${prefix}${name}_imu_gz"
+        reference_link="${prefix}${name}_imu_link"
+        use_gravity="${sim_imu_use_gravity}"
+        always_on="${sim_imu_always_on}"
+        update_rate="${sim_imu_update_rate}"
+        ang_vel_gaussian_noise="${sim_imu_ang_vel_gaussian_noise}"
+        ang_vel_gaussian_noise_bias="${sim_imu_ang_vel_gaussian_noise_bias}"
+        ang_vel_gaussian_noise_dynamic_bias="${sim_imu_ang_vel_gaussian_noise_dynamic_bias}"
+        lin_acc_gaussian_noise="${sim_imu_lin_acc_gaussian_noise}"
+        lin_acc_gaussian_noise_bias="${sim_imu_lin_acc_gaussian_noise_bias}"
+        lin_acc_gaussian_noise_dynamic_bias="${sim_imu_lin_acc_gaussian_noise_dynamic_bias}"
+        use_orientation="${sim_imu_use_orientation}"
+        namespace="${namespace}"
+        topic="${sim_imu_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>
