@@ -12,7 +12,7 @@
 # https://github.com/realsenseai/librealsense/blob/master/tools/enumerate-devices/readme.md
 
 # Configuration for a 'rgbd_camera' Gazebo plugin.
-realsense_d435_rgbd:
+rgbd:
   enabled: True
   use_gravity: True
   always_on: True
@@ -81,10 +81,10 @@ realsense_d435_rgbd:
   # Use this topic if triggered is True. The Gazebo plugin will subscribe to this topic and capture
   # an image each time a message is published in it.
   # The message type should be gz.msgs.Empty, since the content of the message is not used.
-  trigger_topic: ''
+  trigger_topic: ""
 
 # Configuration for a 'camera' Gazebo plugin.
-realsense_d435_infra1:
+infra1:
   enabled: True
   use_gravity: True
   always_on: True
@@ -153,10 +153,10 @@ realsense_d435_infra1:
   # Use this topic if triggered is True. The Gazebo plugin will subscribe to this topic and capture
   # an image each time a message is published in it.
   # The message type should be gz.msgs.Empty, since the content of the message is not used.
-  trigger_topic: ''
+  trigger_topic: ""
 
 # Configuration for a 'camera' Gazebo plugin.
-realsense_d435_infra2:
+infra2:
   enabled: True
   use_gravity: True
   always_on: True
@@ -225,4 +225,4 @@ realsense_d435_infra2:
   # Use this topic if triggered is True. The Gazebo plugin will subscribe to this topic and capture
   # an image each time a message is published in it.
   # The message type should be gz.msgs.Empty, since the content of the message is not used.
-  trigger_topic: ''
+  trigger_topic: ""

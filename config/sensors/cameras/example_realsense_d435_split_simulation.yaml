@@ -12,7 +12,7 @@
 # https://github.com/realsenseai/librealsense/blob/master/tools/enumerate-devices/readme.md
 
 # Configuration for a 'camera' Gazebo plugin.
-realsense_d435_color:
+color:
   enabled: True
   use_gravity: True
   always_on: True
@@ -103,7 +103,7 @@ realsense_d435_color:
 # distortion_center element: to have matching distortion center between depth and infrared images.
 
 # Configuration for a 'depth_camera' Gazebo plugin.
-realsense_d435_depth:
+depth:
   enabled: True
   use_gravity: True
   always_on: True
@@ -180,7 +180,7 @@ realsense_d435_depth:
   trigger_topic: ""
 
 # Configuration for a 'camera' Gazebo plugin.
-realsense_d435_infra1:
+infra1:
   enabled: True
   use_gravity: True
   always_on: True
@@ -252,7 +252,7 @@ realsense_d435_infra1:
   trigger_topic: ""
 
 # Configuration for a 'camera' Gazebo plugin.
-realsense_d435_infra2:
+infra2:
   enabled: True
   use_gravity: True
   always_on: True
