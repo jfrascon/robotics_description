@@ -1,0 +1,232 @@
+<?xml version="1.0" ?>
+<!--
+Convention for parameter types:
+R means real number
+I means integer
+S means string
+B means boolean
+
+name (S):
+name of the lidar, used to name the links and joints.
+
+prefix (S):
+optional prefix for the names of the links and joints.
+
+namespace (S):
+ROS / GZ namespace used to build default simulation topics.
+
+parent_frame (S):
+name of the parent frame to which the lidar's root frame is attached.
+
+use_visual (B):
+if true, include visual element.
+
+use_collision (B):
+if true, include collision element.
+
+use_inertial (B):
+if true, include inertial element.
+
+use_v_mesh (B):
+if true, use a mesh for the visual element. If false, use a primitive box.
+
+v_mesh_use_low_res (B):
+This flag only has effect when use_v_mesh is true.
+In that case, if it is true, use the low-resolution mesh for the visual element. Otherwise, use the
+standard mesh.
+
+color (S):
+String of the form 'r (R) g (R) b (R) a (R)'.
+Used only if use_visual is true.
+If color is not empty, the provided color is applied to the object used in the visual element.
+If color is empty, the mesh color is preserved when available.
+
+use_c_mesh (B):
+if true, use a mesh for the collision element. If false, use a primitive box.
+
+c_mesh_use_low_res (B):
+This flag only has effect when use_c_mesh is true.
+In that case, if it is true, use the low-resolution mesh for the collision element. Otherwise, use
+the standard mesh.
+
+joint_parent_fr_root_fr (S):
+Pose of the lidar's root frame w.r.t the parent's frame.
+joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+sim_lidar_*:
+parameters for the GZ 2D lidar plugin.
+
+sim_lidar_enabled (B):
+if true, include the GZ 2D lidar plugin.
+
+sim_lidar_always_on (B):
+if true, the lidar is always active in simulation.
+
+sim_lidar_visualize (B):
+if true, GZ visualizes the lidar rays in simulation.
+
+sim_lidar_update_rate (R):
+update rate of the lidar in simulation.
+
+sim_lidar_hor_fov_deg (S):
+horizontal field of view, in degrees, as 'min max'.
+
+sim_lidar_hor_res_deg (R):
+horizontal angular resolution, in degrees.
+
+sim_lidar_dist_span (S):
+measurable distance span, in meters, as 'min max'.
+
+sim_lidar_gaussian_noise (S):
+Gaussian noise parameters for range measurements as 'mean stddev'.
+
+sim_lidar_topic (S):
+Topic used by the GZ lidar plugin in simulation. This field is required.
+If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
+namespace.
+-->
+<robot name="hokuyo_utm30lx" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro
+    name="hokuyo_utm30lx"
+    params="name
+            prefix:=''
+            parent_frame
+            use_visual:=True
+            use_collision:=True
+            use_inertial:=True
+            use_v_mesh:=False
+            v_mesh_use_low_res:=True
+            color:=''
+            use_c_mesh:=False
+            c_mesh_use_low_res:=True
+            joint_parent_fr_root_fr
+            sim_lidar_enabled:=True
+            sim_lidar_always_on:=True
+            sim_lidar_visualize:=False
+            sim_lidar_update_rate
+            sim_lidar_hor_fov_deg
+            sim_lidar_hor_res_deg
+            sim_lidar_dist_span
+            sim_lidar_gaussian_noise:='0 0'
+            namespace:=''
+            sim_lidar_topic">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <xacro:property name="mass"   value="0.370"/>
+    <xacro:property name="size_x" value="0.06"/>
+    <xacro:property name="size_y" value="0.06"/>
+    <xacro:property name="size_z" value="0.087"/>
+
+    <!--
+    The mesh represents a box and its frame is located at its geometric center (see MeshLab).
+    Scale is 1 1 1.
+    The standard mesh does not have color information, so passing a visual color is encouraged.
+    -->
+    <xacro:property name="mesh"
+                    value="robotics_description/meshes/sensors/lidars/hokuyo_utm_30lx/mesh.stl"/>
+
+    <!--
+    The mesh represents a box and its frame is located at its geometric center (see MeshLab).
+    Scale is 1 1 1.
+    The mesh can be used for visual or collision. Color only affects the visual element.
+    -->
+    <xacro:property name="low_res_mesh"
+                    value="robotics_description/meshes/sensors/lidars/hokuyo_utm_30lx/mesh_low_res.stl"/>
+
+    <!-- Scale for both meshes, standard mesh and low resolution mesh. -->
+    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+
+    <!--
+    Both meshes, the standard mesh and the low-resolution mesh, are boxes, and the frame of both
+    meshes is located at their geometric center (see MeshLab). Their frames therefore coincide with
+    the frame of a box shape, so just one origin is needed no matter whether use_<v|c>_mesh is
+    true or false.
+    The body frame is located at the center of the bottom face of the box.
+    -->
+    <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * size_z} 0 0 0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_mesh"  value="${(low_res_mesh if v_mesh_use_low_res else mesh) if use_v_mesh else ''}"/>
+        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${v_mesh}"
+                          scale="${mesh_scale}"
+                          mesh_origin="${body_origin}"
+                          size="${size_x} ${size_y} ${size_z}"
+                          shape_origin="${body_origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:property name="c_mesh"
+                        value="${(low_res_mesh if c_mesh_use_low_res else mesh) if use_c_mesh else ''}"/>
+        <xacro:collision_box mesh="${c_mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${body_origin}"
+                             size="${size_x} ${size_y} ${size_z}"
+                             shape_origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${mass}"
+                                 size="${size_x} ${size_y} ${size_z}"
+                                 origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <!--
+    Definition of the joint '${prefix}${name}_root_joint', that joins the lidar root link to
+    its parent frame.
+    -->
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <!-- Definition of the data link '${prefix}${name}_link'. -->
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <!--
+    Definition of the joint '${prefix}${name}_joint', that joins the lidar data link to its root
+    link.
+    This pose sets the position and orientation of the sensor frame with respect the root frame,
+    located at the center of the bottom face of the box.
+    -->
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0.055"/>
+    </joint>
+
+    <!--
+    If sim_lidar_enabled is true and sim_lidar_topic is not empty, include the GZ lidar
+    plugin. If either field is not true, the plugin is not included.
+    -->
+    <xacro:if value="${sim_lidar_enabled and sim_lidar_topic != ''}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_2d_macro.xacro"/>
+
+      <xacro:plugin_lidar_2d
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_lidar_always_on}"
+        visualize="${sim_lidar_visualize}"
+        update_rate="${sim_lidar_update_rate}"
+        hor_fov_deg="${sim_lidar_hor_fov_deg}"
+        hor_res_deg="${sim_lidar_hor_res_deg}"
+        dist_span="${sim_lidar_dist_span}"
+        gaussian_noise="${sim_lidar_gaussian_noise}"
+        namespace="${namespace}"
+        topic="${sim_lidar_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>
