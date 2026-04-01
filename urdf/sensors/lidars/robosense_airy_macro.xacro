@@ -207,10 +207,11 @@ namespace.
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
 
     <!--
-    Since, both, meshes, the standard and the low resolution, are cylinders with their symmetry axis along the z-axis,
-    and the frame of both meshes is located at their geometric center (see MeshLab), their frames coincide with the
-    frame of a cylinder shape, with its symmetry axis along the z-axis, so just one origin is needed no matter if
-    use_<v|c>_mesh is true or false.
+    Since, both, meshes, the standard and the low resolution, are cylinders with their symmetry
+    axis along the z-axis, and the frame of both meshes is located at their geometric center
+    (see MeshLab), their frames coincide with the frame of a cylinder shape, with its symmetry axis
+    along the z-axis, so just one origin is needed no matter whether use_<v|c>_mesh is true or
+    false.
     The body frame is located at the center of the bottom face of the cylinder.
     -->
 
@@ -267,19 +268,20 @@ namespace.
     </link>
 
     <!--
-    Definition of the joint '${prefix}${name}_joint', that joins the lidar data link to its root link.
-    This pose sets the position and orientation of the sensor frame with respect the root frame, located at the center
-    of the bottom face of the cylinder.
-    The Airy sensor is 'ackwardly' designed IMHO (jfrascon), as the light source is not located at the center of the
-    dome, at some height, it is located deviated from the center of the dome, and at some height.
+    Definition of the joint '${prefix}${name}_joint', that joins the lidar data link to its root
+    link.
+    This pose sets the position and orientation of the sensor frame with respect the root frame,
+    located at the center of the bottom face of the cylinder.
+    The Airy sensor is 'ackwardly' designed IMHO (jfrascon), as the light source is not located at
+    the center of the dome, at some height, it is located deviated from the center of the dome, and
+    at some height.
     The location of the optical center is shown in page 63 of the Airy user manual.
     However, on page 27 it is stated that:
     "The origin of the coordinates for the LiDAR is defined at the center of the LiDAR base."
-    Therefore, the driver is making a transformation of the data to provide each point of the point cloud, referred to
-    the center of the base of the sensor.
-    Therefore, for practical purposes, it can be assumed that the data frame is located at the center of the base of the sensor,
-    coinciding with the root frame of the sensor.
-
+    Therefore, the driver is making a transformation of the data to provide each point of the point
+    cloud, referred to the center of the base of the sensor.
+    Therefore, for practical purposes, it can be assumed that the data frame is located at the
+    center of the base of the sensor, coinciding with the root frame of the sensor.
     -->
     <joint name="${prefix}${name}_joint" type="fixed">
       <parent link="${prefix}${name}_root_link"/>

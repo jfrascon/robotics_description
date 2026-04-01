@@ -19,13 +19,6 @@ v_mesh (S): package-relative mesh path used only by the visual element of '${pre
             Ignored when use_visual is false.
 v_mesh_scale (S): Scale of the visual mesh, if use_visual is true and v_mesh is provided.
     v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
-v_mesh_origin (S): String of the form 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)' used to place the visual mesh
-                   w.r.t the frame '${prefix}${name}_rotation_link'. Used only if use_visual is true and v_mesh is provided.
-                   IMPORTANT: The wheel frame convention is fixed:
-                     - +Y is the wheel spin axis.
-                     - +X is the rolling direction.
-                     - +Z points upward.
-                   v_mesh_origin must align the mesh to that convention.
 color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
            If color is not empty, the provided color is applied to the object used in the visual element, either
            a mesh (even if the mesh has its own color) or cylinder shape.
@@ -100,7 +93,6 @@ velocity: 10 to 30 rad/s
                        use_inertial:=true
                        v_mesh:=''
                        v_mesh_scale:='1.0 1.0 1.0'
-                       v_mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
                        color:=''
                        radius
                        length
@@ -125,17 +117,28 @@ velocity: 10 to 30 rad/s
       - +X is rolling direction.
       - +Z points upward.
 
-    If v_mesh is provided, v_mesh_origin must align the mesh to that convention.
-    If v_mesh is empty, a primitive cylinder is used for visual.
+    If a wheel mesh is provided through `v_mesh`, that mesh must be modeled with the wheel "lying on
+    the ground". In that initial orientation, the wheel symmetry axis must be +Z.
 
-    Collision is always enabled and always represented as a primitive cylinder (no collision mesh), to keep contacts
-    stable and fast.
+    This requirement is used so that meshes follow the same initial convention as the primitive
+    cylinder used when `v_mesh` is empty. A URDF cylinder is Z-axis aligned by default.
 
-    Primitive cylinders are Z-axis aligned by default in URDF, so they are rotated by +pi/2 around X using:
-      shape_origin = "0.0 0.0 0.0 0.5*pi 0.0 0.0"
-    The same shape_origin is used by visual primitives and collision primitives.
+    This macro uses the following wheel frame convention:
+      - +Y is wheel spin axis.
+      - +X is rolling direction.
+      - +Z points upward.
+
+    For that reason, both the visual geometry and the collision geometry are rotated by +pi/2 around X
+    before they are attached to '${prefix}${name}_rotation_link'.
+
+    If `v_mesh` is empty, that +pi/2 rotation is applied to the primitive cylinder.
+    If `v_mesh` is provided, the same +pi/2 rotation is applied to the visual mesh.
+
+    Collision is always enabled and always represented as a primitive cylinder.
+    The same +pi/2 rotation is also applied to that collision geometry, so visual and collision use
+    the same wheel orientation.
     -->
-    <xacro:property name="shape_origin" value="0.0 0.0 0.0 ${0.5 * pi} 0.0 0.0"/>
+    <xacro:property name="wheel_origin" value="0.0 0.0 0.0 ${0.5 * pi} 0.0 0.0"/>
 
     <link name="${prefix}${name}_rotation_link">
       <xacro:if value="${use_visual}">
@@ -143,10 +146,10 @@ velocity: 10 to 30 rad/s
                         value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
         <xacro:visual_cylinder mesh="${v_mesh}"
                                scale="${v_mesh_scale}"
-                               mesh_origin="${v_mesh_origin}"
+                               mesh_origin="${wheel_origin}"
                                radius="${radius}"
                                length="${length}"
-                               shape_origin="${shape_origin}"
+                               shape_origin="${wheel_origin}"
                                color="${v_color}"/>
       </xacro:if>
 
@@ -156,14 +159,14 @@ velocity: 10 to 30 rad/s
       -->
       <xacro:collision_cylinder radius="${radius}"
                                 length="${length}"
-                                shape_origin="${shape_origin}"/>
+                                shape_origin="${wheel_origin}"/>
 
       <xacro:if value="${use_inertial}">
       <!--
       The inertia of a solid cylinder with uniform mass distribution, radius and length is used, with symmetry axis
       is the y-axis and center of mass is at the origin of the wheel's frame.
-      For that reason, the origin used is "0 0 0 0 0 0", unlinke the shape_origin used for visual and collision
-      elements.
+      For that reason, the origin used is "0 0 0 0 0 0", unlike the rotated geometry origin used for
+      visual and collision elements.
       In other words, solid_cylinder_inertia_y computes the same inertia as if solid_cylinder_inertia_z were used
       (assuming the cylinder's symmetry axis is along the z-axis, which is the default for a cylinder shape) but using
       origin "0 0 0 0.5*pi 0 0" to rotate the inertia tensor accordingly.
@@ -185,6 +188,10 @@ velocity: 10 to 30 rad/s
 
     <!-- Parsed as [x, y, z, roll, pitch, yaw]. -->
     <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
+
+    <xacro:if value="${len(j) != 6}">
+      ${xacro.fatal("wheel: joint_parent_fr_wheel_fr must have 6 elements: 'x y z roll pitch yaw'")}
+    </xacro:if>
 
     <joint name="${prefix}${name}_rotation_joint" type="${rotation_joint_type}">
       <parent link="${parent_frame}"/>
