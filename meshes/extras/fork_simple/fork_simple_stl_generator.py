@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Generate a simple fork STL using CadQuery boolean unions."""
+"""Generate the fork_simple STL variants using CadQuery geometry.
+
+This script generates the current fork-tines mesh variants. It can generate the
+closed-tines mesh and the open-tines mesh from the same geometry definition.
+
+The rear fork body that joins both tines remains solid. Each tine is modeled as
+a thin-walled box that is closed at the front. When `open_tines` is enabled,
+that front face is moved `pocket_depth_x` meters toward the rear, while the
+outer tine length stays unchanged.
+"""
 
 from __future__ import annotations
 
 import argparse
-from datetime import datetime
 from pathlib import Path
 
 try:
@@ -13,36 +21,44 @@ except ImportError as exc:  # pragma: no cover
     raise SystemExit('cadquery is required for this generator. Install it with: pip install cadquery') from exc
 
 # Editable tine dimensions (meters)
-tine_separation = 0.25
 tine_len_x = 1.20
 tine_len_y = 0.12
 tine_len_z = 0.06
+tine_separation = 0.25
 
 # Editable default dimensions (meters)
+# `tine_union_len_x` is the length in X of the rear block that joins both tines.
 tine_union_len_x = 0.03
+
+# Open-tine dimensions near the tine tip (meters)
+pocket_depth_x = 0.10
+tine_wall_thickness = 0.001
 
 
 def parse_args() -> argparse.Namespace:
-    """Parse command-line arguments for simple fork mesh generation."""
-    script_dir = Path(__file__).resolve().parent
-    default_output = script_dir.joinpath(f'fork_simple_{datetime.now():%Y%m%d}.stl')
-    parser = argparse.ArgumentParser(description='Generate a simple fork STL using CadQuery boolean unions.')
-    parser.add_argument(
-        '--tine-union-len-x',
-        dest='tine_union_len_x',
-        type=float,
-        default=tine_union_len_x,
-        help='Tine-union size in X (m).',
-    )
-    parser.add_argument('--tine-len-z', dest='tine_len_z', type=float, default=tine_len_z, help='Tine size in Z (m).')
-    parser.add_argument('--tine-separation', type=float, default=tine_separation, help='Tine center Y offset in m.')
+    """Parse command-line arguments for the fork-tines mesh generator."""
+    parser = argparse.ArgumentParser(description='Generate fork-tines STL variants using CadQuery geometry.')
     parser.add_argument('--tine-len-x', type=float, default=tine_len_x, help='Tine length in X in m.')
     parser.add_argument('--tine-len-y', type=float, default=tine_len_y, help='Tine width in Y in m.')
+    parser.add_argument('--tine-len-z', type=float, default=tine_len_z, help='Tine size in Z (m).')
+    parser.add_argument('--tine-separation', type=float, default=tine_separation, help='Tine center Y offset in m.')
+    parser.add_argument('--tine-union-len-x', type=float, default=tine_union_len_x, help='Tine-union size in X (m).')
+    parser.add_argument(
+        '--pocket-depth-x',
+        type=float,
+        default=pocket_depth_x,
+        help='Distance from the original tine front face to the shifted front face in open-tines mode (m).',
+    )
+    parser.add_argument(
+        '--open-tines',
+        action='store_true',
+        help='Move the tine front face toward the rear. When omitted, the fork remains closed.',
+    )
     parser.add_argument(
         '--output',
         type=Path,
-        default=default_output,
-        help='Output STL file path (default: same directory as this script).',
+        default=None,
+        help='Output STL file path. When omitted, the default name depends on --open-tines.',
     )
     return parser.parse_args()
 
@@ -50,40 +66,13 @@ def parse_args() -> argparse.Namespace:
 def add_box(
     fork_simple: cq.Workplane, x_min: float, x_max: float, y_min: float, y_max: float, z_min: float, z_max: float
 ) -> cq.Workplane:
-    """Union an axis-aligned box into the current CadQuery solid."""
+    """Union one axis-aligned box into the current CadQuery solid."""
     lx = x_max - x_min
     ly = y_max - y_min
     lz = z_max - z_min
     cx = (x_min + x_max) / 2.0
     cy = (y_min + y_max) / 2.0
     cz = (z_min + z_max) / 2.0
-
-    # This line builds a box from min/max bounds in two conceptual steps:
-    #
-    # 1) cq.Workplane('XY').box(lx, ly, lz, centered=(True, True, True))
-    #    - Creates a box with side lengths (lx, ly, lz), centered at the origin of the final fork body frame (global
-    #      model frame), not at a local frame attached to each individual box.
-    #    - Before translation it occupies:
-    #        X in [-lx/2, +lx/2], Y in [-ly/2, +ly/2], Z in [-lz/2, +lz/2]
-    #
-    # 2) .translate((cx, cy, cz))
-    #    - Moves that centered box so its center is exactly at (cx, cy, cz).
-    #    - After translation, occupied ranges become:
-    #        X in [cx - lx/2, cx + lx/2]
-    #        Y in [cy - ly/2, cy + ly/2]
-    #        Z in [cz - lz/2, cz + lz/2]
-    #
-    # With bounds input:
-    #   lx = x_max - x_min,  cx = (x_min + x_max)/2
-    #   ly = y_max - y_min,  cy = (y_min + y_max)/2
-    #   lz = z_max - z_min,  cz = (z_min + z_max)/2
-    # then:
-    #   x_min = cx - lx/2, x_max = cx + lx/2
-    #   y_min = cy - ly/2, y_max = cy + ly/2
-    #   z_min = cz - lz/2, z_max = cz + lz/2
-    #
-    # So this construction is exactly equivalent to defining a box spanning
-    # [x_min, x_max] x [y_min, y_max] x [z_min, z_max], but expressed in CadQuery's "size + pose" style.
     box = cq.Workplane('XY').box(lx, ly, lz, centered=(True, True, True)).translate((cx, cy, cz))
     return fork_simple.union(box)
 
@@ -91,12 +80,7 @@ def add_box(
 def build_simple_fork(
     tine_union_len_x_m: float, tine_sep_m: float, tine_len_x_m: float, tine_len_y_m: float, tine_len_z_m: float
 ) -> cq.Workplane:
-    """Build fork solid as a union of tine union, tines, and mirrored load stops."""
-    # Frame convention:
-    # - Origin is at the rear face of the tine union, centered in Y, on the bottom plane.
-    # - +X goes from the rear union plate toward the tine tips.
-    # - +Y is the side where the "left tine" is built; the right tine is mirrored to -Y.
-    # - +Z points upward.
+    """Build the baseline simple fork solid as union of boxes."""
     x_min_tine_union = 0.0
     x_max_tine_union = tine_union_len_x_m
     y_min_tine_union = -tine_sep_m / 2.0
@@ -128,7 +112,6 @@ def build_simple_fork(
         z_min_tine_union,
         z_max_tine_union,
     )
-
     fork_simple = add_box(fork_simple, x_min_tine, x_max_tine, y_min_tine, y_max_tine, z_min_tine, z_max_tine)
     fork_simple = add_box(fork_simple, x_min_tine, x_max_tine, -y_max_tine, -y_min_tine, z_min_tine, z_max_tine)
     fork_simple = add_box(
@@ -152,31 +135,179 @@ def build_simple_fork(
     return fork_simple
 
 
-def main() -> None:
-    """Generate the fork mesh with CadQuery and export STL."""
-    args = parse_args()
+def add_hollow_tine(
+    fork_simple: cq.Workplane,
+    *,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    z_min: float,
+    z_max: float,
+    rear_solid_len_x: float,
+    wall_thickness: float,
+    front_face_x_max: float,
+) -> cq.Workplane:
+    """Add one tine as a thin-walled box plus a solid rear attachment block."""
+    rear_solid_x_max = x_min + rear_solid_len_x
+    inner_y_min = y_min + wall_thickness
+    inner_y_max = y_max - wall_thickness
+    inner_z_min = z_min + wall_thickness
+    inner_z_max = z_max - wall_thickness
+    front_face_x_min = front_face_x_max - wall_thickness
 
-    # Basic argument validation: geometric lengths/offsets must be strictly positive.
+    # Solid rear segment that attaches the hollow tine body to the fork trunk.
+    fork_simple = add_box(fork_simple, x_min, rear_solid_x_max, y_min, y_max, z_min, z_max)
+
+    # Bottom and top walls.
+    fork_simple = add_box(fork_simple, x_min, x_max, y_min, y_max, z_min, inner_z_min)
+    fork_simple = add_box(fork_simple, x_min, x_max, y_min, y_max, inner_z_max, z_max)
+
+    # Left and right side walls.
+    fork_simple = add_box(fork_simple, x_min, x_max, y_min, inner_y_min, inner_z_min, inner_z_max)
+    fork_simple = add_box(fork_simple, x_min, x_max, inner_y_max, y_max, inner_z_min, inner_z_max)
+
+    # Front face. In open-tines mode this face is moved toward the rear.
+    fork_simple = add_box(fork_simple, front_face_x_min, front_face_x_max, y_min, y_max, z_min, z_max)
+    return fork_simple
+
+
+def build_open_tines_fork(
+    tine_union_len_x_m: float,
+    tine_sep_m: float,
+    tine_len_x_m: float,
+    tine_len_y_m: float,
+    tine_len_z_m: float,
+    open_tines: bool,
+    pocket_depth_x_m: float,
+    wall_thickness_m: float,
+) -> cq.Shape:
+    """Build the fork variant, optionally moving the tine front face rearward."""
+    x_min_tine_union = 0.0
+    x_max_tine_union = tine_union_len_x_m
+    y_min_tine_union = -tine_sep_m / 2.0
+    y_max_tine_union = tine_sep_m / 2.0
+    z_min_tine_union = 0.0
+    z_max_tine_union = tine_len_z_m
+
+    x_min_tine = 0.0
+    x_max_tine = tine_len_x_m
+    y_min_tine = tine_sep_m / 2.0
+    y_max_tine = y_min_tine + tine_len_y_m
+    z_min_tine = 0.0
+    z_max_tine = tine_len_z_m
+
+    x_min_load_stop = 0.0
+    x_max_load_stop = tine_union_len_x_m
+    y_min_load_stop = tine_sep_m / 2.0
+    y_max_load_stop = y_min_tine + tine_len_y_m
+    z_min_load_stop = tine_len_z_m
+    z_max_load_stop = 2.0 * tine_len_z_m
+
+    front_face_x_max = tine_len_x_m if not open_tines else tine_len_x_m - pocket_depth_x_m
+
+    fork_simple = cq.Workplane('XY')
+    fork_simple = add_box(
+        fork_simple,
+        x_min_tine_union,
+        x_max_tine_union,
+        y_min_tine_union,
+        y_max_tine_union,
+        z_min_tine_union,
+        z_max_tine_union,
+    )
+    fork_simple = add_hollow_tine(
+        fork_simple,
+        x_min=x_min_tine,
+        x_max=x_max_tine,
+        y_min=y_min_tine,
+        y_max=y_max_tine,
+        z_min=z_min_tine,
+        z_max=z_max_tine,
+        rear_solid_len_x=tine_union_len_x_m,
+        wall_thickness=wall_thickness_m,
+        front_face_x_max=front_face_x_max,
+    )
+    fork_simple = add_hollow_tine(
+        fork_simple,
+        x_min=x_min_tine,
+        x_max=x_max_tine,
+        y_min=-y_max_tine,
+        y_max=-y_min_tine,
+        z_min=z_min_tine,
+        z_max=z_max_tine,
+        rear_solid_len_x=tine_union_len_x_m,
+        wall_thickness=wall_thickness_m,
+        front_face_x_max=front_face_x_max,
+    )
+    fork_simple = add_box(
+        fork_simple,
+        x_min_load_stop,
+        x_max_load_stop,
+        y_min_load_stop,
+        y_max_load_stop,
+        z_min_load_stop,
+        z_max_load_stop,
+    )
+    fork_simple = add_box(
+        fork_simple,
+        x_min_load_stop,
+        x_max_load_stop,
+        -y_max_load_stop,
+        -y_min_load_stop,
+        z_min_load_stop,
+        z_max_load_stop,
+    )
+    return fork_simple.val()
+
+
+def main() -> None:
+    """Generate the selected fork-tines mesh variant and export STL."""
+    args = parse_args()
+    script_dir = Path(__file__).resolve().parent
+
+    if args.output is None:
+        default_output_name = 'fork_simple_open_tines.stl' if args.open_tines else 'fork_simple_closed_tines.stl'
+        args.output = script_dir.joinpath(default_output_name)
+
     positive_params = {
-        'tine_union_len_x': args.tine_union_len_x,
-        'tine_len_z': args.tine_len_z,
-        'tine_separation': args.tine_separation,
         'tine_len_x': args.tine_len_x,
         'tine_len_y': args.tine_len_y,
+        'tine_len_z': args.tine_len_z,
+        'tine_separation': args.tine_separation,
+        'tine_union_len_x': args.tine_union_len_x,
+        'pocket_depth_x': args.pocket_depth_x,
     }
     for name, value in positive_params.items():
         if value <= 0.0:
             raise ValueError(f'Invalid argument: {name} must be > 0.0 (got {value}).')
 
-    fork_simple = build_simple_fork(
+    if args.pocket_depth_x >= args.tine_len_x:
+        raise ValueError('pocket_depth_x must be smaller than tine_len_x.')
+
+    if tine_wall_thickness <= 0.0:
+        raise ValueError('tine_wall_thickness must be > 0.0.')
+
+    if 2.0 * tine_wall_thickness >= args.tine_len_y:
+        raise ValueError('2 * tine_wall_thickness must be smaller than tine_len_y.')
+
+    if 2.0 * tine_wall_thickness >= args.tine_len_z:
+        raise ValueError('2 * tine_wall_thickness must be smaller than tine_len_z.')
+
+    if args.open_tines and args.pocket_depth_x <= tine_wall_thickness:
+        raise ValueError('pocket_depth_x must be larger than tine_wall_thickness in open-tines mode.')
+
+    fork_simple = build_open_tines_fork(
         tine_union_len_x_m=args.tine_union_len_x,
         tine_sep_m=args.tine_separation,
         tine_len_x_m=args.tine_len_x,
         tine_len_y_m=args.tine_len_y,
         tine_len_z_m=args.tine_len_z,
+        open_tines=args.open_tines,
+        pocket_depth_x_m=args.pocket_depth_x,
+        wall_thickness_m=tine_wall_thickness,
     )
 
-    # Export tessellated STL from unified B-Rep.
     cq.exporters.export(fork_simple, str(args.output))
 
     print(
@@ -186,6 +317,8 @@ def main() -> None:
         f'tine_separation={args.tine_separation}, '
         f'tine_len_x={args.tine_len_x}, '
         f'tine_len_y={args.tine_len_y}, '
+        f'open_tines={args.open_tines}, '
+        f'pocket_depth_x={args.pocket_depth_x}, '
         f'output={args.output}).'
     )
 

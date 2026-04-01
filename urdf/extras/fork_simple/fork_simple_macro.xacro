@@ -5,10 +5,14 @@ It reuses the generic `fork_simple_links_joints` macro and provides the referenc
 and scaling rules needed to describe a concrete `fork_simple` instance.
 
 Reference mesh path:
-robotics_description/meshes/extras/fork_simple/fork_simple.stl
+    robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl
 
-Companion MeshLab report for that reference mesh:
-robotics_description/meshes/extras/fork_simple/fork_simple_meshlab_geometric_measures.txt
+Alternative reference mesh path used when `open_tines:=True`:
+robotics_description/meshes/extras/fork_simple/fork_simple_open_tines.stl
+
+Companion MeshLab reports for the two reference meshes:
+robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines_meshlab_geometric_measures.txt
+robotics_description/meshes/extras/fork_simple/fork_simple_open_tines_meshlab_geometric_measures.txt
 
 Inertia-scaling procedure:
 robotics_description/doc/how_to_compute_inertia_w_meshlab.md
@@ -39,6 +43,7 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
                        use_inertial:=True
                        color:='0.0 0.0 0.0 1.0'
                        limits:='0.0 0.0 1000.0 1000.0'
+                       open_tines:=False
                        joint_parent_fr_root_fr">
 
     <xacro:property name="scale_seq" value="${scale.split()}"/>
@@ -65,8 +70,18 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
     - +Z: upward.
     Therefore, when integrating this fork model on a robot, `joint_parent_fr_root_fr` must be chosen
     consistently with that frame convention.
+
+    `open_tines` selects which STL variant is sent to visual and collision:
+    - False: `fork_simple_closed_tines.stl`
+    - True:  `fork_simple_open_tines.stl`
     -->
-    <xacro:property name="mesh" value="robotics_description/meshes/extras/fork_simple/fork_simple.stl"/>
+    <xacro:property name="mesh_closed"
+                    value="robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl"/>
+
+    <xacro:property name="mesh_open"
+                    value="robotics_description/meshes/extras/fork_simple/fork_simple_open_tines.stl"/>
+
+    <xacro:property name="mesh"       value="${mesh_open if open_tines else mesh_closed}"/>
     <xacro:property name="mesh_scale" value="${sx} ${sy} ${sz}"/>
 
     <!--
@@ -116,11 +131,64 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
       - second moments and products of inertia are recomputed with the anisotropic-scaling factors
       - the resulting rho=1 inertia tensor is multiplied by `density` to obtain the real inertia tensor
       -->
-      <xacro:property name="mass_ref_real"        value="100.0"/>
-      <xacro:property name="center_of_mass_ref_x" value="0.571591"/>
-      <xacro:property name="center_of_mass_ref_y" value="0.000000"/>
-      <xacro:property name="center_of_mass_ref_z" value="0.031427"/>
-      <xacro:property name="mesh_volume_ref"      value="0.018162"/>
+      <xacro:property name="mass_ref_real" value="100.0"/>
+
+      <!--
+      Reference inertial data is selected from the MeshLab report that matches
+      the STL variant chosen by `open_tines`.
+      -->
+      <xacro:property name="center_of_mass_ref_x_closed" value="0.253826"/>
+      <xacro:property name="center_of_mass_ref_y_closed" value="0.000000"/>
+      <xacro:property name="center_of_mass_ref_z_closed" value="0.041996"/>
+      <xacro:property name="mesh_volume_ref_closed"      value="0.002161"/>
+      <xacro:property name="ixx_ref_closed"              value="0.000066"/>
+      <xacro:property name="ixy_ref_closed"              value="0.000000"/>
+      <xacro:property name="ixz_ref_closed"              value="0.000006"/>
+      <xacro:property name="iyy_ref_closed"              value="0.000293"/>
+      <xacro:property name="iyz_ref_closed"              value="0.000000"/>
+      <xacro:property name="izz_ref_closed"              value="0.000355"/>
+
+      <xacro:property name="center_of_mass_ref_x_open" value="0.253193"/>
+      <xacro:property name="center_of_mass_ref_y_open" value="0.000000"/>
+      <xacro:property name="center_of_mass_ref_z_open" value="0.041996"/>
+      <xacro:property name="mesh_volume_ref_open"      value="0.002161"/>
+      <xacro:property name="ixx_ref_open"              value="0.000066"/>
+      <xacro:property name="ixy_ref_open"              value="0.000000"/>
+      <xacro:property name="ixz_ref_open"              value="0.000006"/>
+      <xacro:property name="iyy_ref_open"              value="0.000291"/>
+      <xacro:property name="iyz_ref_open"              value="0.000000"/>
+      <xacro:property name="izz_ref_open"              value="0.000352"/>
+
+      <xacro:property name="center_of_mass_ref_x"
+                      value="${center_of_mass_ref_x_open if open_tines else center_of_mass_ref_x_closed}"/>
+
+      <xacro:property name="center_of_mass_ref_y"
+                      value="${center_of_mass_ref_y_open if open_tines else center_of_mass_ref_y_closed}"/>
+
+      <xacro:property name="center_of_mass_ref_z"
+                      value="${center_of_mass_ref_z_open if open_tines else center_of_mass_ref_z_closed}"/>
+
+      <xacro:property name="mesh_volume_ref"
+                      value="${mesh_volume_ref_open if open_tines else mesh_volume_ref_closed}"/>
+
+      <xacro:property name="ixx_ref"
+                      value="${ixx_ref_open if open_tines else ixx_ref_closed}"/>
+
+      <xacro:property name="ixy_ref"
+                      value="${ixy_ref_open if open_tines else ixy_ref_closed}"/>
+
+      <xacro:property name="ixz_ref"
+                      value="${ixz_ref_open if open_tines else ixz_ref_closed}"/>
+
+      <xacro:property name="iyy_ref"
+                      value="${iyy_ref_open if open_tines else iyy_ref_closed}"/>
+
+      <xacro:property name="iyz_ref"
+                      value="${iyz_ref_open if open_tines else iyz_ref_closed}"/>
+
+      <xacro:property name="izz_ref"
+                      value="${izz_ref_open if open_tines else izz_ref_closed}"/>
+
       <xacro:property name="density_scale"        value="${mass_ref_real / mesh_volume_ref}"/>
       <xacro:property name="mesh_volume"          value="${mesh_volume_ref * sx * sy * sz}"/>
       <xacro:property name="mass"                 value="${mass_ref_real * sx * sy * sz}"/>
@@ -128,13 +196,6 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
       <xacro:property name="center_of_mass_y"     value="${sy * center_of_mass_ref_y}"/>
       <xacro:property name="center_of_mass_z"     value="${sz * center_of_mass_ref_z}"/>
       <xacro:property name="center_of_mass"       value="${center_of_mass_x} ${center_of_mass_y} ${center_of_mass_z}"/>
-
-      <xacro:property name="ixx_ref" value="0.000637"/>
-      <xacro:property name="ixy_ref" value="0.000000"/>
-      <xacro:property name="ixz_ref" value="0.000014"/>
-      <xacro:property name="iyy_ref" value="0.002368"/>
-      <xacro:property name="iyz_ref" value="0.000000"/>
-      <xacro:property name="izz_ref" value="0.002991"/>
 
       <!-- Recover the reference second moments from the reference inertia tensor. -->
       <xacro:property name="jx_ref" value="${0.5 * (iyy_ref + izz_ref - ixx_ref)}"/>

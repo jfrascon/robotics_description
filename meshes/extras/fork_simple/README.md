@@ -32,64 +32,74 @@ Install dependency:
 python3 -m pip install --user cadquery
 ```
 
-Generate STL with defaults:
+Generate the default closed-tines STL:
 
 ```bash
 python3 fork_simple_stl_generator.py
 ```
 
+Generate the open-tines variant explicitly:
+
+```bash
+python3 fork_simple_stl_generator.py --open-tines
+```
+
+The rear fork body that joins both tines remains solid in both modes. Each tine
+is modeled as a thin-walled box. When `--open-tines` is enabled, the front face
+of that box is moved toward the rear and the outer tine length stays unchanged.
+
 Default values used by the script (meters):
 
-- `tine_union_len_x = 0.03`
-- `tine_separation = 0.25`
 - `tine_len_x = 1.20`
 - `tine_len_y = 0.12`
 - `tine_len_z = 0.06`
+- `tine_separation = 0.25`
+- `tine_union_len_x = 0.03`
+- `pocket_depth_x = 0.10`
 
-Default output:
+Default outputs:
 
-- `fork_simple_YYYYMMDD.stl` in the same directory as the script (`YYYYMMDD` = year, month, day).
+- `fork_simple_closed_tines.stl` when `--open-tines` is not passed
+- `fork_simple_open_tines.stl` when `--open-tines` is passed
 
-Main parameters:
+Script parameters:
 
-- `--tine-union-len-x`
-- `--tine-separation`
 - `--tine-len-x`
 - `--tine-len-y`
 - `--tine-len-z`
+- `--tine-separation`
+- `--tine-union-len-x`
+- `--open-tines`
+- `--pocket-depth-x`
 - `--output`
+
+`pocket_depth_x` controls how far the tine front face is moved toward the rear
+in open-tines mode. The default value is `0.10 m`.
+
+`--open-tines` is disabled by default. When it is not passed, the script keeps
+the tines closed and generates the closed-tines mesh.
+
+To regenerate the two STL files used by the current macro in one step, run:
+
+```bash
+./create_fork_simple_stl_meshes.sh
+```
 
 ## URDF/Xacro integration
 
-The generated mesh is consumed by the generic macro:
+The generated mesh is used by the generic macro:
 
 - [`urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro`](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro)
 
-For each concrete fork model, create a dedicated macro that calls the generic [`fork_simple`
-macro](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro) with fixed parameters.
-Typical fixed values are the mesh path, geometry dimensions, mass, inertia tensor terms, and center of mass.
+The concrete `fork_simple` wrapper uses two STL files:
 
-Example:
+- `fork_simple_closed_tines.stl`
+- `fork_simple_open_tines.stl`
 
-- `urdf/extras/fork_simple/fork_simple_macro.xacro`
+It also uses two MeshLab reports:
 
-To make each fork model self-contained, traceable, and easy to regenerate, use one subfolder per model containing:
+- `fork_simple_closed_tines_meshlab_geometric_measures.txt`
+- `fork_simple_open_tines_meshlab_geometric_measures.txt`
 
-- the STL file,
-- a shell script named `create_stl_mesh.sh` in that same folder
-  (it invokes `fork_simple_stl_generator.py` with explicit flags),
-- and a MeshLab geometric-measures text file.
-
-Why this layout:
-
-- It keeps the STL file together with the exact command and parameters used to generate it.
-- It avoids losing parameters over time when only STL files remain.
-- It scales well for future variants (`fork_simple_1`, `fork_simple_2`, ...).
-- MeshLab results are directly available when filling inertia/CoM fields in Xacro.
-  For the computation and scaling procedure, see `doc/how_to_compute_inertia_w_meshlab.md`.
-
-Current example:
-
-- `meshes/extras/fork_simple/fork_simple_0/fork_simple_0.stl`
-- `meshes/extras/fork_simple/fork_simple_0/create_stl_mesh.sh`
-- `meshes/extras/fork_simple/fork_simple_0/meshlab_geometric_measures.txt`
+The wrapper macro selects the matching mesh and the matching inertial reference
+data according to the provided value of `open_tines`.
