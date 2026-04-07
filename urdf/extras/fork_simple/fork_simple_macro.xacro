@@ -1,243 +1,363 @@
 <?xml version="1.0"?>
 <!--
-This file defines the public `fork_simple` model macro.
-It reuses the generic `fork_simple_links_joints` macro and provides the reference geometry, reference inertial data,
-and scaling rules needed to describe a concrete `fork_simple` instance.
+This file defines the public `fork_simple` macro.
 
-Reference mesh path:
-    robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl
+The macro publishes these links:
+  - `${prefix}${name}_root_link`
+  - `${prefix}${name}_carriage_link`
+  - `${prefix}${name}_left_tine_stop_link`
+  - `${prefix}${name}_left_tine_link`
+  - `${prefix}${name}_right_tine_stop_link`
+  - `${prefix}${name}_right_tine_link`
 
-Alternative reference mesh path used when `open_tines:=True`:
-robotics_description/meshes/extras/fork_simple/fork_simple_open_tines.stl
+The macro publishes these joints:
+  - one fixed joint from `parent_frame` to `${prefix}${name}_root_link`
+  - one prismatic joint from `${prefix}${name}_root_link` to
+    `${prefix}${name}_carriage_link`
+  - four fixed joints from `${prefix}${name}_carriage_link` to the tine-stop and
+    tine links
 
-Companion MeshLab reports for the two reference meshes:
-robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines_meshlab_geometric_measures.txt
-robotics_description/meshes/extras/fork_simple/fork_simple_open_tines_meshlab_geometric_measures.txt
+This macro does not resize the fork from a scale factor. The fork dimensions are
+fixed in this file:
+  - tine length, width, and thickness
+  - tine separation
+  - carriage size
+  - tine mass, tine-stop mass, and carriage mass
 
-Inertia-scaling procedure:
-robotics_description/doc/how_to_compute_inertia_w_meshlab.md
-MeshLab works with rho=1 (it does not model a specific material here), so the reference volume and the reference
-inertia tensor stored below correspond to the reference mesh with unit density.
+Visual and collision are selected independently:
+  - `use_visual` enables or disables all visual blocks
+  - `use_collision` enables or disables all collision blocks
+  - `use_v_mesh` selects mesh or primitive box for tine visual geometry
+  - `use_c_mesh` selects mesh or primitive box for tine collision geometry
 
-This macro interprets `scale='sx sy sz'` as a geometric scaling of that reference mesh and of the fork geometry
-derived from it.
-- The mesh sent to visual and collision is scaled through `mesh_scale`.
-- Geometric values such as tine sizes and tine separation are recomputed from the same `sx sy sz`.
-- The center of mass is scaled component-wise from the reference center of mass.
-- The mass scales with volume, which means constant density is assumed across scaled variants.
-- The inertia tensor is recomputed for anisotropic scaling (`sx`, `sy`, `sz` can differ), instead of applying a
-  single scalar factor to the reference tensor.
+The carriage and both tine-stop links are always represented as primitive boxes.
+The tine mesh path is fixed in this file and is not an external argument.
 
-The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
+The `limits` argument is interpreted as `lower upper velocity effort`.
+The `joint_parent_fr_root_fr` argument is interpreted as
+`x y z roll pitch yaw`.
 -->
 <robot name="fork_simple" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-
-  <!-- Import the generic links-and-joints implementation used by the concrete fork model wrapper below. -->
-  <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro"/>
 
   <xacro:macro name="fork_simple"
                params="name:='fork_simple'
                        prefix:=''
                        parent_frame
-                       scale:='1.0 1.0 1.0'
+                       use_visual:=True
+                       use_collision:=True
                        use_inertial:=True
-                       color:='0.0 0.0 0.0 1.0'
+                       use_v_mesh:=True
+                       color:=''
+                       use_c_mesh:=False
+                       carriage_len_x:='0.03'
+                       carriage_len_y
                        limits:='0.0 0.0 1000.0 1000.0'
-                       open_tines:=False
                        joint_parent_fr_root_fr">
 
-    <xacro:property name="scale_seq" value="${scale.split()}"/>
+    <xacro:property name="tine_mesh"
+                    value="robotics_description/meshes/extras/fork_tine/basic_open_tine_120.stl"/>
 
-    <xacro:if value="${len(scale_seq) != 3}">
-      ${xacro.fatal("fork_simple macro: invalid scale. Expected: 'sx sy sz'")}
+    <xacro:property name="tine_size_x"     value="1.20"/>
+    <xacro:property name="tine_size_y"     value="0.12"/>
+    <xacro:property name="tine_size_z"     value="0.06"/>
+    <xacro:property name="tine_separation" value="0.25"/>
+    <xacro:property name="tine_mass"       value="20.0"/>
+    <xacro:property name="min_carriage_len_y"
+                    value="${tine_separation + (2 * tine_size_y)}"/>
+
+    <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+
+    <xacro:if value="${float(carriage_len_x) &lt;= 0.0}">
+      ${xacro.fatal("fork_simple macro: carriage_len_x must be > 0")}
     </xacro:if>
 
-    <!-- Convert the three scale components to floats so geometry, mass, and inertia can be recomputed from them. -->
-    <xacro:property name="sx" value="${float(scale_seq[0])}"/>
-    <xacro:property name="sy" value="${float(scale_seq[1])}"/>
-    <xacro:property name="sz" value="${float(scale_seq[2])}"/>
-
-    <xacro:if value="${sx &lt;= 0.0 or sy &lt;= 0.0 or sz &lt;= 0.0}">
-      ${xacro.fatal("fork_simple macro: scale values must be > 0")}
+    <xacro:if value="${float(carriage_len_y) &lt; min_carriage_len_y}">
+      ${xacro.fatal("fork_simple macro: carriage_len_y must be at least tine_separation + 2*tine_size_y")}
     </xacro:if>
 
     <!--
-    Model-specific mesh path (package-relative, without package:// prefix).
-    The reference mesh frame is expected to follow the generator convention:
-    - Origin: rear face of the tine union, centered in Y, on the bottom plane.
-    - +X: from the rear union plate toward the tine tips.
-    - +Y: side where the left tine is built (right tine is mirrored to -Y).
-    - +Z: upward.
-    Therefore, when integrating this fork model on a robot, `joint_parent_fr_root_fr` must be chosen
-    consistently with that frame convention.
-
-    `open_tines` selects which STL variant is sent to visual and collision:
-    - False: `fork_simple_closed_tines.stl`
-    - True:  `fork_simple_open_tines.stl`
+    Use 20 kg when `carriage_len_y == min_carriage_len_y`.
+    For larger carriage widths, scale the carriage mass linearly with `carriage_len_y`.
     -->
-    <xacro:property name="mesh_closed"
-                    value="robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl"/>
-
-    <xacro:property name="mesh_open"
-                    value="robotics_description/meshes/extras/fork_simple/fork_simple_open_tines.stl"/>
-
-    <xacro:property name="mesh"       value="${mesh_open if open_tines else mesh_closed}"/>
-    <xacro:property name="mesh_scale" value="${sx} ${sy} ${sz}"/>
+    <xacro:property name="carriage_mass" value="${20.0 * (float(carriage_len_y) / min_carriage_len_y)}"/>
 
     <!--
-    Reference geometry constants (meters), matching the reference mesh generator inputs.
-    These values are scaled below with `sx`, `sy`, and `sz` before they are passed to the generic links-and-joints
-    macro.
+    Use 10 kg when `carriage_len_x == 0.06`.
+    For larger or smaller carriage lengths, scale the tine-stop mass linearly with
+    `carriage_len_x`.
     -->
-    <xacro:property name="tine_size_x_ref"       value="1.20"/>
-    <xacro:property name="tine_size_y_ref"       value="0.12"/>
-    <xacro:property name="tine_size_z_ref"       value="0.06"/>
-    <xacro:property name="tine_separation_ref"   value="0.25"/>
-    <xacro:property name="tine_union_size_x_ref" value="0.03"/>
+    <xacro:property name="tine_stop_mass" value="${10.0 * (float(carriage_len_x) / 0.06)}"/>
 
-    <xacro:property name="tine_size_x"       value="${sx * tine_size_x_ref}"/>
-    <xacro:property name="tine_size_y"       value="${sy * tine_size_y_ref}"/>
-    <xacro:property name="tine_size_z"       value="${sz * tine_size_z_ref}"/>
-    <xacro:property name="tine_size"         value="${tine_size_x} ${tine_size_y} ${tine_size_z}"/>
-    <xacro:property name="tine_separation"   value="${sy * tine_separation_ref}"/>
-    <xacro:property name="tine_union_size_x" value="${sx * tine_union_size_x_ref}"/>
+    <link name="${prefix}${name}_root_link">
+      <xacro:null_inertia/>
+    </link>
 
-    <!-- Path for simulation setups where inertial data is intentionally disabled. -->
-    <xacro:unless value="${use_inertial}">
-      <xacro:fork_simple_links_joints name="${name}"
-                                      prefix="${prefix}"
-                                      parent_frame="${parent_frame}"
-                                      mesh="${mesh}"
-                                      mesh_scale="${mesh_scale}"
-                                      color="${color}"
-                                      tine_size="${tine_size}"
-                                      tine_separation="${tine_separation}"
-                                      tine_union_size_x="${tine_union_size_x}"
-                                      limits="${limits}"
-                                      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
-    </xacro:unless>
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
 
-    <!-- Inertial path: scale the reference fork geometry, mass, center of mass, and inertia tensor consistently. -->
-    <xacro:if value="${use_inertial}">
-      <!--
-      The reference mesh was measured in MeshLab with rho=1, so the stored volume and inertia tensor below are
-      unit-density reference values. The physical reference model used in this macro has a real mass of 100 kg at
-      scale 1.0. Therefore, the real material density used for all scaled variants is:
-        density = mass_ref_real / mesh_volume_ref
-
-      Once `sx`, `sy`, and `sz` are known:
-      - volume scales as `sx * sy * sz`
-      - center of mass scales component-wise
-      - second moments and products of inertia are recomputed with the anisotropic-scaling factors
-      - the resulting rho=1 inertia tensor is multiplied by `density` to obtain the real inertia tensor
-      -->
-      <xacro:property name="mass_ref_real" value="100.0"/>
-
-      <!--
-      Reference inertial data is selected from the MeshLab report that matches
-      the STL variant chosen by `open_tines`.
-      -->
-      <xacro:property name="center_of_mass_ref_x_closed" value="0.253826"/>
-      <xacro:property name="center_of_mass_ref_y_closed" value="0.000000"/>
-      <xacro:property name="center_of_mass_ref_z_closed" value="0.041996"/>
-      <xacro:property name="mesh_volume_ref_closed"      value="0.002161"/>
-      <xacro:property name="ixx_ref_closed"              value="0.000066"/>
-      <xacro:property name="ixy_ref_closed"              value="0.000000"/>
-      <xacro:property name="ixz_ref_closed"              value="0.000006"/>
-      <xacro:property name="iyy_ref_closed"              value="0.000293"/>
-      <xacro:property name="iyz_ref_closed"              value="0.000000"/>
-      <xacro:property name="izz_ref_closed"              value="0.000355"/>
-
-      <xacro:property name="center_of_mass_ref_x_open" value="0.253193"/>
-      <xacro:property name="center_of_mass_ref_y_open" value="0.000000"/>
-      <xacro:property name="center_of_mass_ref_z_open" value="0.041996"/>
-      <xacro:property name="mesh_volume_ref_open"      value="0.002161"/>
-      <xacro:property name="ixx_ref_open"              value="0.000066"/>
-      <xacro:property name="ixy_ref_open"              value="0.000000"/>
-      <xacro:property name="ixz_ref_open"              value="0.000006"/>
-      <xacro:property name="iyy_ref_open"              value="0.000291"/>
-      <xacro:property name="iyz_ref_open"              value="0.000000"/>
-      <xacro:property name="izz_ref_open"              value="0.000352"/>
-
-      <xacro:property name="center_of_mass_ref_x"
-                      value="${center_of_mass_ref_x_open if open_tines else center_of_mass_ref_x_closed}"/>
-
-      <xacro:property name="center_of_mass_ref_y"
-                      value="${center_of_mass_ref_y_open if open_tines else center_of_mass_ref_y_closed}"/>
-
-      <xacro:property name="center_of_mass_ref_z"
-                      value="${center_of_mass_ref_z_open if open_tines else center_of_mass_ref_z_closed}"/>
-
-      <xacro:property name="mesh_volume_ref"
-                      value="${mesh_volume_ref_open if open_tines else mesh_volume_ref_closed}"/>
-
-      <xacro:property name="ixx_ref"
-                      value="${ixx_ref_open if open_tines else ixx_ref_closed}"/>
-
-      <xacro:property name="ixy_ref"
-                      value="${ixy_ref_open if open_tines else ixy_ref_closed}"/>
-
-      <xacro:property name="ixz_ref"
-                      value="${ixz_ref_open if open_tines else ixz_ref_closed}"/>
-
-      <xacro:property name="iyy_ref"
-                      value="${iyy_ref_open if open_tines else iyy_ref_closed}"/>
-
-      <xacro:property name="iyz_ref"
-                      value="${iyz_ref_open if open_tines else iyz_ref_closed}"/>
-
-      <xacro:property name="izz_ref"
-                      value="${izz_ref_open if open_tines else izz_ref_closed}"/>
-
-      <xacro:property name="density_scale"        value="${mass_ref_real / mesh_volume_ref}"/>
-      <xacro:property name="mesh_volume"          value="${mesh_volume_ref * sx * sy * sz}"/>
-      <xacro:property name="mass"                 value="${mass_ref_real * sx * sy * sz}"/>
-      <xacro:property name="center_of_mass_x"     value="${sx * center_of_mass_ref_x}"/>
-      <xacro:property name="center_of_mass_y"     value="${sy * center_of_mass_ref_y}"/>
-      <xacro:property name="center_of_mass_z"     value="${sz * center_of_mass_ref_z}"/>
-      <xacro:property name="center_of_mass"       value="${center_of_mass_x} ${center_of_mass_y} ${center_of_mass_z}"/>
-
-      <!-- Recover the reference second moments from the reference inertia tensor. -->
-      <xacro:property name="jx_ref" value="${0.5 * (iyy_ref + izz_ref - ixx_ref)}"/>
-      <xacro:property name="jy_ref" value="${0.5 * (ixx_ref + izz_ref - iyy_ref)}"/>
-      <xacro:property name="jz_ref" value="${0.5 * (ixx_ref + iyy_ref - izz_ref)}"/>
-
-      <!-- Scale the rho=1 second moments and products of inertia for the anisotropic scaling `sx sy sz`. -->
-      <xacro:property name="jx_scaled_ref"  value="${(sx ** 3) * sy * sz * jx_ref}"/>
-      <xacro:property name="jy_scaled_ref"  value="${sx * (sy ** 3) * sz * jy_ref}"/>
-      <xacro:property name="jz_scaled_ref"  value="${sx * sy * (sz ** 3) * jz_ref}"/>
-
-      <xacro:property name="ixy_scaled_ref" value="${(sx ** 2) * (sy ** 2) * sz * ixy_ref}"/>
-      <xacro:property name="ixz_scaled_ref" value="${(sx ** 2) * sy * (sz ** 2) * ixz_ref}"/>
-      <xacro:property name="iyz_scaled_ref" value="${sx * (sy ** 2) * (sz ** 2) * iyz_ref}"/>
-
-      <!-- Rebuild the scaled rho=1 inertia tensor and then convert it to the real fork mass using `density_scale`. -->
-      <xacro:property name="ixx_scaled_ref" value="${jy_scaled_ref + jz_scaled_ref}"/>
-      <xacro:property name="iyy_scaled_ref" value="${jx_scaled_ref + jz_scaled_ref}"/>
-      <xacro:property name="izz_scaled_ref" value="${jx_scaled_ref + jy_scaled_ref}"/>
-
-      <xacro:property name="ixx" value="${density_scale * ixx_scaled_ref}"/>
-      <xacro:property name="ixy" value="${density_scale * ixy_scaled_ref}"/>
-      <xacro:property name="ixz" value="${density_scale * ixz_scaled_ref}"/>
-      <xacro:property name="iyy" value="${density_scale * iyy_scaled_ref}"/>
-      <xacro:property name="iyz" value="${density_scale * iyz_scaled_ref}"/>
-      <xacro:property name="izz" value="${density_scale * izz_scaled_ref}"/>
-      <xacro:property name="inertial_elements" value="${ixx} ${ixy} ${ixz} ${iyy} ${iyz} ${izz}"/>
-
-      <xacro:fork_simple_links_joints name="${name}"
-                                      prefix="${prefix}"
-                                      parent_frame="${parent_frame}"
-                                      mesh="${mesh}"
-                                      mesh_scale="${mesh_scale}"
-                                      color="${color}"
-                                      mass="${mass}"
-                                      tine_size="${tine_size}"
-                                      tine_separation="${tine_separation}"
-                                      tine_union_size_x="${tine_union_size_x}"
-                                      inertial_elements="${inertial_elements}"
-                                      center_of_mass="${center_of_mass}"
-                                      limits="${limits}"
-                                      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+    <xacro:if value="${len(j) != 6}">
+      ${xacro.fatal("fork_simple macro: invalid joint_parent_fr_root_fr. Expected: 'x y z roll pitch yaw'")}
     </xacro:if>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <!--
+    The carriage is the part moved by the prismatic joint.
+    Both tine links and both tine-stop links are attached to the carriage with fixed
+    joints, so they move together with the carriage.
+    -->
+    <xacro:property name="carriage_len_z" value="${tine_size_z}"/>
+
+    <xacro:property name="carriage_origin_x" value="${0.5 * carriage_len_x}"/>
+    <xacro:property name="carriage_origin_y" value="0"/>
+    <xacro:property name="carriage_origin_z" value="${0.5 * tine_size_z}"/>
+
+    <link name="${prefix}${name}_carriage_link">
+      <xacro:if value="${use_visual}">
+        <visual>
+          <geometry>
+            <box size="${carriage_len_x} ${carriage_len_y} ${carriage_len_z}"/>
+          </geometry>
+          <origin rpy="0 0 0" xyz="${carriage_origin_x} ${carriage_origin_y} ${carriage_origin_z}"/>
+          <xacro:if value="${color != ''}">
+            <material name="${prefix}${name}_color">
+              <color rgba="${color}"/>
+            </material>
+          </xacro:if>
+        </visual>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <collision>
+          <geometry>
+            <box size="${carriage_len_x} ${carriage_len_y} ${carriage_len_z}"/>
+          </geometry>
+          <origin rpy="0 0 0" xyz="${carriage_origin_x} ${carriage_origin_y} ${carriage_origin_z}"/>
+        </collision>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertial mass="${carriage_mass}"
+                                  size="${carriage_len_x} ${carriage_len_y} ${carriage_len_z}"
+                                  origin="${carriage_origin_x} ${carriage_origin_y} ${carriage_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <xacro:property name="limits_seq" value="${limits.split()}"/>
+
+    <xacro:if value="${len(limits_seq) != 4}">
+      ${xacro.fatal("fork_simple macro: invalid limits. Expected: 'lower upper velocity effort'")}
+    </xacro:if>
+
+    <xacro:property name="lower_limit"    value="${float(limits_seq[0])}"/>
+    <xacro:property name="upper_limit"    value="${float(limits_seq[1])}"/>
+    <xacro:property name="velocity_limit" value="${float(limits_seq[2])}"/>
+    <xacro:property name="effort_limit"   value="${float(limits_seq[3])}"/>
+
+    <xacro:if value="${lower_limit > upper_limit}">
+      ${xacro.fatal("fork_simple macro: lower_limit must be &lt;= upper_limit")}
+    </xacro:if>
+
+    <xacro:if value="${effort_limit &lt;= 0.0 or velocity_limit &lt;= 0.0}">
+      ${xacro.fatal("fork_simple macro: effort_limit and velocity_limit must be > 0")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_carriage_joint" type="prismatic">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_carriage_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <axis xyz="0 0 1"/>
+      <limit lower="${lower_limit}"
+             upper="${upper_limit}"
+             effort="${effort_limit}"
+             velocity="${velocity_limit}"/>
+    </joint>
+
+    <!-- Left tine-stop link. This is the rear stop box for the left tine. -->
+
+    <xacro:property name="tine_stop_len_x" value="${carriage_len_x}"/>
+    <xacro:property name="tine_stop_len_y" value="${tine_size_y}"/>
+    <xacro:property name="tine_stop_len_z" value="${2 * tine_size_z}"/>
+
+    <xacro:property name="tine_stop_origin_x" value="${-0.5 * tine_stop_len_x}"/>
+    <xacro:property name="tine_stop_origin_y" value="0"/>
+    <xacro:property name="tine_stop_origin_z" value="0"/>
+
+    <link name="${prefix}${name}_left_tine_stop_link">
+      <xacro:if value="${use_visual}">
+        <visual>
+          <geometry>
+            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+          </geometry>
+          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+          <xacro:if value="${color != ''}">
+            <material name="${prefix}${name}_color">
+              <color rgba="${color}"/>
+            </material>
+          </xacro:if>
+        </visual>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <collision>
+          <geometry>
+            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+          </geometry>
+          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+        </collision>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertial mass="${tine_stop_mass}"
+                                  size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"
+                                  origin="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <xacro:property name="tine_stop_mount_x" value="${carriage_len_x}"/>
+    <xacro:property name="tine_stop_mount_y" value="${0.5*(tine_separation + tine_size_y)}"/>
+    <xacro:property name="tine_stop_mount_z" value="${2*tine_size_z}"/>
+
+    <joint name="${prefix}${name}_left_tine_stop_joint" type="fixed">
+      <parent link="${prefix}${name}_carriage_link"/>
+      <child link="${prefix}${name}_left_tine_stop_link"/>
+      <origin rpy="0 0 0" xyz="${tine_stop_mount_x} ${tine_stop_mount_y} ${tine_stop_mount_z}"/>
+    </joint>
+
+    <!-- Left tine link. This is the main load-bearing tine geometry. -->
+
+    <xacro:property name="tine_origin_x" value="0"/>
+    <xacro:property name="tine_origin_y" value="0"/>
+    <xacro:property name="tine_origin_z" value="${-0.5 * tine_size_z}"/>
+
+    <link name="${prefix}${name}_left_tine_link">
+      <xacro:if value="${use_visual}">
+        <xacro:visual_box mesh="${tine_mesh if use_v_mesh else ''}"
+                          scale="1.0 1.0 1.0"
+                          mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                          size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                          shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:collision_box mesh="${tine_mesh if use_c_mesh else ''}"
+                             scale="1.0 1.0 1.0"
+                             mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                             size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                             shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertial mass="${tine_mass}"
+                                  size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                                  origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <xacro:property name="tine_mount_x" value="${tine_stop_mount_x + (0.5 * tine_size_x)}"/>
+    <xacro:property name="tine_mount_y" value="${tine_stop_mount_y}"/>
+    <xacro:property name="tine_mount_z" value="${tine_size_z}"/>
+
+    <joint name="${prefix}${name}_left_tine_joint" type="fixed">
+      <parent link="${prefix}${name}_carriage_link"/>
+      <child link="${prefix}${name}_left_tine_link"/>
+      <origin rpy="0 0 0" xyz="${tine_mount_x} ${tine_mount_y} ${tine_mount_z}"/>
+    </joint>
+
+    <!-- Right tine-stop link. This is the rear stop box for the right tine. -->
+
+    <link name="${prefix}${name}_right_tine_stop_link">
+      <xacro:if value="${use_visual}">
+        <visual>
+          <geometry>
+            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+          </geometry>
+          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+          <xacro:if value="${color != ''}">
+            <material name="${prefix}${name}_color">
+              <color rgba="${color}"/>
+            </material>
+          </xacro:if>
+        </visual>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <collision>
+          <geometry>
+            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+          </geometry>
+          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+        </collision>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertial mass="${tine_stop_mass}"
+                                  size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"
+                                  origin="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <joint name="${prefix}${name}_right_tine_stop_joint" type="fixed">
+      <parent link="${prefix}${name}_carriage_link"/>
+      <child link="${prefix}${name}_right_tine_stop_link"/>
+      <origin rpy="0 0 0" xyz="${tine_stop_mount_x} ${-tine_stop_mount_y} ${tine_stop_mount_z}"/>
+    </joint>
+
+    <!-- Right tine link. This is the main load-bearing tine geometry. -->
+
+    <link name="${prefix}${name}_right_tine_link">
+      <xacro:if value="${use_visual}">
+        <xacro:visual_box mesh="${tine_mesh if use_v_mesh else ''}"
+                          scale="1.0 1.0 1.0"
+                          mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                          size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                          shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:collision_box mesh="${tine_mesh if use_c_mesh else ''}"
+                             scale="1.0 1.0 1.0"
+                             mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                             size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                             shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertial mass="${tine_mass}"
+                                  size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                                  origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <joint name="${prefix}${name}_right_tine_joint" type="fixed">
+      <parent link="${prefix}${name}_carriage_link"/>
+      <child link="${prefix}${name}_right_tine_link"/>
+      <origin rpy="0 0 0" xyz="${tine_mount_x} ${-tine_mount_y} ${tine_mount_z}"/>
+    </joint>
   </xacro:macro>
 </robot>

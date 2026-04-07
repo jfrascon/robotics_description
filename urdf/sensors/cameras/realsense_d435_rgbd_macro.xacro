@@ -173,7 +173,7 @@ Gazebo topic used to trigger the second infrared camera.
                        use_collision:=True
                        use_inertial:=True
                        use_v_mesh:=True
-                       color:='0.5 0.5 0.5 1.0'
+                       color:=''
                        use_c_mesh:=False
                        use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'

@@ -65,7 +65,7 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
                        use_collision:=True
                        use_inertial:=True
                        use_v_mesh:=True
-                       color:='0.5 0.5 0.5 1.0'
+                       color:=''
                        use_c_mesh:=False
                        use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
