@@ -49,44 +49,92 @@ The `joint_parent_fr_root_fr` argument is interpreted as
                        use_v_mesh:=True
                        color:=''
                        use_c_mesh:=False
-                       carriage_len_x:='0.03'
-                       carriage_len_y
+                       carriage_size_x:='0.03'
                        limits:='0.0 0.0 1000.0 1000.0'
                        joint_parent_fr_root_fr">
 
     <xacro:property name="tine_mesh"
                     value="robotics_description/meshes/extras/fork_tine/basic_open_tine_120.stl"/>
 
-    <xacro:property name="tine_size_x"     value="1.20"/>
-    <xacro:property name="tine_size_y"     value="0.12"/>
-    <xacro:property name="tine_size_z"     value="0.06"/>
-    <xacro:property name="tine_separation" value="0.25"/>
-    <xacro:property name="tine_mass"       value="20.0"/>
-    <xacro:property name="min_carriage_len_y"
-                    value="${tine_separation + (2 * tine_size_y)}"/>
+    <xacro:property name="tine_size_x"        value="1.20"/>
+    <xacro:property name="tine_size_y"        value="0.12"/>
+    <xacro:property name="tine_size_z"        value="0.06"/>
+    <xacro:property name="tine_separation"    value="0.25"/>
+    <xacro:property name="tine_mass"          value="20.0"/>
+
+    <!--
+    The carriage is the part that joints the tines.
+    Carriage and tines move vertically together along the left and righ mast.
+    -->
+    <xacro:property name="carriage_size_y" value="${tine_separation}"/>
+    <xacro:property name="carriage_size_z" value="${tine_size_z}"/>
 
     <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
 
-    <xacro:if value="${float(carriage_len_x) &lt;= 0.0}">
-      ${xacro.fatal("fork_simple macro: carriage_len_x must be > 0")}
-    </xacro:if>
-
-    <xacro:if value="${float(carriage_len_y) &lt; min_carriage_len_y}">
-      ${xacro.fatal("fork_simple macro: carriage_len_y must be at least tine_separation + 2*tine_size_y")}
+    <xacro:if value="${float(carriage_size_x) &lt;= 0.0}">
+      ${xacro.fatal("fork_simple macro: carriage_size_x must be > 0")}
     </xacro:if>
 
     <!--
-    Use 20 kg when `carriage_len_y == min_carriage_len_y`.
-    For larger carriage widths, scale the carriage mass linearly with `carriage_len_y`.
+    Compute the carriage's mass in a simple way, just proportional to its len_x, so that a 0.03 m
+    long carriage has a mass of 20 kg, which is reasonable for a steel box of that size.
     -->
-    <xacro:property name="carriage_mass" value="${20.0 * (float(carriage_len_y) / min_carriage_len_y)}"/>
+    <xacro:property name="carriage_mass" value="${20.0 * (float(carriage_size_x) / 0.03)}"/>
 
     <!--
-    Use 10 kg when `carriage_len_x == 0.06`.
-    For larger or smaller carriage lengths, scale the tine-stop mass linearly with
-    `carriage_len_x`.
+    Check limits for the prismatic joint.
     -->
-    <xacro:property name="tine_stop_mass" value="${10.0 * (float(carriage_len_x) / 0.06)}"/>
+    <xacro:property name="limits_seq" value="${limits.split()}"/>
+
+    <xacro:if value="${len(limits_seq) != 4}">
+      ${xacro.fatal("fork_simple macro: invalid limits. Expected: 'lower upper velocity effort'")}
+    </xacro:if>
+
+    <xacro:property name="lower_limit"    value="${limits_seq[0]}"/>
+    <xacro:property name="upper_limit"    value="${limits_seq[1]}"/>
+    <xacro:property name="velocity_limit" value="${limits_seq[2]}"/>
+    <xacro:property name="effort_limit"   value="${limits_seq[3]}"/>
+
+    <!--
+    Lower limit for the fork joint must be less than or equal to upper limit.
+    Limits must satisfy lower <= 0 <= upper so that the joint can be initialized at its rest
+    position (q=0) without violating the range motion.
+    If lower > 0, then q=0 is outside the motion limits and the fork will be initialized in an
+    invalid configuration.
+    If upper < 0, then q=0 is outside the motion limits and the fork will be initialized in an
+    invalid configuration too.
+    -->
+    <xacro:if value="${lower_limit > upper_limit}">
+      ${xacro.fatal("fork_simple macro: lower_limit must be &lt;= upper_limit")}
+    </xacro:if>
+
+    <xacro:if value="${lower_limit > 0.0 or upper_limit &lt; 0.0}">
+      ${xacro.fatal("xacro arg fork_limits must satisfy lower &lt;= 0 &lt;= upper, so q=0 is valid")}
+    </xacro:if>
+
+    <xacro:if value="${effort_limit &lt;= 0.0 or velocity_limit &lt;= 0.0}">
+      ${xacro.fatal("fork_simple macro: effort_limit and velocity_limit must be > 0")}
+    </xacro:if>
+
+    <!--
+    A mast is the vertical row along with the carriage moves.
+    There are two mast, left and right.
+    -->
+    <xacro:property name="mast_size_x" value="${carriage_size_x}"/>
+    <xacro:property name="mast_size_y" value="${tine_size_y}"/>
+    <!--
+    After the checks on the limits above, we know that `upper_limit - lower_limit` is positive and
+    represents the total vertical travel of the fork, so we can use it as the mast's size in z to
+    cover the whole vertical travel of the fork.
+    -->
+    <xacro:property name="mast_size_z" value="${upper_limit - lower_limit}"/>
+
+    <!--
+    Compute the mass of each mast in a simple way, just proportional to its size in z, so that a 1 m
+    long mast has a mass of 10 kg.
+    mass = 10 kg * (size_z / 1 m) = 10 kg * size_z
+    -->
+    <xacro:property name="mast_mass" value="${10.0 * mast_size_z}"/>
 
     <link name="${prefix}${name}_root_link">
       <xacro:null_inertia/>
@@ -104,22 +152,15 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
     </joint>
 
-    <!--
-    The carriage is the part moved by the prismatic joint.
-    Both tine links and both tine-stop links are attached to the carriage with fixed
-    joints, so they move together with the carriage.
-    -->
-    <xacro:property name="carriage_len_z" value="${tine_size_z}"/>
-
-    <xacro:property name="carriage_origin_x" value="${0.5 * carriage_len_x}"/>
+    <xacro:property name="carriage_origin_x" value="${-0.5 * float(carriage_size_x)}"/>
     <xacro:property name="carriage_origin_y" value="0"/>
-    <xacro:property name="carriage_origin_z" value="${0.5 * tine_size_z}"/>
+    <xacro:property name="carriage_origin_z" value="${-0.5 * carriage_size_z}"/>
 
     <link name="${prefix}${name}_carriage_link">
       <xacro:if value="${use_visual}">
         <visual>
           <geometry>
-            <box size="${carriage_len_x} ${carriage_len_y} ${carriage_len_z}"/>
+            <box size="${carriage_size_x} ${carriage_size_y} ${carriage_size_z}"/>
           </geometry>
           <origin rpy="0 0 0" xyz="${carriage_origin_x} ${carriage_origin_y} ${carriage_origin_z}"/>
           <xacro:if value="${color != ''}">
@@ -133,15 +174,15 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <xacro:if value="${use_collision}">
         <collision>
           <geometry>
-            <box size="${carriage_len_x} ${carriage_len_y} ${carriage_len_z}"/>
+            <box size="${carriage_size_x} ${carriage_size_y} ${carriage_size_z}"/>
           </geometry>
           <origin rpy="0 0 0" xyz="${carriage_origin_x} ${carriage_origin_y} ${carriage_origin_z}"/>
         </collision>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertial mass="${carriage_mass}"
-                                  size="${carriage_len_x} ${carriage_len_y} ${carriage_len_z}"
+        <xacro:solid_box_inertia mass="${carriage_mass}"
+                                  size="${carriage_size_x} ${carriage_size_y} ${carriage_size_z}"
                                   origin="${carriage_origin_x} ${carriage_origin_y} ${carriage_origin_z} 0 0 0"/>
       </xacro:if>
 
@@ -150,29 +191,14 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:unless>
     </link>
 
-    <xacro:property name="limits_seq" value="${limits.split()}"/>
-
-    <xacro:if value="${len(limits_seq) != 4}">
-      ${xacro.fatal("fork_simple macro: invalid limits. Expected: 'lower upper velocity effort'")}
-    </xacro:if>
-
-    <xacro:property name="lower_limit"    value="${float(limits_seq[0])}"/>
-    <xacro:property name="upper_limit"    value="${float(limits_seq[1])}"/>
-    <xacro:property name="velocity_limit" value="${float(limits_seq[2])}"/>
-    <xacro:property name="effort_limit"   value="${float(limits_seq[3])}"/>
-
-    <xacro:if value="${lower_limit > upper_limit}">
-      ${xacro.fatal("fork_simple macro: lower_limit must be &lt;= upper_limit")}
-    </xacro:if>
-
-    <xacro:if value="${effort_limit &lt;= 0.0 or velocity_limit &lt;= 0.0}">
-      ${xacro.fatal("fork_simple macro: effort_limit and velocity_limit must be > 0")}
-    </xacro:if>
+    <xacro:property name="carriage_mount_x" value="${carriage_size_x}"/>
+    <xacro:property name="carriage_mount_y" value="0"/>
+    <xacro:property name="carriage_mount_z" value="${carriage_size_z}"/>
 
     <joint name="${prefix}${name}_carriage_joint" type="prismatic">
       <parent link="${prefix}${name}_root_link"/>
       <child link="${prefix}${name}_carriage_link"/>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="${carriage_mount_x} ${carriage_mount_y} ${carriage_mount_z}"/>
       <axis xyz="0 0 1"/>
       <limit lower="${lower_limit}"
              upper="${upper_limit}"
@@ -180,23 +206,13 @@ The `joint_parent_fr_root_fr` argument is interpreted as
              velocity="${velocity_limit}"/>
     </joint>
 
-    <!-- Left tine-stop link. This is the rear stop box for the left tine. -->
-
-    <xacro:property name="tine_stop_len_x" value="${carriage_len_x}"/>
-    <xacro:property name="tine_stop_len_y" value="${tine_size_y}"/>
-    <xacro:property name="tine_stop_len_z" value="${2 * tine_size_z}"/>
-
-    <xacro:property name="tine_stop_origin_x" value="${-0.5 * tine_stop_len_x}"/>
-    <xacro:property name="tine_stop_origin_y" value="0"/>
-    <xacro:property name="tine_stop_origin_z" value="0"/>
-
-    <link name="${prefix}${name}_left_tine_stop_link">
+    <link name="${prefix}${name}_left_mast_link">
       <xacro:if value="${use_visual}">
         <visual>
           <geometry>
-            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+            <box size="${mast_size_x} ${mast_size_y} ${mast_size_z}"/>
           </geometry>
-          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+          <origin rpy="0 0 0" xyz="0 0 0"/>
           <xacro:if value="${color != ''}">
             <material name="${prefix}${name}_color">
               <color rgba="${color}"/>
@@ -208,16 +224,16 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <xacro:if value="${use_collision}">
         <collision>
           <geometry>
-            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+            <box size="${mast_size_x} ${mast_size_y} ${mast_size_z}"/>
           </geometry>
-          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+          <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertial mass="${tine_stop_mass}"
-                                  size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"
-                                  origin="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z} 0 0 0"/>
+        <xacro:solid_box_inertia mass="${mast_mass}"
+                                  size="${mast_size_x} ${mast_size_y} ${mast_size_z}"
+                                  origin="0 0 0 0 0 0"/>
       </xacro:if>
 
       <xacro:unless value="${use_inertial}">
@@ -225,14 +241,18 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:unless>
     </link>
 
-    <xacro:property name="tine_stop_mount_x" value="${carriage_len_x}"/>
-    <xacro:property name="tine_stop_mount_y" value="${0.5*(tine_separation + tine_size_y)}"/>
-    <xacro:property name="tine_stop_mount_z" value="${2*tine_size_z}"/>
 
-    <joint name="${prefix}${name}_left_tine_stop_joint" type="fixed">
-      <parent link="${prefix}${name}_carriage_link"/>
-      <child link="${prefix}${name}_left_tine_stop_link"/>
-      <origin rpy="0 0 0" xyz="${tine_stop_mount_x} ${tine_stop_mount_y} ${tine_stop_mount_z}"/>
+    <xacro:property name="left_mast_mount_x" value="${0.5 * mast_size_x}"/>
+    <xacro:property name="left_mast_mount_y" value="${0.5*(tine_separation + tine_size_y)}"/>
+    <!--
+    Remember after the checks on the limits above, we know lower_limit <= 0 <= upper_limit.
+    -->
+    <xacro:property name="left_mast_mount_z" value="${lower_limit + (0.5 * mast_size_z)}"/>
+
+    <joint name="${prefix}${name}_left_mast_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_left_mast_link"/>
+      <origin rpy="0 0 0" xyz="${left_mast_mount_x} ${left_mast_mount_y} ${left_mast_mount_z}"/>
     </joint>
 
     <!-- Left tine link. This is the main load-bearing tine geometry. -->
@@ -260,7 +280,7 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertial mass="${tine_mass}"
+        <xacro:solid_box_inertia mass="${tine_mass}"
                                   size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
                                   origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
       </xacro:if>
@@ -270,25 +290,23 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:unless>
     </link>
 
-    <xacro:property name="tine_mount_x" value="${tine_stop_mount_x + (0.5 * tine_size_x)}"/>
-    <xacro:property name="tine_mount_y" value="${tine_stop_mount_y}"/>
-    <xacro:property name="tine_mount_z" value="${tine_size_z}"/>
+    <xacro:property name="left_tine_mount_x" value="${0.5 * tine_size_x}"/>
+    <xacro:property name="left_tine_mount_y" value="${left_mast_mount_y}"/>
+    <xacro:property name="left_tine_mount_z" value="0"/>
 
     <joint name="${prefix}${name}_left_tine_joint" type="fixed">
       <parent link="${prefix}${name}_carriage_link"/>
       <child link="${prefix}${name}_left_tine_link"/>
-      <origin rpy="0 0 0" xyz="${tine_mount_x} ${tine_mount_y} ${tine_mount_z}"/>
+      <origin rpy="0 0 0" xyz="${left_tine_mount_x} ${left_tine_mount_y} ${left_tine_mount_z}"/>
     </joint>
 
-    <!-- Right tine-stop link. This is the rear stop box for the right tine. -->
-
-    <link name="${prefix}${name}_right_tine_stop_link">
+    <link name="${prefix}${name}_right_mast_link">
       <xacro:if value="${use_visual}">
         <visual>
           <geometry>
-            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+            <box size="${mast_size_x} ${mast_size_y} ${mast_size_z}"/>
           </geometry>
-          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+          <origin rpy="0 0 0" xyz="0 0 0"/>
           <xacro:if value="${color != ''}">
             <material name="${prefix}${name}_color">
               <color rgba="${color}"/>
@@ -300,16 +318,16 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <xacro:if value="${use_collision}">
         <collision>
           <geometry>
-            <box size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"/>
+            <box size="${mast_size_x} ${mast_size_y} ${mast_size_z}"/>
           </geometry>
-          <origin rpy="0 0 0" xyz="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z}"/>
+          <origin rpy="0 0 0" xyz="0 0 0"/>
         </collision>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertial mass="${tine_stop_mass}"
-                                  size="${tine_stop_len_x} ${tine_stop_len_y} ${tine_stop_len_z}"
-                                  origin="${tine_stop_origin_x} ${tine_stop_origin_y} ${tine_stop_origin_z} 0 0 0"/>
+        <xacro:solid_box_inertia mass="${mast_mass}"
+                                  size="${mast_size_x} ${mast_size_y} ${mast_size_z}"
+                                  origin="0 0 0 0 0 0"/>
       </xacro:if>
 
       <xacro:unless value="${use_inertial}">
@@ -317,10 +335,14 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:unless>
     </link>
 
-    <joint name="${prefix}${name}_right_tine_stop_joint" type="fixed">
-      <parent link="${prefix}${name}_carriage_link"/>
-      <child link="${prefix}${name}_right_tine_stop_link"/>
-      <origin rpy="0 0 0" xyz="${tine_stop_mount_x} ${-tine_stop_mount_y} ${tine_stop_mount_z}"/>
+    <xacro:property name="right_mast_mount_x" value="${left_mast_mount_x}"/>
+    <xacro:property name="right_mast_mount_y" value="${-left_mast_mount_y}"/>
+    <xacro:property name="right_mast_mount_z" value="${left_mast_mount_z}"/>
+
+    <joint name="${prefix}${name}_right_mast_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_right_mast_link"/>
+      <origin rpy="0 0 0" xyz="${right_mast_mount_x} ${right_mast_mount_y} ${right_mast_mount_z}"/>
     </joint>
 
     <!-- Right tine link. This is the main load-bearing tine geometry. -->
@@ -344,7 +366,7 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertial mass="${tine_mass}"
+        <xacro:solid_box_inertia mass="${tine_mass}"
                                   size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
                                   origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
       </xacro:if>
@@ -354,10 +376,14 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       </xacro:unless>
     </link>
 
+    <xacro:property name="right_tine_mount_x" value="${left_tine_mount_x}"/>
+    <xacro:property name="right_tine_mount_y" value="${-left_tine_mount_y}"/>
+    <xacro:property name="right_tine_mount_z" value="${left_tine_mount_z}"/>
+
     <joint name="${prefix}${name}_right_tine_joint" type="fixed">
       <parent link="${prefix}${name}_carriage_link"/>
       <child link="${prefix}${name}_right_tine_link"/>
-      <origin rpy="0 0 0" xyz="${tine_mount_x} ${-tine_mount_y} ${tine_mount_z}"/>
+      <origin rpy="0 0 0" xyz="${right_tine_mount_x} ${right_tine_mount_y} ${right_tine_mount_z}"/>
     </joint>
   </xacro:macro>
 </robot>
