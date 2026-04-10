@@ -15,7 +15,7 @@ What this plugin publishes:
 How to interpret that transform:
 - Gazebo uses the xml tags `odom_frame` and `robot_base_frame`.
 - The published pose and transform always describe
-  `T:${odom_frame} -> ${robot_base_frame}.
+  `T:${odom_frame} -> ${robot_base_frame}`.
 - This means the plugin reports the pose of the robot base with respect to
   the frame named in `odom_frame`.
 
@@ -99,13 +99,80 @@ https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1OdometryPublisher.
       <robot_base_frame>${robot_base_frame}</robot_base_frame>
 
       <!--
-      Offsets are applied before the final odometry messages and transform are
-      published.
+      Gazebo already knows the pose (position and orientation) of the robot in the simulation world:
+
+      rawPose = pose_robot_in_gazebo_world (also known as T: gazebo_world -> robot_base_frame)
+
+      In this comment, `T: reference_frame -> referenced_frame` means:
+      The position and orientation of `referenced_frame` expressed in `reference_frame`.
+
+      pose_in_reference_frame =
+        T: reference_frame -> referenced_frame * pose_in_referenced_frame
+
+      With that convention, publishing the robot pose with respect to a
+      different fixed frame, for example `map`, requires this transform:
+
+      pose_robot_in_map =
+        T: map -> gazebo_world * pose_robot_in_gazebo_world
+
+      The `xyz_global_offset` and `rpy_global_offset` tags define the pose (position and
+      orientation)  of `odom_frame` expressed in Gazebo's simulation world:
+
+      globalOffset = T: gazebo_world -> odom_frame
+
+      Therefore, the plugin must invert `globalOffset` before applying it:
+
+      globalOffset.Inverse() = T: odom_frame -> gazebo_world
+
+      The plugin then does this:
+
+      pose = globalOffset.Inverse() * rawPose
+
+      Conceptually, this produces:
+
+      pose = T: odom_frame -> gazebo_world * T: gazebo_world -> robot_base_frame
+           = T: odom_frame -> robot_base_frame
+
+      If `odom_frame` is `map`, the published odometry pose is therefore the
+      robot pose expressed in `map`, not directly in Gazebo's simulation world.
+
+      Note: these global offset tags are available from Gazebo Sim 10. Older
+      Gazebo Sim versions can ignore them.
+      -->
+      <xyz_global_offset>${xyz_global_offset}</xyz_global_offset>
+      <rpy_global_offset>${rpy_global_offset}</rpy_global_offset>
+
+      <!--
+      The local offset changes which rigid point of the robot is reported.
+
+      Gazebo starts from the pose of `robot_base_frame` (position and orientation of the robot
+      frame) in the simulation world:
+
+      rawPose = T: gazebo_world -> robot_base_frame
+
+      The local offset defines a pose (position and orientation) expressed with respect to
+      `robot_base_frame`. That pose could represent another frame rigidly attached to the robot,
+      for example the frame of a lidar:
+
+      offset = T: robot_base_frame -> offset_frame
+
+      The global offset changes the frame in which the result is expressed.
+      The local offset changes the robot point whose pose is reported.
+      Together, both offsets describe the pose (position and orientation) of that robot point in the
+      selected fixed frame.
+      The resulting transform starts in `odom_frame`, passes through `robot_base_frame`, and ends at
+      the local `offset_frame`:
+
+      pose = T: odom_frame -> gazebo_world * rawPose * offset
+           = T: odom_frame -> gazebo_world * T: gazebo_world -> robot_base_frame * T: robot_base_frame -> offset_frame
+           = T: odom_frame -> gazebo_world * T: gazebo_world -> offset_frame
+           = T: odom_frame -> offset_frame
+
+      For example, if the offset describes the pose of a lidar with respect to `robot_base_frame`,
+      the plugin publishes the pose of that lidar in the fixed frame named by `odom_frame`.
       -->
       <xyz_offset>${xyz_offset}</xyz_offset>
       <rpy_offset>${rpy_offset}</rpy_offset>
-      <xyz_global_offset>${xyz_global_offset}</xyz_global_offset>
-      <rpy_global_offset>${rpy_global_offset}</rpy_global_offset>
 
       <!--
       Gazebo uses `gaussian_noise` to populate the covariance information of
