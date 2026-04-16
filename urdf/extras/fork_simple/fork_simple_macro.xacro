@@ -49,6 +49,7 @@ The `joint_parent_fr_root_fr` argument is interpreted as
                        use_v_mesh:=True
                        color:=''
                        use_c_mesh:=False
+                       tine_open:=False
                        carriage_size_x:=0.06
                        carriage_size_z:=0.06
                        limits:='0.0 0.0 1000.0 1000.0'
@@ -318,6 +319,60 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <origin rpy="0 0 0" xyz="${left_tine_bottom_plate_mount_x} ${left_tine_bottom_plate_mount_y} ${left_tine_bottom_plate_mount_z}"/>
     </joint>
 
+    <!-- Front plate link for the left tine (when closed) -->
+
+    <xacro:unless value="${tine_open}">
+      <xacro:property name="front_tine_plate_size_x" value="${tine_wall_thickness}"/>
+      <xacro:property name="front_tine_plate_size_y" value="${tine_size_y - 2*tine_wall_thickness}"/>
+      <xacro:property name="front_tine_plate_size_z" value="${tine_size_z - 2*tine_wall_thickness}"/>
+      <xacro:property name="front_tine_plate_origin_x" value="${-0.5 * front_tine_plate_size_x}"/>
+
+      <link name="${prefix}${name}_left_tine_front_plate_link">
+        <xacro:if value="${use_visual}">
+          <visual>
+            <geometry>
+              <box size="${front_tine_plate_size_x} ${front_tine_plate_size_y} ${front_tine_plate_size_z}"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="${front_tine_plate_origin_x} 0 0"/>
+            <xacro:if value="${color != ''}">
+              <material name="${prefix}${name}_color">
+                <color rgba="${color}"/>
+              </material>
+            </xacro:if>
+          </visual>
+        </xacro:if>
+
+        <xacro:if value="${use_collision}">
+          <collision>
+            <geometry>
+              <box size="${front_tine_plate_size_x} ${front_tine_plate_size_y} ${front_tine_plate_size_z}"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="${front_tine_plate_origin_x} 0 0"/>
+          </collision>
+        </xacro:if>
+
+        <xacro:if value="${use_inertial}">
+          <xacro:solid_box_inertia mass="0.1"
+                                    size="${front_tine_plate_size_x} ${front_tine_plate_size_y} ${front_tine_plate_size_z}"
+                                    origin="${front_tine_plate_origin_x} 0 0 0 0 0"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_inertial}">
+          <xacro:null_inertia/>
+        </xacro:unless>
+      </link>
+
+      <xacro:property name="left_tine_front_plate_mount_x" value="${0.5 * tine_size_x}"/>
+      <xacro:property name="left_tine_front_plate_mount_y" value="0"/>
+      <xacro:property name="left_tine_front_plate_mount_z" value="${-0.5 * tine_size_z}"/>
+
+      <joint name="${prefix}${name}_left_tine_front_plate_joint" type="fixed">
+        <parent link="${prefix}${name}_left_tine_link"/>
+        <child link="${prefix}${name}_left_tine_front_plate_link"/>
+        <origin rpy="0 0 0" xyz="${left_tine_front_plate_mount_x} ${left_tine_front_plate_mount_y} ${left_tine_front_plate_mount_z}"/>
+      </joint>
+    </xacro:unless>
+
     <!-- Left tine-shank -->
 
     <link name="${prefix}${name}_left_tine_shank_link">
@@ -512,6 +567,55 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <child link="${prefix}${name}_right_tine_bottom_plate_link"/>
       <origin rpy="0 0 0" xyz="${right_tine_bottom_plate_mount_x} ${right_tine_bottom_plate_mount_y} ${right_tine_bottom_plate_mount_z}"/>
     </joint>
+
+    <!-- Front plate link for the right tine (when closed) -->
+
+    <xacro:unless value="${tine_open}">
+      <link name="${prefix}${name}_right_tine_front_plate_link">
+        <xacro:if value="${use_visual}">
+          <visual>
+            <geometry>
+              <box size="${front_tine_plate_size_x} ${front_tine_plate_size_y} ${front_tine_plate_size_z}"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="${front_tine_plate_origin_x} 0 0"/>
+            <xacro:if value="${color != ''}">
+              <material name="${prefix}${name}_color">
+                <color rgba="${color}"/>
+              </material>
+            </xacro:if>
+          </visual>
+        </xacro:if>
+
+        <xacro:if value="${use_collision}">
+          <collision>
+            <geometry>
+              <box size="${front_tine_plate_size_x} ${front_tine_plate_size_y} ${front_tine_plate_size_z}"/>
+            </geometry>
+            <origin rpy="0 0 0" xyz="${front_tine_plate_origin_x} 0 0"/>
+          </collision>
+        </xacro:if>
+
+        <xacro:if value="${use_inertial}">
+          <xacro:solid_box_inertia mass="0.1"
+                                    size="${front_tine_plate_size_x} ${front_tine_plate_size_y} ${front_tine_plate_size_z}"
+                                    origin="${front_tine_plate_origin_x} 0 0 0 0 0"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_inertial}">
+          <xacro:null_inertia/>
+        </xacro:unless>
+      </link>
+
+      <xacro:property name="right_tine_front_plate_mount_x" value="${left_tine_front_plate_mount_x}"/>
+      <xacro:property name="right_tine_front_plate_mount_y" value="0"/>
+      <xacro:property name="right_tine_front_plate_mount_z" value="${left_tine_front_plate_mount_z}"/>
+
+      <joint name="${prefix}${name}_right_tine_front_plate_joint" type="fixed">
+        <parent link="${prefix}${name}_right_tine_link"/>
+        <child link="${prefix}${name}_right_tine_front_plate_link"/>
+        <origin rpy="0 0 0" xyz="${right_tine_front_plate_mount_x} ${right_tine_front_plate_mount_y} ${right_tine_front_plate_mount_z}"/>
+      </joint>
+    </xacro:unless>
 
     <!-- Right tine-shank -->
 
