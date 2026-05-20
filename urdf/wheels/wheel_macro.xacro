@@ -99,6 +99,7 @@ velocity: 10 to 30 rad/s
                        mass
                        rotation_joint_type:=continuous
                        rotation_joint_limits:='100.0 100000.0'
+                       rotation_joint_dynamics:='0.0 0.0'
                        max_contacts:=10
                        mu:=0.5
                        mu2:=5.0
@@ -193,19 +194,25 @@ velocity: 10 to 30 rad/s
       ${xacro.fatal("wheel: joint_parent_fr_wheel_fr must have 6 elements: 'x y z roll pitch yaw'")}
     </xacro:if>
 
+    <xacro:property name="rj_limits_seq"   value="${str(rotation_joint_limits).split()}"/>
+    <xacro:property name="rj_dynamics_seq" value="${str(rotation_joint_dynamics).split()}"/>
+
+    <xacro:if value="${rotation_joint_type == 'continuous' and len(rj_limits_seq) != 2}">
+      ${xacro.fatal("wheel: rotation_joint_limits must have 2 elements: 'velocity (R) effort (R)'")}
+    </xacro:if>
+
+    <xacro:if value="${rotation_joint_type == 'continuous' and len(rj_dynamics_seq) != 2}">
+      ${xacro.fatal("wheel: rotation_joint_dynamics must have 2 elements: 'damping friction'")}
+    </xacro:if>
+
     <joint name="${prefix}${name}_rotation_joint" type="${rotation_joint_type}">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_rotation_link"/>
       <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
 
       <xacro:if value="${rotation_joint_type == 'continuous'}">
-        <xacro:property name="rj_limits_seq" value="${rotation_joint_limits.split()}"/>
-
-        <xacro:if value="${len(rj_limits_seq) != 2}">
-            ${xacro.fatal("wheel: rotation_joint_limits must have 2 elements: 'velocity (R) effort (R)'")}
-        </xacro:if>
-
         <axis xyz="0 1 0"/>
+        <dynamics damping="${rj_dynamics_seq[0]}" friction="${rj_dynamics_seq[1]}"/>
         <limit velocity="${rj_limits_seq[0]}" effort="${rj_limits_seq[1]}"/>
       </xacro:if>
     </joint>
