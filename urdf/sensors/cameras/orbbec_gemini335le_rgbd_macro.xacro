@@ -118,6 +118,15 @@ plugin, two infrared camera plugins, and one IMU plugin.
                                            c_mesh_use_low_res="${c_mesh_use_low_res}"
                                            joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
+    <xacro:if value="${use_visual and color != '' and (sim_rgbd_enabled or sim_left_ir_enabled or sim_right_ir_enabled or sim_imu_enabled)}">
+      <gazebo reference="${prefix}${name}_bottom_screw_frame">
+        <material>
+          <ambient>${color}</ambient>
+          <diffuse>${color}</diffuse>
+        </material>
+      </gazebo>
+    </xacro:if>
+
     <xacro:if value="${sim_rgbd_enabled}">
       <xacro:plugin_camera_rgbd name="${prefix}${name}_rgbd"
                                 reference_frame="${prefix}${name}_depth_frame"

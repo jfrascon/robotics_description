@@ -123,6 +123,15 @@ macro does not try to infer or validate mesh dimensions.
     </joint>
 
     <xacro:if value="${sim_enabled and sim_topic != ''}">
+      <xacro:if value="${use_visual and color != ''}">
+        <gazebo reference="${prefix}${name}_root_link">
+          <material>
+            <ambient>${color}</ambient>
+            <diffuse>${color}</diffuse>
+          </material>
+        </gazebo>
+      </xacro:if>
+
       <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
 
       <xacro:plugin_imu

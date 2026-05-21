@@ -297,6 +297,15 @@ Gazebo topic used to trigger the second infrared camera.
                                        use_sensor_frames_and_joints="${use_sensor_frames_and_joints}"
                                        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
+    <xacro:if value="${use_visual and color != '' and (sim_color_enabled or sim_depth_enabled or sim_infra1_enabled or sim_infra2_enabled)}">
+      <gazebo reference="${prefix}${name}_bottom_screw_frame">
+        <material>
+          <ambient>${color}</ambient>
+          <diffuse>${color}</diffuse>
+        </material>
+      </gazebo>
+    </xacro:if>
+
     <xacro:if value="${sim_depth_enabled}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
 

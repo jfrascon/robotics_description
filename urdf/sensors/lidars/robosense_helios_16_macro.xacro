@@ -223,6 +223,15 @@ namespace.
     If either of fields is not true, the plugin is not included.
     -->
     <xacro:if value="${sim_enabled and sim_base_topic != ''}">
+      <xacro:if value="${use_visual and color != ''}">
+        <gazebo reference="${prefix}${name}_root_link">
+          <material>
+            <ambient>${color}</ambient>
+            <diffuse>${color}</diffuse>
+          </material>
+        </gazebo>
+      </xacro:if>
+
       <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
 
       <xacro:plugin_lidar_3d_ring
