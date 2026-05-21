@@ -7,4 +7,4 @@ hor_fov_deg: { "min_angle": -135, "max_angle": 135 }
 hor_res_deg: 0.5
 dist_span: { "min_dist": 0.1, "max_dist": 30.0 } # m
 gaussian_noise: { "mean": 0, "stddev": 0.01 }
-topic: sick_300/scan
+topic: sick_s300/scan
