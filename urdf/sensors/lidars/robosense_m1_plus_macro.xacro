@@ -1,0 +1,188 @@
+<?xml version="1.0"?>
+<!--
+Convention for parameter types:
+R means real number
+I means integer
+S means string
+B means boolean
+
+name (S):
+name of the lidar, used to name the links and joints.
+
+prefix (S):
+optional prefix for the names of the links and joints.
+
+namespace (S):
+ROS / GZ namespace used to build default simulation topics.
+
+parent_frame (S):
+name of the parent frame to which the lidar's root frame is attached.
+
+use_visual (B):
+if true, include visual element.
+
+use_collision (B):
+if true, include collision element.
+
+use_inertial (B):
+if true, include inertial element.
+
+color (S):
+String of the form 'r (R) g (R) b (R) a (R)'.
+Used only if use_visual is true.
+If color is not empty, the provided color is applied to the box used in the visual element.
+The default value is opaque black, used here as a matte black visual approximation.
+
+joint_parent_fr_root_fr (S):
+Pose of the lidar's root frame w.r.t the parent's frame.
+joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+sim_enabled (B):
+if true, include the GZ 3D lidar plugin.
+
+sim_always_on (B):
+if true, the lidar is always active in simulation.
+
+sim_visualize (B):
+if true, GZ visualizes the lidar rays in simulation.
+
+sim_update_rate (R):
+update rate of the lidar in simulation.
+
+sim_hor_fov_deg (S):
+horizontal field of view, in degrees, as 'min max'.
+
+sim_hor_res_deg (R):
+horizontal angular resolution, in degrees.
+
+sim_ver_fov_deg (S):
+vertical field of view, in degrees, as 'min max'.
+
+sim_ver_res_deg (R):
+vertical angular resolution, in degrees.
+
+sim_dist_span (S):
+measurable distance span, in meters, as 'min max'.
+
+sim_dist_res (R):
+range resolution, in meters.
+
+sim_gaussian_noise (S):
+Gaussian noise parameters for range measurements as 'mean stddev'.
+
+sim_base_topic (S):
+Topic used by the GZ `gpu_lidar` plugin in simulation. This field is required.
+If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
+namespace.
+-->
+<robot name="robosense_m1_plus" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="robosense_m1_plus"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       color:='0.0 0.0 0.0 1.0'
+                       joint_parent_fr_root_fr
+                       sim_enabled:=False
+                       sim_always_on:=True
+                       sim_visualize:=False
+                       sim_update_rate
+                       sim_hor_fov_deg
+                       sim_hor_res_deg
+                       sim_ver_fov_deg
+                       sim_ver_res_deg
+                       sim_dist_span
+                       sim_dist_res:=0.0
+                       sim_gaussian_noise:='0 0'
+                       namespace:=''
+                       sim_base_topic">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <!--
+    RS-LiDAR-M1 Plus user guide:
+    - Weight: about 0.75 kg, not including the data cable.
+    - Dimensions: Length 110 mm, Width 111 mm, Height 45 mm.
+    This macro uses x, y, z size = 0.111, 0.110, 0.045 according to the
+    requested sensor frame orientation.
+    -->
+    <xacro:property name="mass" value="0.75"/>
+    <xacro:property name="size_z" value="0.045"/>
+    <xacro:property name="size" value="0.111 0.110 ${size_z}"/>
+
+    <!--
+    The Robosense M1 Plus is represented as a rectangular box because this
+    package does not currently include a visual mesh or a collision mesh for it.
+    The root link is located at the center of the lower face of the box. The
+    visual, collision, and inertial elements are shifted half the height upward,
+    so the physical box is centered above the root link. The lidar data link is
+    located at the center of the physical sensor body.
+    -->
+    <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * size_z} 0.0 0.0 0.0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box size="${size}"
+                          shape_origin="${body_origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:collision_box size="${size}"
+                             shape_origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${mass}"
+                                 size="${size}"
+                                 origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 ${0.5 * size_z}"/>
+    </joint>
+
+    <xacro:if value="${sim_enabled and sim_base_topic != ''}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
+
+      <xacro:plugin_lidar_3d_ring
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        ver_fov_deg="${sim_ver_fov_deg}"
+        ver_res_deg="${sim_ver_res_deg}"
+        dist_span="${sim_dist_span}"
+        dist_res="${sim_dist_res}"
+        gaussian_noise="${sim_gaussian_noise}"
+        namespace="${namespace}"
+        base_topic="${sim_base_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>

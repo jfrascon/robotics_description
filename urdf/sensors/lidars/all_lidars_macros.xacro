@@ -6,5 +6,6 @@
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/leuze_rsl400_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_airy_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_helios_16_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_m1_plus_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/sick_s300_macro.xacro"/>
 </robot>
