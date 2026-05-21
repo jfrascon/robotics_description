@@ -43,34 +43,34 @@ if true, use a mesh for the collision element. If false, use a primitive box.
     Pose of the lidar's root frame w.r.t the parent's frame.
     joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
-sim_lidar_*:
+sim_*:
 parameters for the GZ 2D lidar plugin.
 
-sim_lidar_enabled (B):
+sim_enabled (B):
 if true, include the GZ 2D lidar plugin.
 
-sim_lidar_always_on (B):
+sim_always_on (B):
 if true, the lidar is always active in simulation.
 
-sim_lidar_visualize (B):
+sim_visualize (B):
 if true, GZ visualizes the lidar rays in simulation.
 
-sim_lidar_update_rate (R):
+sim_update_rate (R):
 update rate of the lidar in simulation.
 
-sim_lidar_hor_fov_deg (S):
+sim_hor_fov_deg (S):
 horizontal field of view, in degrees, as 'min max'.
 
-sim_lidar_hor_res_deg (R):
+sim_hor_res_deg (R):
 horizontal angular resolution, in degrees.
 
-sim_lidar_dist_span (S):
+sim_dist_span (S):
 measurable distance span, in meters, as 'min max'.
 
-sim_lidar_gaussian_noise (S):
+sim_gaussian_noise (S):
 Gaussian noise parameters for range measurements as 'mean stddev'.
 
-sim_lidar_topic (S):
+sim_topic (S):
 Topic used by the GZ lidar plugin in simulation. This field is required.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
@@ -90,17 +90,17 @@ namespace.
             use_c_mesh:=False
             c_mesh_use_low_res:=True
             joint_parent_fr_root_fr
-            sim_lidar_enabled:=True
-            sim_lidar_always_on:=True
-            sim_lidar_visualize:=False
-            sim_lidar_update_rate
-            sim_lidar_hor_fov_deg
-            sim_lidar_hor_res_deg
-            sim_lidar_dist_span
-            sim_lidar_dist_res:=0.0
-            sim_lidar_gaussian_noise:='0 0'
+            sim_enabled:=True
+            sim_always_on:=True
+            sim_visualize:=False
+            sim_update_rate
+            sim_hor_fov_deg
+            sim_hor_res_deg
+            sim_dist_span
+            sim_dist_res:=0.0
+            sim_gaussian_noise:='0 0'
             namespace:=''
-            sim_lidar_topic">
+            sim_topic">
 
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
@@ -202,25 +202,25 @@ namespace.
     </joint>
 
     <!--
-    If sim_lidar_enabled is true and sim_lidar_topic is not empty, include the GZ lidar
+    If sim_enabled is true and sim_topic is not empty, include the GZ lidar
     plugin. If either field is not true, the plugin is not included.
     -->
-    <xacro:if value="${sim_lidar_enabled and sim_lidar_topic != ''}">
+    <xacro:if value="${sim_enabled and sim_topic != ''}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_2d_macro.xacro"/>
 
       <xacro:plugin_lidar_2d
         sensor_name="${prefix}${name}_gz"
         reference_link="${prefix}${name}_link"
-        always_on="${sim_lidar_always_on}"
-        visualize="${sim_lidar_visualize}"
-        update_rate="${sim_lidar_update_rate}"
-        hor_fov_deg="${sim_lidar_hor_fov_deg}"
-        hor_res_deg="${sim_lidar_hor_res_deg}"
-        dist_span="${sim_lidar_dist_span}"
-        dist_res="${sim_lidar_dist_res}"
-        gaussian_noise="${sim_lidar_gaussian_noise}"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        dist_span="${sim_dist_span}"
+        dist_res="${sim_dist_res}"
+        gaussian_noise="${sim_gaussian_noise}"
         namespace="${namespace}"
-        topic="${sim_lidar_topic}"/>
+        topic="${sim_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>

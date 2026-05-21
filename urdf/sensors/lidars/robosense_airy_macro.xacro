@@ -140,7 +140,7 @@ namespace.
                        use_visual:=True
                        use_collision:=True
                        use_inertial:=True
-                       use_v_mesh:=False
+                       use_v_mesh:=True
                        v_mesh_use_low_res:=True
                        color:=''
                        use_c_mesh:=False

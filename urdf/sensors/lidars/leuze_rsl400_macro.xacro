@@ -8,23 +8,23 @@
             use_visual:=True
             use_collision:=True
             use_inertial:=True
-            use_v_mesh:=False
+            use_v_mesh:=True
             v_mesh_use_low_res:=True
             color:=''
             use_c_mesh:=False
             c_mesh_use_low_res:=True
             joint_parent_fr_root_fr
-            sim_lidar_enabled:=True
-            sim_lidar_always_on:=True
-            sim_lidar_visualize:=False
-            sim_lidar_update_rate
-            sim_lidar_hor_fov_deg
-            sim_lidar_hor_res_deg
-            sim_lidar_dist_span
-            sim_lidar_dist_res:=0.0
-            sim_lidar_gaussian_noise:='0 0'
+            sim_enabled:=True
+            sim_always_on:=True
+            sim_visualize:=False
+            sim_update_rate
+            sim_hor_fov_deg
+            sim_hor_res_deg
+            sim_dist_span
+            sim_dist_res:=0.0
+            sim_gaussian_noise:='0 0'
             namespace:=''
-            sim_lidar_topic">
+            sim_topic">
 
     <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
@@ -126,25 +126,25 @@
     </joint>
 
     <!--
-    If sim_lidar_enabled is true and sim_lidar_topic is not empty, include the GZ lidar
+    If sim_enabled is true and sim_topic is not empty, include the GZ lidar
     plugin. If either field is not true, the plugin is not included.
     -->
-    <xacro:if value="${sim_lidar_enabled and sim_lidar_topic != ''}">
+    <xacro:if value="${sim_enabled and sim_topic != ''}">
       <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_2d_macro.xacro"/>
 
       <xacro:plugin_lidar_2d
         sensor_name="${prefix}${name}_gz"
         reference_link="${prefix}${name}_link"
-        always_on="${sim_lidar_always_on}"
-        visualize="${sim_lidar_visualize}"
-        update_rate="${sim_lidar_update_rate}"
-        hor_fov_deg="${sim_lidar_hor_fov_deg}"
-        hor_res_deg="${sim_lidar_hor_res_deg}"
-        dist_span="${sim_lidar_dist_span}"
-        dist_res="${sim_lidar_dist_res}"
-        gaussian_noise="${sim_lidar_gaussian_noise}"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        dist_span="${sim_dist_span}"
+        dist_res="${sim_dist_res}"
+        gaussian_noise="${sim_gaussian_noise}"
         namespace="${namespace}"
-        topic="${sim_lidar_topic}"/>
+        topic="${sim_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>
