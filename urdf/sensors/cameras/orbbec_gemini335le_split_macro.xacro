@@ -25,7 +25,6 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        use_c_mesh:=False
                        c_mesh_use_low_res:=True
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       sim_namespace:=''
                        sim_depth_enabled:=True
                        sim_depth_use_gravity:=True
                        sim_depth_always_on:=True
@@ -46,9 +45,6 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        sim_depth_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_depth_distortion_center:='0.5 0.5'
                        sim_depth_gaussian_noise:='0.0 0.0'
-                       sim_depth_image_topic
-                       sim_depth_camera_info_topic
-                       sim_depth_trigger_topic:=''
                        sim_color_enabled:=True
                        sim_color_use_gravity:=True
                        sim_color_always_on:=True
@@ -68,9 +64,6 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        sim_color_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_color_distortion_center:='0.5 0.5'
                        sim_color_gaussian_noise:='0.0 0.0'
-                       sim_color_image_topic
-                       sim_color_camera_info_topic
-                       sim_color_trigger_topic:=''
                        sim_left_ir_enabled:=True
                        sim_left_ir_use_gravity:=True
                        sim_left_ir_always_on:=True
@@ -90,9 +83,6 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        sim_left_ir_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_left_ir_distortion_center:='0.5 0.5'
                        sim_left_ir_gaussian_noise:='0.0 0.0'
-                       sim_left_ir_image_topic
-                       sim_left_ir_camera_info_topic
-                       sim_left_ir_trigger_topic:=''
                        sim_right_ir_enabled:=True
                        sim_right_ir_use_gravity:=True
                        sim_right_ir_always_on:=True
@@ -112,9 +102,6 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        sim_right_ir_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_right_ir_distortion_center:='0.5 0.5'
                        sim_right_ir_gaussian_noise:='0.0 0.0'
-                       sim_right_ir_image_topic
-                       sim_right_ir_camera_info_topic
-                       sim_right_ir_trigger_topic:=''
                        sim_imu_enabled:=True
                        sim_imu_use_gravity:=True
                        sim_imu_always_on:=True
@@ -126,6 +113,19 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        sim_imu_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
                        sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
                        sim_imu_use_orientation:=True
+                       namespace:=''
+                       sim_depth_image_topic
+                       sim_depth_camera_info_topic
+                       sim_depth_trigger_topic:=''
+                       sim_color_image_topic
+                       sim_color_camera_info_topic
+                       sim_color_trigger_topic:=''
+                       sim_left_ir_image_topic
+                       sim_left_ir_camera_info_topic
+                       sim_left_ir_trigger_topic:=''
+                       sim_right_ir_image_topic
+                       sim_right_ir_camera_info_topic
+                       sim_right_ir_trigger_topic:=''
                        sim_imu_topic">
 
     <xacro:orbbec_gemini335le_links_joints name="${name}"
@@ -164,7 +164,7 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                                  distortion_k_p="${sim_depth_distortion_k_p}"
                                  distortion_center="${sim_depth_distortion_center}"
                                  gaussian_noise="${sim_depth_gaussian_noise}"
-                                 namespace="${sim_namespace}"
+                                 namespace="${namespace}"
                                  topic="${sim_depth_image_topic}"
                                  info_topic="${sim_depth_camera_info_topic}"
                                  trigger_topic="${sim_depth_trigger_topic}"/>
@@ -192,7 +192,7 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                            distortion_k_p="${sim_color_distortion_k_p}"
                            distortion_center="${sim_color_distortion_center}"
                            gaussian_noise="${sim_color_gaussian_noise}"
-                           namespace="${sim_namespace}"
+                           namespace="${namespace}"
                            topic="${sim_color_image_topic}"
                            info_topic="${sim_color_camera_info_topic}"
                            trigger_topic="${sim_color_trigger_topic}"/>
@@ -220,7 +220,7 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                            distortion_k_p="${sim_left_ir_distortion_k_p}"
                            distortion_center="${sim_left_ir_distortion_center}"
                            gaussian_noise="${sim_left_ir_gaussian_noise}"
-                           namespace="${sim_namespace}"
+                           namespace="${namespace}"
                            topic="${sim_left_ir_image_topic}"
                            info_topic="${sim_left_ir_camera_info_topic}"
                            trigger_topic="${sim_left_ir_trigger_topic}"/>
@@ -248,7 +248,7 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                            distortion_k_p="${sim_right_ir_distortion_k_p}"
                            distortion_center="${sim_right_ir_distortion_center}"
                            gaussian_noise="${sim_right_ir_gaussian_noise}"
-                           namespace="${sim_namespace}"
+                           namespace="${namespace}"
                            topic="${sim_right_ir_image_topic}"
                            info_topic="${sim_right_ir_camera_info_topic}"
                            trigger_topic="${sim_right_ir_trigger_topic}"/>
@@ -267,7 +267,7 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                         lin_acc_gaussian_noise_bias="${sim_imu_lin_acc_gaussian_noise_bias}"
                         lin_acc_gaussian_noise_dynamic_bias="${sim_imu_lin_acc_gaussian_noise_dynamic_bias}"
                         use_orientation="${sim_imu_use_orientation}"
-                        namespace="${sim_namespace}"
+                        namespace="${namespace}"
                         topic="${sim_imu_topic}"/>
     </xacro:if>
   </xacro:macro>

@@ -25,7 +25,6 @@ plugin, two infrared camera plugins, and one IMU plugin.
                        use_c_mesh:=False
                        c_mesh_use_low_res:=True
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       sim_namespace:=''
                        sim_rgbd_enabled:=True
                        sim_rgbd_use_gravity:=True
                        sim_rgbd_always_on:=True
@@ -46,8 +45,6 @@ plugin, two infrared camera plugins, and one IMU plugin.
                        sim_rgbd_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_rgbd_distortion_center:='0.5 0.5'
                        sim_rgbd_gaussian_noise:='0.0 0.0'
-                       sim_rgbd_base_topic
-                       sim_rgbd_trigger_topic:=''
                        sim_left_ir_enabled:=True
                        sim_left_ir_use_gravity:=True
                        sim_left_ir_always_on:=True
@@ -67,9 +64,6 @@ plugin, two infrared camera plugins, and one IMU plugin.
                        sim_left_ir_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_left_ir_distortion_center:='0.5 0.5'
                        sim_left_ir_gaussian_noise:='0.0 0.0'
-                       sim_left_ir_image_topic
-                       sim_left_ir_camera_info_topic
-                       sim_left_ir_trigger_topic:=''
                        sim_right_ir_enabled:=True
                        sim_right_ir_use_gravity:=True
                        sim_right_ir_always_on:=True
@@ -89,9 +83,6 @@ plugin, two infrared camera plugins, and one IMU plugin.
                        sim_right_ir_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
                        sim_right_ir_distortion_center:='0.5 0.5'
                        sim_right_ir_gaussian_noise:='0.0 0.0'
-                       sim_right_ir_image_topic
-                       sim_right_ir_camera_info_topic
-                       sim_right_ir_trigger_topic:=''
                        sim_imu_enabled:=True
                        sim_imu_use_gravity:=True
                        sim_imu_always_on:=True
@@ -103,6 +94,15 @@ plugin, two infrared camera plugins, and one IMU plugin.
                        sim_imu_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
                        sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
                        sim_imu_use_orientation:=True
+                       namespace:=''
+                       sim_rgbd_base_topic
+                       sim_rgbd_trigger_topic:=''
+                       sim_left_ir_image_topic
+                       sim_left_ir_camera_info_topic
+                       sim_left_ir_trigger_topic:=''
+                       sim_right_ir_image_topic
+                       sim_right_ir_camera_info_topic
+                       sim_right_ir_trigger_topic:=''
                        sim_imu_topic">
 
     <xacro:orbbec_gemini335le_links_joints name="${name}"
@@ -141,7 +141,7 @@ plugin, two infrared camera plugins, and one IMU plugin.
                                 distortion_k_p="${sim_rgbd_distortion_k_p}"
                                 distortion_center="${sim_rgbd_distortion_center}"
                                 gaussian_noise="${sim_rgbd_gaussian_noise}"
-                                namespace="${sim_namespace}"
+                                namespace="${namespace}"
                                 base_topic="${sim_rgbd_base_topic}"
                                 trigger_topic="${sim_rgbd_trigger_topic}"/>
     </xacro:if>
@@ -168,7 +168,7 @@ plugin, two infrared camera plugins, and one IMU plugin.
                            distortion_k_p="${sim_left_ir_distortion_k_p}"
                            distortion_center="${sim_left_ir_distortion_center}"
                            gaussian_noise="${sim_left_ir_gaussian_noise}"
-                           namespace="${sim_namespace}"
+                           namespace="${namespace}"
                            topic="${sim_left_ir_image_topic}"
                            info_topic="${sim_left_ir_camera_info_topic}"
                            trigger_topic="${sim_left_ir_trigger_topic}"/>
@@ -196,7 +196,7 @@ plugin, two infrared camera plugins, and one IMU plugin.
                            distortion_k_p="${sim_right_ir_distortion_k_p}"
                            distortion_center="${sim_right_ir_distortion_center}"
                            gaussian_noise="${sim_right_ir_gaussian_noise}"
-                           namespace="${sim_namespace}"
+                           namespace="${namespace}"
                            topic="${sim_right_ir_image_topic}"
                            info_topic="${sim_right_ir_camera_info_topic}"
                            trigger_topic="${sim_right_ir_trigger_topic}"/>
@@ -215,7 +215,7 @@ plugin, two infrared camera plugins, and one IMU plugin.
                         lin_acc_gaussian_noise_bias="${sim_imu_lin_acc_gaussian_noise_bias}"
                         lin_acc_gaussian_noise_dynamic_bias="${sim_imu_lin_acc_gaussian_noise_dynamic_bias}"
                         use_orientation="${sim_imu_use_orientation}"
-                        namespace="${sim_namespace}"
+                        namespace="${namespace}"
                         topic="${sim_imu_topic}"/>
     </xacro:if>
   </xacro:macro>
