@@ -1,0 +1,150 @@
+<?xml version="1.0" ?>
+<robot name="leuze_rsl400" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro
+    name="leuze_rsl400"
+    params="name
+            prefix:=''
+            parent_frame
+            use_visual:=True
+            use_collision:=True
+            use_inertial:=True
+            use_v_mesh:=False
+            v_mesh_use_low_res:=True
+            color:=''
+            use_c_mesh:=False
+            c_mesh_use_low_res:=True
+            joint_parent_fr_root_fr
+            sim_lidar_enabled:=True
+            sim_lidar_always_on:=True
+            sim_lidar_visualize:=False
+            sim_lidar_update_rate
+            sim_lidar_hor_fov_deg
+            sim_lidar_hor_res_deg
+            sim_lidar_dist_span
+            sim_lidar_dist_res:=0.0
+            sim_lidar_gaussian_noise:='0 0'
+            namespace:=''
+            sim_lidar_topic">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <xacro:property name="mass"   value="1.2"/>
+    <xacro:property name="size_x" value="0.142645"/>
+    <xacro:property name="size_y" value="0.140254"/>
+    <xacro:property name="size_z" value="0.147911"/>
+
+    <!--
+    The mesh represents a box.
+    The frame of the mesh is located at its geometric center (See MeshLab).
+    Scale is 1 1 1.
+    The standard mesh does not have color information, so a color is encouraged.
+    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="mesh"
+                    value="robotics_description/meshes/sensors/lidars/leuze_rsl400/mesh.stl"/>
+
+    <!--
+    The mesh represents a box and its frame is located at its geometric center (see MeshLab).
+    Scale is 1 1 1.
+    The standard mesh does not have color information, so passing a visual color is encouraged.
+    -->
+    <xacro:property name="low_res_mesh"
+                    value="robotics_description/meshes/sensors/lidars/leuze_rsl400/mesh_low_res.stl"/>
+
+    <!-- Scale for both meshes, standard mesh and low resolution mesh. -->
+    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+
+    <!--
+    Both meshes, the standard mesh and the low-resolution mesh, are boxes, and the frame of both
+    meshes is located at their geometric center (see MeshLab). Their frames therefore coincide with
+    the frame of a box shape, so just one origin is needed no matter whether use_<v|c>_mesh is
+    true or false.
+    The body frame is located at the center of the bottom face of the box.
+    -->
+    <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * size_z} 0 0 0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_mesh"  value="${(low_res_mesh if v_mesh_use_low_res else mesh) if use_v_mesh else ''}"/>
+        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${v_mesh}"
+                          scale="${mesh_scale}"
+                          mesh_origin="${body_origin}"
+                          size="${size_x} ${size_y} ${size_z}"
+                          shape_origin="${body_origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:property name="c_mesh"
+                        value="${(low_res_mesh if c_mesh_use_low_res else mesh) if use_c_mesh else ''}"/>
+        <xacro:collision_box mesh="${c_mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${body_origin}"
+                             size="${size_x} ${size_y} ${size_z}"
+                             shape_origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${mass}"
+                                 size="${size_x} ${size_y} ${size_z}"
+                                 origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <!--
+    Definition of the joint '${prefix}${name}_root_joint', that joins the lidar root link to
+    its parent frame.
+    -->
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <!-- Definition of the data link '${prefix}${name}_link'. -->
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <!--
+    Definition of the joint '${prefix}${name}_joint', that joins the lidar data link to its root
+    link.
+    This pose sets the position and orientation of the sensor frame with respect the root frame,
+    located at the center of the bottom face of the box.
+    -->
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0.10375"/>
+    </joint>
+
+    <!--
+    If sim_lidar_enabled is true and sim_lidar_topic is not empty, include the GZ lidar
+    plugin. If either field is not true, the plugin is not included.
+    -->
+    <xacro:if value="${sim_lidar_enabled and sim_lidar_topic != ''}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_2d_macro.xacro"/>
+
+      <xacro:plugin_lidar_2d
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_lidar_always_on}"
+        visualize="${sim_lidar_visualize}"
+        update_rate="${sim_lidar_update_rate}"
+        hor_fov_deg="${sim_lidar_hor_fov_deg}"
+        hor_res_deg="${sim_lidar_hor_res_deg}"
+        dist_span="${sim_lidar_dist_span}"
+        dist_res="${sim_lidar_dist_res}"
+        gaussian_noise="${sim_lidar_gaussian_noise}"
+        namespace="${namespace}"
+        topic="${sim_lidar_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>
