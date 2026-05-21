@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <robot name="test_steerable_wheel" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:include filename="$(find robotics_description)/urdf/wheels/steerable_wheel_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/all_wheels.xacro"/>
+
+  <xacro:property name="swheel_sim_cfg"
+                  value="${xacro.load_yaml('$(find robotics_description)/config/wheels/example_steerable_wheel_simulation.yaml')}"/>
+
+  <xacro:set_props_wheel_sim prop_prefix="swheel_sim"
+                             sim_cfg="${swheel_sim_cfg}"/>
 
   <link name="base_link"/>
 
@@ -20,10 +26,11 @@
                          rotation_joint_type="continuous"
                          rotation_joint_limits="20.0 200.0"
                          rotation_joint_dynamics="0.1 0.2"
-                         max_contacts="10"
-                         mu="0.5"
-                         mu2="5.0"
-                         slip1="0.05"
-                         slip2="0.005"
-                         joint_parent_fr_wheel_fr="0.0 0.0 0.15 0.0 0.0 0.0"/>
+                         joint_parent_fr_wheel_fr="0.0 0.0 0.15 0.0 0.0 0.0"
+                         sim_enabled="${swheel_sim_enabled}"
+                         sim_max_contacts="${swheel_sim_max_contacts}"
+                         sim_mu="${swheel_sim_mu}"
+                         sim_mu2="${swheel_sim_mu2}"
+                         sim_slip1="${swheel_sim_slip1}"
+                         sim_slip2="${swheel_sim_slip2}"/>
 </robot>

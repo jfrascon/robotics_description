@@ -49,20 +49,6 @@ rotation_joint_limits (S): limits of the rotation joint.
     velocity (R): velocity limit of the rotation joint (radians/second).
     effort (R): effort limit of the rotation joint (newton-meters).
     Used only if rotation_joint_type is 'continuous'.
-max_contacts (I): maximum number of contact points between the wheel and other objects in simulation.
-mu (R): friction coefficient along the primary direction of motion of the wheel. Having into account that this macro
-        models a wheel as a cylinder with its rotation axis along the y-axis, the primary direction of motion is
-        along the x-axis of the wheel's frame.
-        This coefficient should be low enough to allow the wheel to roll freely, typically between 0.5 and 1.5.
-mu2 (R): friction coefficient along the secondary direction of motion of the wheel. Having into account that this
-         macro models a wheel as a cylinder with its rotation axis along the y-axis, the secondary direction of motion
-         is along the y-axis of the wheel's frame.
-         This coefficient should be high enough to prevent the wheel from slipping sideways, typically between 5 and 10.
-slip1 (R): slip parameter along the primary direction of motion of the wheel (x-axis of the wheel's frame).
-           This parameter models the small amount of slip that occurs even when a wheel is rolling without slipping.
-           typical values are between 0 and 0.1.
-slip2 (R): slip parameter along the secondary direction of motion of the wheel (y-axis of the wheel's frame).
-           This parameter should be very low, typically between 0 and 0.01, to prevent the wheel from slipping sideways.
 joint_parent_fr_wheel_fr (S): Pose of '${prefix}${name}_steerable_link' w.r.t the parent frame.
     joint_parent_fr_wheel_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
     IMPORTANT:
@@ -72,6 +58,14 @@ joint_parent_fr_wheel_fr (S): Pose of '${prefix}${name}_steerable_link' w.r.t th
     The steerable frame changes its orientation with respect to the parent when the wheel is steered.
     The rotation frame changes its orientation with respect to the steerable frame when the wheel spins.
     This parameter does not define any offset between steerable and rotation frames.
+sim_enabled (B): if true, Gazebo contact/friction parameters are emitted for the wheel link.
+sim_max_contacts (I): maximum number of contact points between the wheel and other
+    objects in simulation.
+sim_mu (R): Gazebo friction coefficient in the fdir1 direction. See the contact/friction note below.
+sim_mu2 (R): Gazebo friction coefficient perpendicular to fdir1. See the contact/friction
+    note below.
+sim_slip1 (R): Gazebo slip compliance in the fdir1 direction. See the contact/friction note below.
+sim_slip2 (R): Gazebo slip compliance perpendicular to fdir1. See the contact/friction note below.
 
 Explanation of the default values for the field 'steering_joint_limits: "-3.14159265 3.14159265 100 100000"'
 and 'rotation_joint_limits: "100 100000"':
@@ -111,6 +105,29 @@ For a typical medium-sized wheel, realistic values would be in the range of:
 effort:   10 to 100 n·m
 velocity: 10 to 30 rad/s
 -->
+<!--
+Contact and friction note for steerable wheels.
+
+Gazebo uses fdir1 to choose the first friction direction (rolling direction) at the wheel-ground
+contact. The coefficient mu is applied in the fdir1 direction. The coefficient mu2 is applied
+perpendicular to the rolling direction, which is the wheel rotation-axis direction for a normal
+wheel. slip1 and slip2 are compliance terms in those same directions: larger slip values allow more
+sliding (patinaje/deslizamiento), while smaller slip values make the contact more rigid.
+
+A normal wheel does not move forward because it slides. It moves because static friction gives the
+wheel traction (agarre) against the ground. For a normal rubber wheel, both longitudinal traction
+and lateral grip are usually desired:
+mu and mu2 should both be high enough, and slip1 and slip2 should both be low enough. Lower mu2 or
+larger slip2 is useful only when the wheel is meant to slide laterally, such as an omni or
+mecanum-style approximation.
+
+A steerable wheel changes its rolling direction when the steering joint moves.
+For that reason fdir1 must not be expressed in the robot base frame: it would stay fixed while the
+wheel steers. It also must not be expressed in the rotation link: that link spins continuously as
+the wheel rolls. This macro expresses fdir1 in the steerable link and uses the vector 1 0 0.
+The steerable link turns with the steering joint, but it does not spin with wheel rotation, so its
+X axis is the rolling direction of the wheel.
+-->
 <robot name="steerable_wheel_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="steerable_wheel"
                params="name
@@ -130,12 +147,13 @@ velocity: 10 to 30 rad/s
                        rotation_joint_type:=continuous
                        rotation_joint_limits:='100.0 100000.0'
                        rotation_joint_dynamics:='0.0 0.0'
-                       max_contacts:=10
-                       mu:=0.5
-                       mu2:=5.0
-                       slip1:=0.05
-                       slip2:=0.005
-                       joint_parent_fr_wheel_fr">
+                       joint_parent_fr_wheel_fr
+                       sim_enabled:=True
+                       sim_max_contacts:=10
+                       sim_mu:=1.0
+                       sim_mu2:=1.0
+                       sim_slip1:=0.0
+                       sim_slip2:=0.0">
 
     <!-- A steerable wheel is cylinder with its rotation axis along the y-axis that can change its orientation. -->
 
@@ -287,43 +305,50 @@ velocity: 10 to 30 rad/s
       </xacro:if>
     </joint>
 
-    <gazebo reference="${prefix}${name}_rotation_link">
+    <xacro:if value="${sim_enabled}">
+      <gazebo reference="${prefix}${name}_rotation_link">
       <!--
       This block configures contact/friction for the URDF collision already defined in rotation_link.
       It does not create a second collision shape.
       -->
-      <collision>
-        <max_contacts>${max_contacts}</max_contacts>
-        <surface>
-          <friction>
-            <ode>
-              <!--
-              In a standard wheel, with the configured orientations, the rolling direction is along the x-axis of the
-              steerable link.
-              -->
-              <fdir1 gz:expressed_in="${prefix}${name}_steerable_link">1 0 0</fdir1>
-              <!--
-              Reference 'http://sdformat.org/tutorials?tut=sdformat_urdf_extensions&cat=specification#gazebo-elements-for-links'
-              Friction coefficient in the direction of the wheel rolling, along the contact surface.
-              This coefficient should be high enough to allow the wheel to roll without slipping, from 0.8 a 1.5.
-              High traction along forward direction
-              -->
-              <mu>${mu}</mu>
-              <!--
-              Friction coefficient in axial direction (the direction of the wheel axis), along the contact surface.
+        <xacro:if value="${use_visual and color != ''}">
+          <material>
+            <ambient>${color}</ambient>
+            <diffuse>${color}</diffuse>
+          </material>
+        </xacro:if>
 
-              For a mecanum wheel:
-              This can be somehow assimilated to the direcion in which the rollers are moving.
-              This coefficient should be low enough to allow the rollers to move freely, from 0.03 to 0.1.
-              Low friction laterally to emulate rollers.
-              -->
-              <mu2>${mu2}</mu2>
-              <slip1>${slip1}</slip1>
-              <slip2>${slip2}</slip2>
-            </ode>
-          </friction>
-        </surface>
-      </collision>
-    </gazebo>
+        <collision>
+          <max_contacts>${sim_max_contacts}</max_contacts>
+          <surface>
+            <friction>
+              <ode>
+                <!--
+                In a steerable wheel the rolling direction is along the x-axis of the
+                steerable link.
+                -->
+                <fdir1 gz:expressed_in="${prefix}${name}_steerable_link">1 0 0</fdir1>
+                <!--
+                Friction coefficient in the fdir1 direction. For a normal wheel,
+                this controls longitudinal traction (agarre).
+                -->
+                <mu>${sim_mu}</mu>
+                <!--
+                Friction coefficient perpendicular to fdir1 in the contact plane.
+                For a normal wheel, this controls lateral grip.
+                -->
+                <mu2>${sim_mu2}</mu2>
+                <!--
+                Slip compliance in the fdir1 direction and perpendicular direction.
+                Smaller values allow less sliding (patinaje/deslizamiento).
+                -->
+                <slip1>${sim_slip1}</slip1>
+                <slip2>${sim_slip2}</slip2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+      </gazebo>
+    </xacro:if>
   </xacro:macro>
 </robot>

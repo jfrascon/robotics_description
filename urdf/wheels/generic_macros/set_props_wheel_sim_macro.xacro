@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<robot name="set_props_wheel_sim_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!--
+  `prop_prefix` is used as the prefix for all the properties defined in this macro.
+
+  This macro intentionally does not define fdir1 or fdir1_frame. Those values depend on the
+  robot frame tree and must be passed directly when the wheel macro is instantiated.
+  -->
+
+  <xacro:macro name="set_props_wheel_sim"
+               params="prop_prefix
+                       sim_cfg:=dict()">
+
+    <xacro:unless value="${sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_enabled"      value="False" scope="parent"/>
+      <xacro:property name="${prop_prefix}_max_contacts" value="0"     scope="parent"/>
+      <xacro:property name="${prop_prefix}_mu"           value="0.0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_mu2"          value="0.0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_slip1"        value="0.0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_slip2"        value="0.0"   scope="parent"/>
+    </xacro:unless>
+
+    <xacro:if value="${sim_cfg.get('enabled', False)}">
+      <xacro:property name="${prop_prefix}_enabled"      value="True"                       scope="parent"/>
+      <xacro:property name="${prop_prefix}_max_contacts" value="${sim_cfg['max_contacts']}" scope="parent"/>
+      <xacro:property name="${prop_prefix}_mu"           value="${sim_cfg['mu']}"           scope="parent"/>
+      <xacro:property name="${prop_prefix}_mu2"          value="${sim_cfg['mu2']}"          scope="parent"/>
+      <xacro:property name="${prop_prefix}_slip1"        value="${sim_cfg['slip1']}"        scope="parent"/>
+      <xacro:property name="${prop_prefix}_slip2"        value="${sim_cfg['slip2']}"        scope="parent"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>
+
