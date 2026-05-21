@@ -1,18 +1,28 @@
 import os
 import shutil
 import subprocess
+import tempfile
 import xml.etree.ElementTree as ET
 
 import pytest
 from ament_index_python.packages import get_package_share_directory
 
 xacro_files = []
-test_xacros_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_xacros')
+test_dir = os.path.dirname(os.path.abspath(__file__))
+package_root = os.path.dirname(test_dir)
+package_name = os.path.basename(package_root)
+test_xacros_dir = os.path.join(test_dir, 'test_xacros')
+all_xacro_files = []
 
 if os.path.isdir(test_xacros_dir):
     for file in os.listdir(test_xacros_dir):
         if file.endswith('.xacro'):
             xacro_files.append(os.path.join(test_xacros_dir, file))
+
+for root_dir, _, files in os.walk(package_root):
+    for file in files:
+        if file.endswith('.xacro'):
+            all_xacro_files.append(os.path.join(root_dir, file))
 
 
 def check_meshes(urdf_file):
@@ -52,10 +62,9 @@ def check_meshes(urdf_file):
 
         if filename.startswith('package://'):
             package_name, _, package_path = filename[10:].partition('/')
-            package_share_path = get_package_share_directory(package_name)
 
             try:
-                package_share_path = get_package_share_directory(package_name)
+                package_share_path = get_package_share_directory_from_test_env(package_name)
 
                 if not os.path.exists(os.path.join(package_share_path, package_path)):
                     failed_meshes.append(f"Mesh '{filename}' does not exist")
@@ -65,6 +74,74 @@ def check_meshes(urdf_file):
             failed_meshes.append(f"Mesh path is not in 'package://' format: '{filename}'")
 
     assert not failed_meshes, 'URDF mesh validation failed:\n  - ' + '\n  - '.join(failed_meshes)
+
+
+def create_source_package_ament_prefix():
+    """
+    Create an ament index prefix that points this package name to the source tree.
+
+    The test Xacro files use $(find robotics_description). When pytest is run
+    directly from the source tree, $(find ...) may otherwise resolve an older
+    installed copy under the workspace install directory. That would test stale
+    files and miss newly added macros until the package is installed again.
+    """
+    ament_prefix = tempfile.TemporaryDirectory()
+    resource_dir = os.path.join(ament_prefix.name, 'share', 'ament_index', 'resource_index', 'packages')
+    share_dir = os.path.join(ament_prefix.name, 'share')
+    os.makedirs(resource_dir, exist_ok=True)
+    os.makedirs(share_dir, exist_ok=True)
+
+    with open(os.path.join(resource_dir, package_name), 'w', encoding='utf-8'):
+        pass
+
+    os.symlink(package_root, os.path.join(share_dir, package_name))
+
+    return ament_prefix
+
+
+def get_package_share_directory_from_test_env(name):
+    """Resolve this package to the source tree and all other packages normally."""
+    if name == package_name:
+        return package_root
+
+    return get_package_share_directory(name)
+
+
+@pytest.mark.parametrize('xacro_file', all_xacro_files)
+def test_macro_file_robot_name_uses_macro_suffix(xacro_file):
+    """
+    Check the naming convention for files that declare reusable Xacro macros.
+
+    A file that declares a <xacro:macro> is a macro container, not a standalone
+    robot model. Its top-level <robot name="..."> therefore uses a _macro or
+    _macros suffix. The public macro names themselves do not use that suffix.
+    """
+    root = ET.parse(xacro_file).getroot()
+    macro_elements = [
+        element
+        for element in root.iter()
+        if element.tag == '{http://www.ros.org/wiki/xacro}macro'
+    ]
+
+    if not macro_elements:
+        return
+
+    robot_name = root.get('name')
+    assert robot_name, f"Macro file '{xacro_file}' must set the top-level <robot name>"
+    assert robot_name.endswith(('_macro', '_macros')), (
+        f"Macro file '{xacro_file}' has robot name '{robot_name}', "
+        "but macro-container robot names must end with _macro or _macros"
+    )
+
+    macro_names_with_suffix = [
+        macro.get('name')
+        for macro in macro_elements
+        if macro.get('name', '').endswith(('_macro', '_macros'))
+    ]
+    assert not macro_names_with_suffix, (
+        f"Macro file '{xacro_file}' has public macro names with a macro suffix: "
+        f"{macro_names_with_suffix}"
+    )
 
 
 @pytest.mark.parametrize('xacro_file', xacro_files)
@@ -88,18 +165,25 @@ def test_xacro_file(xacro_file):
     xacro_command_list = [xacro_path, xacro_file, f'robot_id:={robot_id}', '-o', tmp_urdf_output_file]
     check_command_list = [check_urdf_path, tmp_urdf_output_file]
 
+    ament_prefix = create_source_package_ament_prefix()
+    env = os.environ.copy()
+    current_ament_prefix_path = env.get('AMENT_PREFIX_PATH', '')
+    env['AMENT_PREFIX_PATH'] = os.pathsep.join(
+        path for path in [ament_prefix.name, current_ament_prefix_path] if path
+    )
+
     try:
         # Generate URDF file.
         print(f"Testing xacro file '{xacro_file}'")
         print(f'Executing command: {" ".join(xacro_command_list)}')
 
-        xacro_process = subprocess.run(xacro_command_list, capture_output=True, text=True, check=False)
+        xacro_process = subprocess.run(xacro_command_list, capture_output=True, text=True, check=False, env=env)
         assert xacro_process.returncode == 0, f'xacro command failed with stderr: {xacro_process.stderr}'
         assert os.path.exists(tmp_urdf_output_file), f"Output urdf file '{tmp_urdf_output_file}' not found"
 
         # Check URDF file.
         print(f'Executing command: {" ".join(check_command_list)}')
-        check_process = subprocess.run(check_command_list, capture_output=True, text=True, check=False)
+        check_process = subprocess.run(check_command_list, capture_output=True, text=True, check=False, env=env)
         assert check_process.returncode == 0, f'> check_urdf command failed with stderr: {check_process.stderr}'
 
         # Check meshes
@@ -108,6 +192,7 @@ def test_xacro_file(xacro_file):
     finally:
         if os.path.exists(tmp_urdf_output_file):
             os.remove(tmp_urdf_output_file)
+        ament_prefix.cleanup()
 
 
 if __name__ == '__main__':

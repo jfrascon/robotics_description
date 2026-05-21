@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<robot name="test_robosense_m1_plus" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/robosense_m1_plus_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_3d_ring_macro.xacro"/>
+
+  <xacro:property name="sim_cfg"
+                  value="${xacro.load_yaml('$(find robotics_description)/config/sensors/lidars/example_robosense_m1_plus_simulation.yaml')}"/>
+
+  <xacro:set_props_plugin_lidar_3d_ring prop_prefix="lidar3d"
+                                        sim_cfg="${sim_cfg}"/>
+
+  <link name="base_link"/>
+
+  <xacro:robosense_m1_plus name="lidar3d"
+                            parent_frame="base_link"
+                            use_visual="True"
+                            use_collision="True"
+                            use_inertial="True"
+                            color="0.0 0.0 0.0 1.0"
+                            joint_parent_fr_root_fr="0 0 0 0 0 0"
+                            sim_enabled="${lidar3d_enabled}"
+                            sim_always_on="${lidar3d_always_on}"
+                            sim_visualize="${lidar3d_visualize}"
+                            sim_update_rate="${lidar3d_update_rate}"
+                            sim_hor_fov_deg="${lidar3d_hor_fov_deg}"
+                            sim_hor_res_deg="${lidar3d_hor_res_deg}"
+                            sim_ver_fov_deg="${lidar3d_ver_fov_deg}"
+                            sim_ver_res_deg="${lidar3d_ver_res_deg}"
+                            sim_dist_span="${lidar3d_dist_span}"
+                            sim_dist_res="${lidar3d_dist_res}"
+                            sim_gaussian_noise="${lidar3d_gaussian_noise}"
+                            namespace="test_lidar3d"
+                            sim_base_topic="${lidar3d_base_topic}"/>
+</robot>

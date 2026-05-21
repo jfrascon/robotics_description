@@ -27,6 +27,12 @@
 
   <xacro:um7 name="imu"
              parent_frame="base_link"
+             use_visual="True"
+             use_collision="True"
+             use_inertial="True"
+             use_v_mesh="False"
+             color="0.1 0.1 0.1 1.0"
+             use_c_mesh="False"
              joint_parent_fr_root_fr="0 0 0 0 0 0"
              sim_enabled="${imu_enabled}"
              sim_use_gravity="${imu_use_gravity}"
@@ -39,5 +45,6 @@
              sim_lin_acc_gaussian_noise_bias="${imu_lin_acc_gaussian_noise_bias}"
              sim_lin_acc_gaussian_noise_dynamic_bias="${imu_lin_acc_gaussian_noise_dynamic_bias}"
              sim_use_orientation="${imu_use_orientation}"
+             namespace="test_imu"
              sim_topic="${imu_topic}"/>
 </robot>

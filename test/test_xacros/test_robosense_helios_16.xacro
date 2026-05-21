@@ -14,6 +14,14 @@
 
   <xacro:robosense_helios_16 name="lidar3d"
                               parent_frame="base_link"
+                              use_visual="True"
+                              use_collision="True"
+                              use_inertial="True"
+                              use_v_mesh="False"
+                              v_mesh_use_low_res="True"
+                              color="0.0 0.0 0.0 1.0"
+                              use_c_mesh="False"
+                              c_mesh_use_low_res="True"
                               joint_parent_fr_root_fr="0 0 0 0 0 0"
                               sim_enabled="${lidar3d_enabled}"
                               sim_always_on="${lidar3d_always_on}"
@@ -24,6 +32,8 @@
                               sim_ver_fov_deg="${lidar3d_ver_fov_deg}"
                               sim_ver_res_deg="${lidar3d_ver_res_deg}"
                               sim_dist_span="${lidar3d_dist_span}"
+                              sim_dist_res="${lidar3d_dist_res}"
                               sim_gaussian_noise="${lidar3d_gaussian_noise}"
+                              namespace="test_lidar3d"
                               sim_base_topic="${lidar3d_base_topic}"/>
 </robot>
