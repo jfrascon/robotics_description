@@ -19,6 +19,7 @@
                        hor_fov_deg
                        hor_res_deg
                        dist_span
+                       dist_res:=0.0
                        gaussian_noise:='0 0'
                        namespace:=''
                        topic">
@@ -34,6 +35,7 @@
                                 ver_fov_deg="0 0"
                                 ver_res_deg="1.0"
                                 dist_span="${dist_span}"
+                                dist_res="${dist_res}"
                                 gaussian_noise="${gaussian_noise}"
                                 namespace="${namespace}"
                                 base_topic="${topic}"/>

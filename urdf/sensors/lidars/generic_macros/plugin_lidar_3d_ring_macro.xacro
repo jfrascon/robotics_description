@@ -56,6 +56,7 @@ Mandatory parameters:
 - ver_fov_deg has 2 values between quotes in this order 'min_ver_angle_deg max_ver_angle_deg'
 - ver_res_deg has 1 value.
 - dist_span has 2 values between quotes in this order 'min_dist max_dist'
+- dist_res has 1 value, in meters.
 -->
 <robot name="plugin_lidar_3d_ring" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="plugin_lidar_3d_ring"
@@ -69,6 +70,7 @@ Mandatory parameters:
                        ver_fov_deg
                        ver_res_deg
                        dist_span
+                       dist_res:=0.0
                        gaussian_noise:='0 0'
                        namespace:=''
                        base_topic">
@@ -156,8 +158,7 @@ Mandatory parameters:
           <range>
             <min>${min_dist}</min>
             <max>${max_dist}</max>
-            <!-- DO NOT TOUCH, LEAVE IT TO 0.0 -->
-            <resolution>0.0</resolution>
+            <resolution>${dist_res}</resolution>
           </range>
           <noise>
             <type>gaussian</type>

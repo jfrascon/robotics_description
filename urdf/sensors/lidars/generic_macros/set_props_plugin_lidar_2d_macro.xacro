@@ -20,6 +20,7 @@
       <xacro:property name="${prop_prefix}_hor_fov_deg"    value="0 0"   scope="parent"/>
       <xacro:property name="${prop_prefix}_hor_res_deg"    value="0"     scope="parent"/>
       <xacro:property name="${prop_prefix}_dist_span"      value="0 0"   scope="parent"/>
+      <xacro:property name="${prop_prefix}_dist_res"       value="0.0"   scope="parent"/>
       <xacro:property name="${prop_prefix}_gaussian_noise" value="0 0"   scope="parent"/>
       <xacro:property name="${prop_prefix}_topic"          value=""      scope="parent"/>
     </xacro:unless>
@@ -60,6 +61,10 @@
                       value="${sim_cfg['dist_span']}"/>
       <xacro:property name="${prop_prefix}_dist_span"
                       value="${sim_dist_span['min_dist']} ${sim_dist_span['max_dist']}"
+                      scope="parent"/>
+
+      <xacro:property name="${prop_prefix}_dist_res"
+                      value="${sim_cfg.get('dist_res', 0.0)}"
                       scope="parent"/>
 
       <xacro:property name="sim_gaussian_noise"

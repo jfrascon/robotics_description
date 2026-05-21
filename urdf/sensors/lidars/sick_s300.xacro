@@ -97,6 +97,7 @@ namespace.
             sim_lidar_hor_fov_deg
             sim_lidar_hor_res_deg
             sim_lidar_dist_span
+            sim_lidar_dist_res:=0.0
             sim_lidar_gaussian_noise:='0 0'
             namespace:=''
             sim_lidar_topic">
@@ -216,6 +217,7 @@ namespace.
         hor_fov_deg="${sim_lidar_hor_fov_deg}"
         hor_res_deg="${sim_lidar_hor_res_deg}"
         dist_span="${sim_lidar_dist_span}"
+        dist_res="${sim_lidar_dist_res}"
         gaussian_noise="${sim_lidar_gaussian_noise}"
         namespace="${namespace}"
         topic="${sim_lidar_topic}"/>

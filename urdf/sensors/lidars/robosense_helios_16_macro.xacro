@@ -111,6 +111,7 @@ namespace.
                        sim_ver_fov_deg
                        sim_ver_res_deg
                        sim_dist_span
+                       sim_dist_res:=0.0
                        sim_gaussian_noise:='0 0'
                        namespace:=''
                        sim_base_topic">
@@ -235,6 +236,7 @@ namespace.
         ver_fov_deg="${sim_ver_fov_deg}"
         ver_res_deg="${sim_ver_res_deg}"
         dist_span="${sim_dist_span}"
+        dist_res="${sim_dist_res}"
         gaussian_noise="${sim_gaussian_noise}"
         namespace="${namespace}"
         base_topic="${sim_base_topic}"/>
