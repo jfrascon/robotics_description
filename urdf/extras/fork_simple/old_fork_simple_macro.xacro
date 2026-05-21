@@ -30,7 +30,7 @@ derived from it.
 
 The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
 -->
-<robot name="fork_simple" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="fork_simple_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
   <!-- Import the generic links-and-joints implementation used by the concrete fork model wrapper below. -->
   <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro"/>

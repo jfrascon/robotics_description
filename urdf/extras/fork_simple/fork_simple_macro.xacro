@@ -37,7 +37,7 @@ The `limits` argument is interpreted as `lower upper velocity effort`.
 The `joint_parent_fr_root_fr` argument is interpreted as
 `x y z roll pitch yaw`.
 -->
-<robot name="fork_simple" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="fork_simple_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
   <xacro:macro name="fork_simple"
                params="name:='fork_simple'

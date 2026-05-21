@@ -85,7 +85,7 @@ Topic used by the GZ lidar plugin in simulation. This field is required.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
 -->
-<robot name="hokuyo_utm30lx" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="hokuyo_utm30lx_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro
     name="hokuyo_utm30lx"
     params="name

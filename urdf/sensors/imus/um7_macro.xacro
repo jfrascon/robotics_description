@@ -43,7 +43,7 @@ sim_use_orientation (B): if true, the imu plugin provides orientation data in si
 sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. This field is required.
     If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot namespace.
 -->
-<robot name="um7" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="um7_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="um7"
                params="name
                        prefix:=''

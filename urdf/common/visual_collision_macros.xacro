@@ -11,7 +11,7 @@ Note: In some expressions used in <xacro:if> tags, the symbol '&lt;' appears ins
       must be escaped as '&lt;'.
 -->
 
-<robot name="visual_collision" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="visual_collision_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
   <xacro:include filename="$(find robotics_description)/urdf/common/set_basic_geometry_macro.xacro"/>
 

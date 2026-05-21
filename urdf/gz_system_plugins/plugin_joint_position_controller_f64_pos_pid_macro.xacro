@@ -24,7 +24,7 @@ The caller still has to decide:
 - The initial commanded position that will be published through `initial_position`.
 - The command topic that will be published through `topic`.
 -->
-<robot name="plugin_joint_position_controller_f64_pos_pid" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_joint_position_controller_f64_pos_pid_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_macro.xacro"/>
 
   <xacro:macro name="plugin_joint_position_controller_f64_pos_pid"

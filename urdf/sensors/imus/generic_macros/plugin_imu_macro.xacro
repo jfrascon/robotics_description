@@ -65,7 +65,7 @@ TO USE IMU PLUGIN DO NOT FORGET TO ADD THE FOLLOWING BLOCK TO THE SDF WORLD FILE
 Reference: https://gazebosim.org/docs/harmonic/sensors/
 -->
 
-<robot name="plugin_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_imu_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="plugin_imu"
                params="sensor_name
                        reference_link

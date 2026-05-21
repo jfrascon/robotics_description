@@ -72,7 +72,7 @@ joint_parent_fr_root_fr (S): pose of root frame with respect to `parent_frame`.
 
 -->
 
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="fork_simple_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="fork_simple_links_joints"
                params="name
                        prefix:=''

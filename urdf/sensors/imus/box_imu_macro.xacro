@@ -18,7 +18,7 @@ with a mesh or with the basic box primitive. The corresponding mesh scale must
 make the scaled mesh match the size declared through the size parameter. This
 macro does not try to infer or validate mesh dimensions.
 -->
-<robot name="box_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="box_imu_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="box_imu"
                params="name
                        prefix:=''

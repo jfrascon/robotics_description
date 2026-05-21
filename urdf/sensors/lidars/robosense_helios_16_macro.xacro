@@ -88,7 +88,7 @@ Topic used by the GZ `gpu_lidar` plugin in simulation. This field is required.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
 -->
-<robot name="robosense_helios_16" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="robosense_helios_16_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="robosense_helios_16"
                params="name
                        prefix:=''

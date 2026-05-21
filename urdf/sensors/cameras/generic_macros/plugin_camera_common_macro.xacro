@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="plugin_camera_common" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_camera_common_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <!--
   Common implementation for the camera sub-elements shared by Gazebo camera sensors.
 

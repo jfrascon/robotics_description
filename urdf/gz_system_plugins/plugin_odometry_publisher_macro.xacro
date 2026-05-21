@@ -70,7 +70,7 @@ URL 'https://gazebosim.org/api/sim/10/namespacegz_1_1sim_1_1systems.html', for A
 
 https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
 -->
-<robot name="plugin_odometry_publisher" xmlns:xacro="http://www.ros.org/wiki/xacro"
+<robot name="plugin_odometry_publisher_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
        xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="plugin_odometry_publisher"
                params="odom_frame

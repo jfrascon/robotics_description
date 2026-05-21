@@ -132,7 +132,7 @@ Topic used by the GZ IMU plugin in simulation. This field is required.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
 -->
-<robot name="robosense_airy" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="robosense_airy_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="robosense_airy"
                params="name
                        prefix:=''

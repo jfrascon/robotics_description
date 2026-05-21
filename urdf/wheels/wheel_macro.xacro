@@ -84,7 +84,7 @@ For a typical medium-sized wheel, realistic values would be in the range of:
 effort:   10 to 100 n·m
 velocity: 10 to 30 rad/s
 -->
-<robot name="wheel" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="wheel_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="wheel"
                params="name
                        prefix:=''

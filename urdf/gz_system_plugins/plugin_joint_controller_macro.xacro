@@ -52,7 +52,7 @@ URL 'https://gazebosim.org/api/sim/10/namespacegz_1_1sim_1_1systems.html', for A
 
 https://gazebosim.org/api/sim/9/classgz_1_1sim_1_1systems_1_1JointController.html
 -->
-<robot name="plugin_joint_controller" xmlns:xacro="http://www.ros.org/wiki/xacro"
+<robot name="plugin_joint_controller_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
        xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="plugin_joint_controller"
                params="joint_name

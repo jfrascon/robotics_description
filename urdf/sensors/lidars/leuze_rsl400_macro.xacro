@@ -1,5 +1,5 @@
 <?xml version="1.0" ?>
-<robot name="leuze_rsl400" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="leuze_rsl400_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro
     name="leuze_rsl400"
     params="name
