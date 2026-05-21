@@ -69,7 +69,7 @@ sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. This field is 
                        namespace:=''
                        sim_topic">
 
-    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/box_imu_macro.xacro"/>
 
     <xacro:property name="mass"   value="0.0110"/>
 
@@ -82,7 +82,6 @@ sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. This field is 
     <xacro:property name="size_x" value="0.0285"/>
     <xacro:property name="size_y" value="0.0285"/>
     <xacro:property name="size_z" value="0.0128"/>
-    <xacro:property name="size"   value="${size_x} ${size_y} ${size_z}"/>
 
     <!--
     The frame of the mesh is located at its geometric center (see MeshLab), so it coincides with the frame of a box
@@ -94,84 +93,35 @@ sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. This field is 
     -->
     <xacro:property name="mesh"       value="robotics_description/meshes/sensors/imus/um7/mesh.dae"/>
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
-    <!--
-    Move the visual element half length up in z to place the root frame at the center of the bottom face of the imu.
-    -->
-    <xacro:property name="origin" value="0 0 ${0.5 * size_z} 0 0 0"/>
 
-    <link name="${prefix}${name}_root_link">
-      <xacro:if value="${use_visual}">
-        <xacro:property name="v_mesh" value="${mesh if use_v_mesh else ''}"/>
-        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
-        <xacro:visual_box mesh="${v_mesh}"
-                          scale="${mesh_scale}"
-                          mesh_origin="${origin}"
-                          size="${size}"
-                          shape_origin="${origin}"
-                          color="${v_color}"/>
-      </xacro:if>
-
-      <xacro:if value="${use_collision}">
-        <xacro:property name="c_mesh" value="${mesh if use_c_mesh else ''}"/>
-        <xacro:collision_box mesh="${c_mesh}"
-                             scale="${mesh_scale}"
-                             mesh_origin="${origin}"
-                             size="${size}"
-                             shape_origin="${origin}"/>
-      </xacro:if>
-
-      <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertia mass="${mass}" size="${size}" origin="${origin}"/>
-      </xacro:if>
-
-      <xacro:unless value="${use_inertial}">
-        <xacro:null_inertia/>
-      </xacro:unless>
-    </link>
-
-    <!-- Definition of the joint '${prefix}${name}_root_joint', that joins the lidar root link to its parent frame. -->
-    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
-
-    <joint name="${prefix}${name}_root_joint" type="fixed">
-      <parent link="${parent_frame}"/>
-      <child link="${prefix}${name}_root_link"/>
-      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
-    </joint>
-
-    <!-- Definition of the link ${prefix}${name}_link. -->
-    <link name="${prefix}${name}_link">
-      <xacro:null_inertia/>
-    </link>
-
-    <!-- Definition of the joint '${prefix}${name}_joint', that joins the imu data link to its root link. -->
-    <joint name="${prefix}${name}_joint" type="fixed">
-      <parent link="${prefix}${name}_root_link"/>
-      <child link="${prefix}${name}_link"/>
-      <origin rpy="${pi} 0.0 0.0" xyz="-0.00785 0.00785 0.01118"/>
-    </joint>
-
-    <!--
-    If sim_enabled is true and sim_topic is not empty, include the GZ plugin.
-    If either of fields is not true, the plugin is not included.
-    -->
-    <xacro:if value="${sim_enabled and sim_topic != ''}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
-
-      <xacro:plugin_imu
-        sensor_name="${prefix}${name}_gz"
-        reference_link="${prefix}${name}_link"
-        use_gravity="${sim_use_gravity}"
-        always_on="${sim_always_on}"
-        update_rate="${sim_update_rate}"
-        ang_vel_gaussian_noise="${sim_ang_vel_gaussian_noise}"
-        ang_vel_gaussian_noise_bias="${sim_ang_vel_gaussian_noise_bias}"
-        ang_vel_gaussian_noise_dynamic_bias="${sim_ang_vel_gaussian_noise_dynamic_bias}"
-        lin_acc_gaussian_noise="${sim_lin_acc_gaussian_noise}"
-        lin_acc_gaussian_noise_bias="${sim_lin_acc_gaussian_noise_bias}"
-        lin_acc_gaussian_noise_dynamic_bias="${sim_lin_acc_gaussian_noise_dynamic_bias}"
-        use_orientation="${sim_use_orientation}"
-        namespace="${namespace}"
-        topic="${sim_topic}"/>
-    </xacro:if>
+    <xacro:box_imu
+      name="${name}"
+      prefix="${prefix}"
+      parent_frame="${parent_frame}"
+      mass="${mass}"
+      size="${size_x} ${size_y} ${size_z}"
+      use_visual="${use_visual}"
+      use_collision="${use_collision}"
+      use_inertial="${use_inertial}"
+      v_mesh="${mesh if use_v_mesh else ''}"
+      v_mesh_scale="${mesh_scale}"
+      color="${color}"
+      c_mesh="${mesh if use_c_mesh else ''}"
+      c_mesh_scale="${mesh_scale}"
+      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
+      joint_root_fr_data_fr="-0.00785 0.00785 0.01118 ${pi} 0.0 0.0"
+      sim_enabled="${sim_enabled}"
+      sim_use_gravity="${sim_use_gravity}"
+      sim_always_on="${sim_always_on}"
+      sim_update_rate="${sim_update_rate}"
+      sim_ang_vel_gaussian_noise="${sim_ang_vel_gaussian_noise}"
+      sim_ang_vel_gaussian_noise_bias="${sim_ang_vel_gaussian_noise_bias}"
+      sim_ang_vel_gaussian_noise_dynamic_bias="${sim_ang_vel_gaussian_noise_dynamic_bias}"
+      sim_lin_acc_gaussian_noise="${sim_lin_acc_gaussian_noise}"
+      sim_lin_acc_gaussian_noise_bias="${sim_lin_acc_gaussian_noise_bias}"
+      sim_lin_acc_gaussian_noise_dynamic_bias="${sim_lin_acc_gaussian_noise_dynamic_bias}"
+      sim_use_orientation="${sim_use_orientation}"
+      namespace="${namespace}"
+      sim_topic="${sim_topic}"/>
   </xacro:macro>
 </robot>

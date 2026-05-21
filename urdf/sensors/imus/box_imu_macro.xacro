@@ -1,0 +1,145 @@
+<?xml version="1.0"?>
+<!--
+Generic rectangular IMU macro.
+
+This macro defines a generic IMU with a rectangular body. It can represent the
+body with a basic box primitive or with optional visual and collision meshes.
+
+The root link frame is located at the center of the lower face of the IMU box.
+The visual, collision, and inertial elements are shifted upward by half the box
+height so that the box volume sits above the root frame.
+
+If a visual or collision mesh is provided, the mesh frame is expected to be at
+the geometric center of the mesh. The same convention is used by the basic box
+primitive. Because of that convention, the visual, collision, and inertial
+elements are translated upward by size.z / 2. This keeps the IMU root frame at
+the center of the lower face independently of whether the body is represented
+with a mesh or with the basic box primitive. The corresponding mesh scale must
+make the scaled mesh match the size declared through the size parameter. This
+macro does not try to infer or validate mesh dimensions.
+-->
+<robot name="box_imu" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="box_imu"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       mass
+                       size
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       v_mesh:=''
+                       v_mesh_scale:='1.0 1.0 1.0'
+                       color:=''
+                       c_mesh:=''
+                       c_mesh_scale:='1.0 1.0 1.0'
+                       joint_parent_fr_root_fr
+                       joint_root_fr_data_fr:='0 0 0 0 0 0'
+                       sim_enabled:=False
+                       sim_use_gravity:=True
+                       sim_always_on:=True
+                       sim_update_rate:=100
+                       sim_ang_vel_gaussian_noise:='0 0 0 0 0 0'
+                       sim_ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_lin_acc_gaussian_noise:='0 0 0 0 0 0'
+                       sim_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_use_orientation:=True
+                       namespace:=''
+                       sim_topic:=''">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <xacro:property name="size_seq" value="${size.split()}"/>
+
+    <xacro:if value="${len(size_seq) != 3}">
+      ${xacro.fatal("box_imu: size must be 'len_x len_y len_z'")}
+    </xacro:if>
+
+    <!--
+    The root link frame is located at the center of the lower face of the IMU box.
+    -->
+    <xacro:property name="origin"
+                    value="0 0 ${0.5 * float(size_seq[2])} 0 0 0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${v_mesh}"
+                          scale="${v_mesh_scale}"
+                          mesh_origin="${origin}"
+                          size="${size}"
+                          shape_origin="${origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:collision_box mesh="${c_mesh}"
+                             scale="${c_mesh_scale}"
+                             mesh_origin="${origin}"
+                             size="${size}"
+                             shape_origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${mass}" size="${size}" origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <xacro:property name="parent_root_seq" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <xacro:if value="${len(parent_root_seq) != 6}">
+      ${xacro.fatal("box_imu: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${parent_root_seq[3]} ${parent_root_seq[4]} ${parent_root_seq[5]}"
+              xyz="${parent_root_seq[0]} ${parent_root_seq[1]} ${parent_root_seq[2]}"/>
+    </joint>
+
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <xacro:property name="root_data_seq" value="${joint_root_fr_data_fr.split()}"/>
+
+    <xacro:if value="${len(root_data_seq) != 6}">
+      ${xacro.fatal("box_imu: joint_root_fr_data_fr must be 'x y z roll pitch yaw'")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="${root_data_seq[3]} ${root_data_seq[4]} ${root_data_seq[5]}"
+              xyz="${root_data_seq[0]} ${root_data_seq[1]} ${root_data_seq[2]}"/>
+    </joint>
+
+    <xacro:if value="${sim_enabled and sim_topic != ''}">
+      <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
+
+      <xacro:plugin_imu
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        use_gravity="${sim_use_gravity}"
+        always_on="${sim_always_on}"
+        update_rate="${sim_update_rate}"
+        ang_vel_gaussian_noise="${sim_ang_vel_gaussian_noise}"
+        ang_vel_gaussian_noise_bias="${sim_ang_vel_gaussian_noise_bias}"
+        ang_vel_gaussian_noise_dynamic_bias="${sim_ang_vel_gaussian_noise_dynamic_bias}"
+        lin_acc_gaussian_noise="${sim_lin_acc_gaussian_noise}"
+        lin_acc_gaussian_noise_bias="${sim_lin_acc_gaussian_noise_bias}"
+        lin_acc_gaussian_noise_dynamic_bias="${sim_lin_acc_gaussian_noise_dynamic_bias}"
+        use_orientation="${sim_use_orientation}"
+        namespace="${namespace}"
+        topic="${sim_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>
