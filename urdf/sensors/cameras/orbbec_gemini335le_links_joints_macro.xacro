@@ -1,0 +1,226 @@
+<?xml version="1.0"?>
+<!--
+Orbbec Gemini 335Le links-and-joints macro.
+
+This file defines the URDF structure of the Orbbec Gemini 335Le:
+- the camera frame used by the driver
+- the physical body link attached to the bottom screw frame
+- the attachment joint to the parent frame
+- and, optionally, the nominal depth, left infrared, right infrared, color, and IMU frames
+
+It does not define Gazebo sensor plugins. Those should be added by a higher-level macro.
+
+The numerical link poses come from the SolidWorks URDF export that originally defined this
+camera model. The mass comes from the Orbbec Gemini 335Le datasheet.
+
+Convention for parameter types:
+R means real number
+I means integer
+S means string
+B means boolean
+
+name (S): name of the camera, used to name the links and joints.
+
+prefix (S): optional prefix for the names of the links and joints.
+
+parent_frame (S): name of the parent frame to which the camera root frame is attached.
+
+use_visual (B): if true, include visual element.
+
+use_collision (B): if true, include collision element.
+
+use_inertial (B): if true, include inertial element.
+
+use_v_mesh (B): if true, use a camera mesh for the visual element. If false, use a box shape.
+
+v_mesh_use_low_res (B): if true, use the low-resolution visual mesh. This flag only has
+effect when `use_v_mesh` is true.
+
+color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if `use_visual` is true.
+           If `color` is not empty, the provided color is applied to the object used in the visual
+           element, either a mesh or a box shape.
+
+use_c_mesh (B): if true, use a camera mesh for the collision element. If false, use a box shape.
+
+c_mesh_use_low_res (B): if true, use the low-resolution collision mesh. This flag only has
+effect when `use_c_mesh` is true.
+
+joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the parent frame.
+    joint_parent_fr_root_fr = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+-->
+
+<robot name="orbbec_gemini335le_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="orbbec_gemini335le_links_joints"
+               params="name
+                        prefix:=''
+                        parent_frame
+                        use_visual:=True
+                        use_collision:=True
+                        use_inertial:=True
+                        use_v_mesh:=True
+                        v_mesh_use_low_res:=True
+                        color:=''
+                        use_c_mesh:=False
+                        c_mesh_use_low_res:=True
+                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <xacro:property name="mesh_path"
+                    value="robotics_description/meshes/sensors/cameras/orbbec_gemini335le"/>
+    <xacro:property name="mesh" value="${mesh_path}/mesh.STL"/>
+    <xacro:property name="low_res_mesh" value="${mesh_path}/low_res_mesh.STL"/>
+
+    <!--
+    Approximate outer-case size used when a primitive box is requested instead of the mesh.
+    The values follow the SolidWorks mesh bounding placement used in the exported model.
+    -->
+    <xacro:property name="size_x" value="0.05"/>
+    <xacro:property name="size_y" value="0.124022"/>
+    <xacro:property name="size_z" value="0.029035"/>
+    <xacro:property name="size"   value="${size_x} ${size_y} ${size_z}"/>
+    <xacro:property name="mass"   value="0.220"/>
+
+    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+    </joint>
+
+    <xacro:property name="origin" value="0.01301 0.0 0.013578 0.0 0.0 0.0"/>
+
+    <link name="${prefix}${name}_bottom_screw_frame">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_mesh"
+                        value="${(low_res_mesh if v_mesh_use_low_res else mesh) if use_v_mesh else ''}"/>
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_box mesh="${v_mesh}"
+                          mesh_origin="${origin}"
+                          size="${size}"
+                          shape_origin="${origin}"
+                          color="${v_color}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:property name="c_mesh"
+                        value="${(low_res_mesh if c_mesh_use_low_res else mesh) if use_c_mesh else ''}"/>
+        <xacro:collision_box mesh="${c_mesh}"
+                              mesh_origin="${origin}"
+                              size="${size}"
+                              shape_origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${mass}" size="${size}" origin="${origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <joint name="${prefix}${name}_bottom_screw_joint" type="fixed">
+      <parent link="${prefix}${name}_link"/>
+      <child link="${prefix}${name}_bottom_screw_frame"/>
+      <origin rpy="0.0 0.0 0.0" xyz="-0.034005 -0.0475 -0.014048"/>
+    </joint>
+
+    <link name="${prefix}${name}_depth_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_depth_joint" type="fixed">
+      <parent link="${prefix}${name}_link"/>
+      <child link="${prefix}${name}_depth_frame"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_depth_optical_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_depth_optical_joint" type="fixed">
+      <parent link="${prefix}${name}_depth_frame"/>
+      <child link="${prefix}${name}_depth_optical_frame"/>
+      <origin rpy="${-pi * 0.5} 0.0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_right_ir_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_right_ir_joint" type="fixed">
+      <parent link="${prefix}${name}_depth_frame"/>
+      <child link="${prefix}${name}_right_ir_frame"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 -0.095 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_right_ir_optical_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_right_ir_optical_joint" type="fixed">
+      <parent link="${prefix}${name}_right_ir_frame"/>
+      <child link="${prefix}${name}_right_ir_optical_frame"/>
+      <origin rpy="${-pi * 0.5} 0.0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_left_ir_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_left_ir_joint" type="fixed">
+      <parent link="${prefix}${name}_depth_frame"/>
+      <child link="${prefix}${name}_left_ir_frame"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_left_ir_optical_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_left_ir_optical_joint" type="fixed">
+      <parent link="${prefix}${name}_left_ir_frame"/>
+      <child link="${prefix}${name}_left_ir_optical_frame"/>
+      <origin rpy="${-pi * 0.5} 0.0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_color_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_color_joint" type="fixed">
+      <parent link="${prefix}${name}_depth_frame"/>
+      <child link="${prefix}${name}_color_frame"/>
+      <origin rpy="0.0 0.0 0.0" xyz="9e-06 -0.02375 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_color_optical_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_color_optical_joint" type="fixed">
+      <parent link="${prefix}${name}_color_frame"/>
+      <child link="${prefix}${name}_color_optical_frame"/>
+      <origin rpy="${-pi * 0.5} 0.0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
+    </joint>
+
+    <link name="${prefix}${name}_imu_frame">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_imu_joint" type="fixed">
+      <parent link="${prefix}${name}_depth_frame"/>
+      <child link="${prefix}${name}_imu_frame"/>
+      <origin rpy="0.0 0.0 0.0" xyz="-0.014248 -0.01131 -0.00069"/>
+    </joint>
+
+
+  </xacro:macro>
+</robot>

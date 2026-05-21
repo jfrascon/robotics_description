@@ -1,0 +1,274 @@
+<?xml version="1.0"?>
+<!--
+Orbbec Gemini 335Le split simulation macro.
+
+This macro includes the Orbbec Gemini 335Le links and joints and adds separate Gazebo
+plugins for depth, color, left infrared, right infrared, and IMU data.
+-->
+
+<robot name="orbbec_gemini335le_split_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/orbbec_gemini335le_links_joints_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
+
+  <xacro:macro name="orbbec_gemini335le"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=True
+                       v_mesh_use_low_res:=True
+                       color:=''
+                       use_c_mesh:=False
+                       c_mesh_use_low_res:=True
+                       joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       sim_namespace:=''
+                       sim_depth_enabled:=True
+                       sim_depth_use_gravity:=True
+                       sim_depth_always_on:=True
+                       sim_depth_visualize:=False
+                       sim_depth_enable_metrics:=False
+                       sim_depth_save:='False /tmp'
+                       sim_depth_triggered:=False
+                       sim_depth_visible_mask:=4294967295
+                       sim_depth_clip:='0.1 20.0'
+                       sim_depth_depth_clip:='0.25 20.0'
+                       sim_depth_update_rate:=30.0
+                       sim_depth_image:='1280 800 R_FLOAT32 4'
+                       sim_depth_lens_single_elements:='gnomonical true 90.0 256'
+                       sim_depth_lens_custom_function:=''
+                       sim_depth_lens_intrinsics:='640.0 627.8 639.5 399.5'
+                       sim_depth_lens_xy_skew:=0.0
+                       sim_depth_lens_projection:=''
+                       sim_depth_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_depth_distortion_center:='0.5 0.5'
+                       sim_depth_gaussian_noise:='0.0 0.0'
+                       sim_depth_image_topic
+                       sim_depth_camera_info_topic
+                       sim_depth_trigger_topic:=''
+                       sim_color_enabled:=True
+                       sim_color_use_gravity:=True
+                       sim_color_always_on:=True
+                       sim_color_visualize:=False
+                       sim_color_enable_metrics:=False
+                       sim_color_save:='False /tmp'
+                       sim_color_triggered:=False
+                       sim_color_visible_mask:=4294967295
+                       sim_color_clip:='0.1 20.0'
+                       sim_color_update_rate:=60.0
+                       sim_color_image:='1280 800 R8G8B8 4'
+                       sim_color_lens_single_elements:='gnomonical true 94.0 256'
+                       sim_color_lens_custom_function:=''
+                       sim_color_lens_intrinsics:='596.8 593.0 639.5 399.5'
+                       sim_color_lens_xy_skew:=0.0
+                       sim_color_lens_projection:=''
+                       sim_color_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_color_distortion_center:='0.5 0.5'
+                       sim_color_gaussian_noise:='0.0 0.0'
+                       sim_color_image_topic
+                       sim_color_camera_info_topic
+                       sim_color_trigger_topic:=''
+                       sim_left_ir_enabled:=True
+                       sim_left_ir_use_gravity:=True
+                       sim_left_ir_always_on:=True
+                       sim_left_ir_visualize:=False
+                       sim_left_ir_enable_metrics:=False
+                       sim_left_ir_save:='False /tmp'
+                       sim_left_ir_triggered:=False
+                       sim_left_ir_visible_mask:=4294967295
+                       sim_left_ir_clip:='0.1 20.0'
+                       sim_left_ir_update_rate:=30.0
+                       sim_left_ir_image:='1280 800 L8 4'
+                       sim_left_ir_lens_single_elements:='gnomonical true 90.0 256'
+                       sim_left_ir_lens_custom_function:=''
+                       sim_left_ir_lens_intrinsics:='640.0 627.8 639.5 399.5'
+                       sim_left_ir_lens_xy_skew:=0.0
+                       sim_left_ir_lens_projection:=''
+                       sim_left_ir_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_left_ir_distortion_center:='0.5 0.5'
+                       sim_left_ir_gaussian_noise:='0.0 0.0'
+                       sim_left_ir_image_topic
+                       sim_left_ir_camera_info_topic
+                       sim_left_ir_trigger_topic:=''
+                       sim_right_ir_enabled:=True
+                       sim_right_ir_use_gravity:=True
+                       sim_right_ir_always_on:=True
+                       sim_right_ir_visualize:=False
+                       sim_right_ir_enable_metrics:=False
+                       sim_right_ir_save:='False /tmp'
+                       sim_right_ir_triggered:=False
+                       sim_right_ir_visible_mask:=4294967295
+                       sim_right_ir_clip:='0.1 20.0'
+                       sim_right_ir_update_rate:=30.0
+                       sim_right_ir_image:='1280 800 L8 4'
+                       sim_right_ir_lens_single_elements:='gnomonical true 90.0 256'
+                       sim_right_ir_lens_custom_function:=''
+                       sim_right_ir_lens_intrinsics:='640.0 627.8 639.5 399.5'
+                       sim_right_ir_lens_xy_skew:=0.0
+                       sim_right_ir_lens_projection:=''
+                       sim_right_ir_distortion_k_p:='0.0 0.0 0.0 0.0 0.0'
+                       sim_right_ir_distortion_center:='0.5 0.5'
+                       sim_right_ir_gaussian_noise:='0.0 0.0'
+                       sim_right_ir_image_topic
+                       sim_right_ir_camera_info_topic
+                       sim_right_ir_trigger_topic:=''
+                       sim_imu_enabled:=True
+                       sim_imu_use_gravity:=True
+                       sim_imu_always_on:=True
+                       sim_imu_update_rate:=200.0
+                       sim_imu_ang_vel_gaussian_noise:='0 0 0 0 0 0'
+                       sim_imu_ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_imu_ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_imu_use_orientation:=True
+                       sim_imu_topic">
+
+    <xacro:orbbec_gemini335le_links_joints name="${name}"
+                                           prefix="${prefix}"
+                                           parent_frame="${parent_frame}"
+                                           use_visual="${use_visual}"
+                                           use_collision="${use_collision}"
+                                           use_inertial="${use_inertial}"
+                                           use_v_mesh="${use_v_mesh}"
+                                           v_mesh_use_low_res="${v_mesh_use_low_res}"
+                                           color="${color}"
+                                           use_c_mesh="${use_c_mesh}"
+                                           c_mesh_use_low_res="${c_mesh_use_low_res}"
+                                           joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+
+    <xacro:if value="${sim_depth_enabled}">
+      <xacro:plugin_camera_depth name="${prefix}${name}_depth"
+                                 reference_frame="${prefix}${name}_depth_frame"
+                                 optical_frame="${prefix}${name}_depth_optical_frame"
+                                 use_gravity="${sim_depth_use_gravity}"
+                                 always_on="${sim_depth_always_on}"
+                                 visualize="${sim_depth_visualize}"
+                                 enable_metrics="${sim_depth_enable_metrics}"
+                                 save="${sim_depth_save}"
+                                 triggered="${sim_depth_triggered}"
+                                 visible_mask="${sim_depth_visible_mask}"
+                                 clip="${sim_depth_clip}"
+                                 depth_clip="${sim_depth_depth_clip}"
+                                 update_rate="${sim_depth_update_rate}"
+                                 image="${sim_depth_image}"
+                                 lens_single_elements="${sim_depth_lens_single_elements}"
+                                 lens_custom_function="${sim_depth_lens_custom_function}"
+                                 lens_intrinsics="${sim_depth_lens_intrinsics}"
+                                 lens_xy_skew="${sim_depth_lens_xy_skew}"
+                                 lens_projection="${sim_depth_lens_projection}"
+                                 distortion_k_p="${sim_depth_distortion_k_p}"
+                                 distortion_center="${sim_depth_distortion_center}"
+                                 gaussian_noise="${sim_depth_gaussian_noise}"
+                                 namespace="${sim_namespace}"
+                                 topic="${sim_depth_image_topic}"
+                                 info_topic="${sim_depth_camera_info_topic}"
+                                 trigger_topic="${sim_depth_trigger_topic}"/>
+    </xacro:if>
+
+    <xacro:if value="${sim_color_enabled}">
+      <xacro:plugin_camera name="${prefix}${name}_color"
+                           reference_frame="${prefix}${name}_color_frame"
+                           optical_frame="${prefix}${name}_color_optical_frame"
+                           use_gravity="${sim_color_use_gravity}"
+                           always_on="${sim_color_always_on}"
+                           visualize="${sim_color_visualize}"
+                           enable_metrics="${sim_color_enable_metrics}"
+                           save="${sim_color_save}"
+                           triggered="${sim_color_triggered}"
+                           visible_mask="${sim_color_visible_mask}"
+                           clip="${sim_color_clip}"
+                           update_rate="${sim_color_update_rate}"
+                           image="${sim_color_image}"
+                           lens_single_elements="${sim_color_lens_single_elements}"
+                           lens_custom_function="${sim_color_lens_custom_function}"
+                           lens_intrinsics="${sim_color_lens_intrinsics}"
+                           lens_xy_skew="${sim_color_lens_xy_skew}"
+                           lens_projection="${sim_color_lens_projection}"
+                           distortion_k_p="${sim_color_distortion_k_p}"
+                           distortion_center="${sim_color_distortion_center}"
+                           gaussian_noise="${sim_color_gaussian_noise}"
+                           namespace="${sim_namespace}"
+                           topic="${sim_color_image_topic}"
+                           info_topic="${sim_color_camera_info_topic}"
+                           trigger_topic="${sim_color_trigger_topic}"/>
+    </xacro:if>
+
+    <xacro:if value="${sim_left_ir_enabled}">
+      <xacro:plugin_camera name="${prefix}${name}_left_ir"
+                           reference_frame="${prefix}${name}_left_ir_frame"
+                           optical_frame="${prefix}${name}_left_ir_optical_frame"
+                           use_gravity="${sim_left_ir_use_gravity}"
+                           always_on="${sim_left_ir_always_on}"
+                           visualize="${sim_left_ir_visualize}"
+                           enable_metrics="${sim_left_ir_enable_metrics}"
+                           save="${sim_left_ir_save}"
+                           triggered="${sim_left_ir_triggered}"
+                           visible_mask="${sim_left_ir_visible_mask}"
+                           clip="${sim_left_ir_clip}"
+                           update_rate="${sim_left_ir_update_rate}"
+                           image="${sim_left_ir_image}"
+                           lens_single_elements="${sim_left_ir_lens_single_elements}"
+                           lens_custom_function="${sim_left_ir_lens_custom_function}"
+                           lens_intrinsics="${sim_left_ir_lens_intrinsics}"
+                           lens_xy_skew="${sim_left_ir_lens_xy_skew}"
+                           lens_projection="${sim_left_ir_lens_projection}"
+                           distortion_k_p="${sim_left_ir_distortion_k_p}"
+                           distortion_center="${sim_left_ir_distortion_center}"
+                           gaussian_noise="${sim_left_ir_gaussian_noise}"
+                           namespace="${sim_namespace}"
+                           topic="${sim_left_ir_image_topic}"
+                           info_topic="${sim_left_ir_camera_info_topic}"
+                           trigger_topic="${sim_left_ir_trigger_topic}"/>
+    </xacro:if>
+
+    <xacro:if value="${sim_right_ir_enabled}">
+      <xacro:plugin_camera name="${prefix}${name}_right_ir"
+                           reference_frame="${prefix}${name}_right_ir_frame"
+                           optical_frame="${prefix}${name}_right_ir_optical_frame"
+                           use_gravity="${sim_right_ir_use_gravity}"
+                           always_on="${sim_right_ir_always_on}"
+                           visualize="${sim_right_ir_visualize}"
+                           enable_metrics="${sim_right_ir_enable_metrics}"
+                           save="${sim_right_ir_save}"
+                           triggered="${sim_right_ir_triggered}"
+                           visible_mask="${sim_right_ir_visible_mask}"
+                           clip="${sim_right_ir_clip}"
+                           update_rate="${sim_right_ir_update_rate}"
+                           image="${sim_right_ir_image}"
+                           lens_single_elements="${sim_right_ir_lens_single_elements}"
+                           lens_custom_function="${sim_right_ir_lens_custom_function}"
+                           lens_intrinsics="${sim_right_ir_lens_intrinsics}"
+                           lens_xy_skew="${sim_right_ir_lens_xy_skew}"
+                           lens_projection="${sim_right_ir_lens_projection}"
+                           distortion_k_p="${sim_right_ir_distortion_k_p}"
+                           distortion_center="${sim_right_ir_distortion_center}"
+                           gaussian_noise="${sim_right_ir_gaussian_noise}"
+                           namespace="${sim_namespace}"
+                           topic="${sim_right_ir_image_topic}"
+                           info_topic="${sim_right_ir_camera_info_topic}"
+                           trigger_topic="${sim_right_ir_trigger_topic}"/>
+    </xacro:if>
+
+    <xacro:if value="${sim_imu_enabled}">
+      <xacro:plugin_imu sensor_name="${prefix}${name}_imu"
+                        reference_link="${prefix}${name}_imu_frame"
+                        use_gravity="${sim_imu_use_gravity}"
+                        always_on="${sim_imu_always_on}"
+                        update_rate="${sim_imu_update_rate}"
+                        ang_vel_gaussian_noise="${sim_imu_ang_vel_gaussian_noise}"
+                        ang_vel_gaussian_noise_bias="${sim_imu_ang_vel_gaussian_noise_bias}"
+                        ang_vel_gaussian_noise_dynamic_bias="${sim_imu_ang_vel_gaussian_noise_dynamic_bias}"
+                        lin_acc_gaussian_noise="${sim_imu_lin_acc_gaussian_noise}"
+                        lin_acc_gaussian_noise_bias="${sim_imu_lin_acc_gaussian_noise_bias}"
+                        lin_acc_gaussian_noise_dynamic_bias="${sim_imu_lin_acc_gaussian_noise_dynamic_bias}"
+                        use_orientation="${sim_imu_use_orientation}"
+                        namespace="${sim_namespace}"
+                        topic="${sim_imu_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>
