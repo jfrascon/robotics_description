@@ -16,12 +16,16 @@ blocks, not standalone robot descriptions that can be rendered and validated
 directly on their own.
 
 Current explicit test cases in `test/test_xacros/`:
+- `test_box_imu.xacro`
 - `test_fork_simple.xacro`
 - `test_gz_system_plugins.xacro`
+- `test_orbbec_gemini335le_rgbd.xacro`
+- `test_orbbec_gemini335le_split.xacro`
 - `test_realsense_d435.xacro`
 - `test_realsense_d435_rgbd.xacro`
 - `test_robosense_airy.xacro`
 - `test_robosense_helios_16.xacro`
+- `test_robosense_m1_plus.xacro`
 - `test_steerable_wheel.xacro`
 - `test_um7.xacro`
 - `test_wheel.xacro`
@@ -43,10 +47,14 @@ For every collected Xacro file, the test performs:
 ## Why `test_xacros/` exists
 
 Many files in `urdf/sensors/...` are macros such as:
+- `box_imu_macro.xacro`
+- `orbbec_gemini335le_split_macro.xacro`
+- `orbbec_gemini335le_rgbd_macro.xacro`
 - `realsense_d435_split_macro.xacro`
 - `realsense_d435_rgbd_macro.xacro`
 - `robosense_airy_macro.xacro`
 - `robosense_helios_16_macro.xacro`
+- `robosense_m1_plus_macro.xacro`
 - `steerable_wheel_macro.xacro`
 - `um7_macro.xacro`
 - `wheel_macro.xacro`
