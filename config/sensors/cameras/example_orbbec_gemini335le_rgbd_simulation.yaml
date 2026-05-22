@@ -16,7 +16,7 @@ rgbd:
   triggered: false
   visible_mask: 4294967295
   update_rate: 30.0
-  image: {width: 1280, height: 800, format: R8G8B8, anti_aliasing: 4}
+  image: {width: 640, height: 400, format: R8G8B8, anti_aliasing: 4}
   lens_single_elements:
     type: gnomonical
     scale_to_hfov: true
@@ -33,13 +33,13 @@ rgbd:
   distortion_k_p: {k1: 0.0, k2: 0.0, k3: 0.0, p1: 0.0, p2: 0.0}
   distortion_center: {center_x_norm: 0.5, center_y_norm: 0.5}
   gaussian_noise: {mean: 0.0, stddev: 0.0}
-  clip: {near: 0.1, far: 20.0}
-  depth_clip: {near: 0.25, far: 20.0}
+  clip: {near: 0.1, far: 10.0}
+  depth_clip: {near: 0.25, far: 10.0}
   base_topic: orbbec_gemini335le/rgbd
   trigger_topic: ""
 
 left_ir:
-  enabled: true
+  enabled: false
   use_gravity: true
   always_on: true
   visualize: false
@@ -48,7 +48,7 @@ left_ir:
   triggered: false
   visible_mask: 4294967295
   update_rate: 30.0
-  image: {width: 1280, height: 800, format: L8, anti_aliasing: 4}
+  image: {width: 640, height: 400, format: L8, anti_aliasing: 4}
   lens_single_elements:
     type: gnomonical
     scale_to_hfov: true
@@ -65,13 +65,13 @@ left_ir:
   distortion_k_p: {k1: 0.0, k2: 0.0, k3: 0.0, p1: 0.0, p2: 0.0}
   distortion_center: {center_x_norm: 0.5, center_y_norm: 0.5}
   gaussian_noise: {mean: 0.0, stddev: 0.0}
-  clip: {near: 0.1, far: 20.0}
+  clip: {near: 0.1, far: 10.0}
   image_topic: orbbec_gemini335le/left_ir/image
   camera_info_topic: orbbec_gemini335le/left_ir/camera_info
   trigger_topic: ""
 
 right_ir:
-  enabled: true
+  enabled: false
   use_gravity: true
   always_on: true
   visualize: false
@@ -80,7 +80,7 @@ right_ir:
   triggered: false
   visible_mask: 4294967295
   update_rate: 30.0
-  image: {width: 1280, height: 800, format: L8, anti_aliasing: 4}
+  image: {width: 640, height: 400, format: L8, anti_aliasing: 4}
   lens_single_elements:
     type: gnomonical
     scale_to_hfov: true
@@ -97,7 +97,7 @@ right_ir:
   distortion_k_p: {k1: 0.0, k2: 0.0, k3: 0.0, p1: 0.0, p2: 0.0}
   distortion_center: {center_x_norm: 0.5, center_y_norm: 0.5}
   gaussian_noise: {mean: 0.0, stddev: 0.0}
-  clip: {near: 0.1, far: 20.0}
+  clip: {near: 0.1, far: 10.0}
   image_topic: orbbec_gemini335le/right_ir/image
   camera_info_topic: orbbec_gemini335le/right_ir/camera_info
   trigger_topic: ""
@@ -106,7 +106,7 @@ imu:
   enabled: true
   use_gravity: true
   always_on: true
-  update_rate: 200.0
+  update_rate: 100.0
   use_orientation: true
   ang_vel_gaussian_noise:
     {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
