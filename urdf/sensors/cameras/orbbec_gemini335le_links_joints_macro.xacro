@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
 <!--
+Reference: https://github.com/orbbec/OrbbecSDK_ROS2/blob/v2-main/orbbec_description/urdf/gemini_335_Le.urdf.xacro
+Reference: https://www.orbbec.com/gemini-335le/
+Reference: https://doc.orbbec.com/documentation/Orbbec%20Gemini%20330%20Series%20Documentation
+Reference: https://doc.orbbec.com/documentation/Orbbec%20Gemini%20330%20Series%20Documentation/Gemini%20330%20Series%20Datasheet%20(Overall)
+
 Orbbec Gemini 335Le links-and-joints macro.
 
 This file defines the URDF structure of the Orbbec Gemini 335Le:
