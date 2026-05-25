@@ -136,8 +136,8 @@ https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1OdometryPublisher.
       If `odom_frame` is `map`, the published odometry pose is therefore the
       robot pose expressed in `map`, not directly in Gazebo's simulation world.
 
-      Note: these global offset tags are available from Gazebo Sim 10. Older
-      Gazebo Sim versions can ignore them.
+      Note: these global offset tags are available from Gazebo Sim 10.
+      Older Gazebo Sim versions will ignore those fields.
       -->
       <xyz_global_offset>${xyz_global_offset}</xyz_global_offset>
       <rpy_global_offset>${rpy_global_offset}</rpy_global_offset>
