@@ -14,15 +14,19 @@ What this plugin publishes:
 
 How to interpret that transform:
 - Gazebo uses the xml tags `odom_frame` and `robot_base_frame`.
-- The published pose and transform always describe
+- The published pose and transform always describe the transformation:
   `T:${odom_frame} -> ${robot_base_frame}`.
+  Note the arrow goes from parent frame to child frame.
 - This means the plugin reports the pose of the robot base with respect to
   the frame named in `odom_frame`.
 
 Why the name can be confusing:
-- The system is called `OdometryPublisher`, but it does not force
-  `odom_frame` to be the robot odometry frame in the ROS navigation sense.
-- You are free to choose `odom_frame`.
+- The system is called `OdometryPublisher`, but the plugin does not enforce any
+  particular meaning for the fixed frame named in `odom_frame`.
+  The plugin simply publishes the robot pose with respect to that frame,
+  whatever it is.
+  Therefore, you are free to choose any frame name in `odom_frame`, and the
+  plugin will publish the robot pose with respect to that frame.
 - If you set `odom_frame` to a world-fixed frame such as `map`, `world`, or
   `sim_world`, then the published pose is better understood as a
   simulator-provided ground-truth localization signal.
