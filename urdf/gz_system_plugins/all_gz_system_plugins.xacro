@@ -13,4 +13,5 @@
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_velocity_control_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_odometry_publisher_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_state_publisher_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_linear_battery_macro.xacro"/>
 </robot>

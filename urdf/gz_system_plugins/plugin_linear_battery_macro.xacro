@@ -1,0 +1,203 @@
+<?xml version="1.0"?>
+<!--
+This file defines the macro `plugin_linear_battery` that emits the XML for the
+Gazebo Sim plugin `gz::sim::systems::LinearBatteryPlugin`.
+
+The battery system keeps track of the battery charge on a robot model.
+Currently, one battery per model is supported. When the battery drains
+completely, all joints of the corresponding model are turned off, meaning joint
+forces are set to 0.
+
+To find the reference for the system Gazebo plugins:
+1. Go to: https://gazebosim.org/libs/
+2. Click in the link 'API & Tutorials' for the 'Sim' section.
+3. Click in the link 'gz::sim::systems'
+
+At the time of writing this text (June 2026), this workspace uses Gazebo Sim
+8.11.0 through the ROS Jazzy `ros-jazzy-gz-sim-vendor` package.
+The LinearBatteryPlugin reference is:
+https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1LinearBatteryPlugin.html
+
+The battery tutorial with an SDF example is:
+https://gazebosim.org/api/sim/8/battery.html
+
+Parameters for a basic functional battery:
+You do not need to set every parameter in this macro to get a functional battery.
+The following parameters are enough to create a battery with a fixed voltage, a total charge, and a constant consumer
+load:
+- `battery_name`: The name of the battery.
+- `voltage`: Initial voltage of the battery in volts.
+- `capacity`: Total charge that the battery can hold in ampere-hours.
+- `power_load`: Power load on the battery in watts.
+- `fix_issue_225`: Enables Gazebo's corrected battery state-of-charge behavior.
+  Without this flag, Gazebo keeps the legacy behavior described in gz-sim issue 225, where the documented runtime
+  calculation has to include a 100x drain-rate factor.
+  See the `Runtime estimate` and `Known limitation` sections below.
+  In Gazebo Sim 8.11.0 this flag is still read by the plugin source code, so the macro enables it by default.
+  Use `fix_issue_225="false"` only if you intentionally need legacy battery behavior.
+  Issue: https://github.com/gazebosim/gz-sim/issues/225
+  Source: https://github.com/gazebosim/gz-sim/blob/gz-sim8/src/systems/battery_plugin/LinearBatteryPlugin.cc
+
+The battery state is published by Gazebo on:
+`/model/<model_name>/battery/<battery_name>/state`
+
+Runtime estimate:
+
+  battery_runtime_hours = capacity_Ah * voltage_V / power_load_W
+
+Known limitation:
+- If `fix_issue_225` is not enabled on affected Gazebo versions, the battery can  drain at a 100x faster rate.
+  In that case, the runtime estimate is:
+
+  battery_runtime_hours = capacity_Ah * voltage_V / (power_load_W * 100)
+
+Ideal battery with no discharge:
+- If a robot needs a battery state topic but the battery should behave like an ideal infinite battery, use the same
+  basic battery parameters and set `power_load` to 0.
+- The important field is `power_load="0.0"`. With zero power load, the plugin can publish battery state while the stored
+  charge remains constant.
+- Keep `voltage` positive. Do not use `voltage="0.0"`, because the plugin computes current from power divided by
+  voltage.
+- The following configuration keeps the battery topic active and avoids discharge:
+
+  <xacro:plugin_linear_battery
+      battery_name="main_battery"
+      voltage="24.0"
+      capacity="20.0"
+      power_load="0.0"
+  />
+
+Parameters for a more realistic battery:
+If you need to model a more realistic battery, use the basic battery parameters above and add any of the following
+fields:
+- `open_circuit_voltage_constant_coef`: Voltage at full charge in volts.
+   If omitted, the macro uses the same value as `voltage`.
+- `open_circuit_voltage_linear_coef`: Voltage decrease when the battery has no charge.
+- `initial_charge`: Initial charge of the battery in ampere-hours.
+- `resistance`: Internal resistance in ohms.
+- `smooth_current_tau`: Coefficient for smoothing current.
+- `invert_current_sign`: Flips the sign of the current reported in the battery state message.
+- `start_draining`: Starts draining the battery at the beginning of the simulation.
+- `power_draining_topic`: Topic that starts power draining when a message is received.
+- `stop_power_draining_topic`: Topic that stops power draining when a message is received.
+
+Charging:
+- Whether the battery is modeled with only the basic parameters or with the more realistic parameters above, the
+  following fields enable recharge behavior.
+- `enable_recharge`: Enables battery recharging.
+- `charging_time`: Hours needed to fully charge the battery with no load.
+- `recharge_by_topic`: Exposes recharge start and stop controls over Gazebo Transport topics in addition to the Gazebo
+   services.
+- Gazebo always exposes these recharge services:
+  `/model/<model_name>/battery/<battery_name>/recharge/start`
+  `/model/<model_name>/battery/<battery_name>/recharge/stop`
+- Both recharge services accept a `gz::msgs::Boolean` request.
+-->
+<robot name="plugin_linear_battery_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="plugin_linear_battery"
+               params="battery_name
+                       voltage
+                       capacity
+                       power_load
+                       fix_issue_225:=true
+                       open_circuit_voltage_constant_coef:=''
+                       open_circuit_voltage_linear_coef:=''
+                       initial_charge:=''
+                       resistance:=''
+                       smooth_current_tau:=''
+                       invert_current_sign:=''
+                       start_draining:=''
+                       power_draining_topic:=''
+                       stop_power_draining_topic:=''
+                       enable_recharge:=false
+                       charging_time:=''
+                       recharge_by_topic:=false">
+
+    <xacro:if value="${fix_issue_225 not in (True, False)}">
+      ${xacro.fatal("plugin_linear_battery: fix_issue_225 must be true or false")}
+    </xacro:if>
+
+    <xacro:if value="${invert_current_sign != '' and invert_current_sign not in (True, False)}">
+      ${xacro.fatal("plugin_linear_battery: invert_current_sign must be true or false")}
+    </xacro:if>
+
+    <xacro:if value="${start_draining != '' and start_draining not in (True, False)}">
+      ${xacro.fatal("plugin_linear_battery: start_draining must be true or false")}
+    </xacro:if>
+
+    <xacro:if value="${enable_recharge not in (True, False)}">
+      ${xacro.fatal("plugin_linear_battery: enable_recharge must be true or false")}
+    </xacro:if>
+
+    <xacro:if value="${enable_recharge and charging_time == ''}">
+      ${xacro.fatal("plugin_linear_battery: charging_time is required when enable_recharge is true")}
+    </xacro:if>
+
+    <xacro:if value="${recharge_by_topic not in (True, False)}">
+      ${xacro.fatal("plugin_linear_battery: recharge_by_topic must be true or false")}
+    </xacro:if>
+
+    <plugin filename="gz-sim-linearbatteryplugin-system" name="gz::sim::systems::LinearBatteryPlugin">
+      <battery_name>${battery_name}</battery_name>
+      <voltage>${voltage}</voltage>
+      <capacity>${capacity}</capacity>
+      <power_load>${power_load}</power_load>
+
+      <xacro:if value="${fix_issue_225 != ''}">
+        <fix_issue_225>${fix_issue_225}</fix_issue_225>
+      </xacro:if>
+
+      <!--
+      Gazebo's internal default for open_circuit_voltage_constant_coef is 0.0.
+      Use the configured initial voltage when the caller does not set a more
+      specific value, so the basic battery keeps that voltage while discharging.
+      -->
+      <xacro:if value="${open_circuit_voltage_constant_coef == ''}">
+        <open_circuit_voltage_constant_coef>${voltage}</open_circuit_voltage_constant_coef>
+      </xacro:if>
+
+      <xacro:if value="${open_circuit_voltage_constant_coef != ''}">
+        <open_circuit_voltage_constant_coef>${open_circuit_voltage_constant_coef}</open_circuit_voltage_constant_coef>
+      </xacro:if>
+
+      <xacro:if value="${open_circuit_voltage_linear_coef != ''}">
+        <open_circuit_voltage_linear_coef>${open_circuit_voltage_linear_coef}</open_circuit_voltage_linear_coef>
+      </xacro:if>
+
+      <xacro:if value="${initial_charge != ''}">
+        <initial_charge>${initial_charge}</initial_charge>
+      </xacro:if>
+
+      <xacro:if value="${resistance != ''}">
+        <resistance>${resistance}</resistance>
+      </xacro:if>
+
+      <xacro:if value="${smooth_current_tau != ''}">
+        <smooth_current_tau>${smooth_current_tau}</smooth_current_tau>
+      </xacro:if>
+
+      <xacro:if value="${invert_current_sign != ''}">
+        <invert_current_sign>${invert_current_sign}</invert_current_sign>
+      </xacro:if>
+
+      <xacro:if value="${start_draining != ''}">
+        <start_draining>${start_draining}</start_draining>
+      </xacro:if>
+
+      <xacro:if value="${power_draining_topic != ''}">
+        <power_draining_topic>${power_draining_topic}</power_draining_topic>
+      </xacro:if>
+
+      <xacro:if value="${stop_power_draining_topic != ''}">
+        <stop_power_draining_topic>${stop_power_draining_topic}</stop_power_draining_topic>
+      </xacro:if>
+
+      <xacro:if value="${enable_recharge}">
+        <enable_recharge>${enable_recharge}</enable_recharge>
+        <charging_time>${charging_time}</charging_time>
+        <recharge_by_topic>${recharge_by_topic}</recharge_by_topic>
+      </xacro:if>
+    </plugin>
+  </xacro:macro>
+</robot>
