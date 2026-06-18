@@ -25,7 +25,7 @@ Parameters for a basic functional battery:
 You do not need to set every parameter in this macro to get a functional battery.
 The following parameters are enough to create a battery with a fixed voltage, a total charge, and a constant consumer
 load:
-- `battery_name`: The name of the battery.
+- `name`: The name of the battery.
 - `voltage`: Initial voltage of the battery in volts.
 - `capacity`: Total charge that the battery can hold in ampere-hours.
 - `power_load`: Power load on the battery in watts.
@@ -61,7 +61,7 @@ Ideal battery with no discharge:
 - The following configuration keeps the battery topic active and avoids discharge:
 
   <xacro:plugin_linear_battery
-      battery_name="main_battery"
+      name="main_battery"
       voltage="24.0"
       capacity="20.0"
       power_load="0.0"
@@ -86,17 +86,19 @@ Charging:
   following fields enable recharge behavior.
 - `enable_recharge`: Enables battery recharging.
 - `charging_time`: Hours needed to fully charge the battery with no load.
-- `recharge_by_topic`: Exposes recharge start and stop controls over Gazebo Transport topics in addition to the Gazebo
-   services.
-- Gazebo always exposes these recharge services:
+- `recharge_by_topic`: If true, the plugin also subscribes to Gazebo Transport message topics for starting and
+  stopping recharge.
+- When recharge is enabled, Gazebo always exposes these Gazebo Transport services. Both services use
+  `gz::msgs::Boolean`:
   `/model/<model_name>/battery/<battery_name>/recharge/start`
   `/model/<model_name>/battery/<battery_name>/recharge/stop`
-- Both recharge services accept a `gz::msgs::Boolean` request.
+- If `recharge_by_topic` is true, the plugin also accepts `gz::msgs::Boolean` messages published on topics with those
+  exact same names.
 -->
 <robot name="plugin_linear_battery_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
        xmlns:gz="http://gazebosim.org/schema">
   <xacro:macro name="plugin_linear_battery"
-               params="battery_name
+               params="name
                        voltage
                        capacity
                        power_load
@@ -110,9 +112,9 @@ Charging:
                        start_draining:=''
                        power_draining_topic:=''
                        stop_power_draining_topic:=''
-                       enable_recharge:=false
+                       enable_recharge:=''
                        charging_time:=''
-                       recharge_by_topic:=false">
+                       recharge_by_topic:=''">
 
     <xacro:if value="${fix_issue_225 not in (True, False)}">
       ${xacro.fatal("plugin_linear_battery: fix_issue_225 must be true or false")}
@@ -126,20 +128,12 @@ Charging:
       ${xacro.fatal("plugin_linear_battery: start_draining must be true or false")}
     </xacro:if>
 
-    <xacro:if value="${enable_recharge not in (True, False)}">
+    <xacro:if value="${enable_recharge != '' and enable_recharge not in (True, False)}">
       ${xacro.fatal("plugin_linear_battery: enable_recharge must be true or false")}
     </xacro:if>
 
-    <xacro:if value="${enable_recharge and charging_time == ''}">
-      ${xacro.fatal("plugin_linear_battery: charging_time is required when enable_recharge is true")}
-    </xacro:if>
-
-    <xacro:if value="${recharge_by_topic not in (True, False)}">
-      ${xacro.fatal("plugin_linear_battery: recharge_by_topic must be true or false")}
-    </xacro:if>
-
     <plugin filename="gz-sim-linearbatteryplugin-system" name="gz::sim::systems::LinearBatteryPlugin">
-      <battery_name>${battery_name}</battery_name>
+      <battery_name>${name}</battery_name>
       <voltage>${voltage}</voltage>
       <capacity>${capacity}</capacity>
       <power_load>${power_load}</power_load>
@@ -193,10 +187,22 @@ Charging:
         <stop_power_draining_topic>${stop_power_draining_topic}</stop_power_draining_topic>
       </xacro:if>
 
-      <xacro:if value="${enable_recharge}">
+      <xacro:if value="${enable_recharge != '' and enable_recharge}">
         <enable_recharge>${enable_recharge}</enable_recharge>
+
+        <xacro:if value="${charging_time == ''}">
+          ${xacro.fatal("plugin_linear_battery: charging_time is required when enable_recharge is true")}
+        </xacro:if>
+
         <charging_time>${charging_time}</charging_time>
-        <recharge_by_topic>${recharge_by_topic}</recharge_by_topic>
+
+        <xacro:if value="${recharge_by_topic != '' and recharge_by_topic not in (True, False)}">
+          ${xacro.fatal("plugin_linear_battery: recharge_by_topic must be true or false")}
+        </xacro:if>
+
+        <xacro:if value="${recharge_by_topic != '' and recharge_by_topic}">
+          <recharge_by_topic>${recharge_by_topic}</recharge_by_topic>
+        </xacro:if>
       </xacro:if>
     </plugin>
   </xacro:macro>
