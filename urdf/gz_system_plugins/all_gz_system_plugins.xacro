@@ -12,6 +12,6 @@
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_position_controller_f64_pos_velcmd_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_state_publisher_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_linear_battery_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_referenced_frame_pose_publisher_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_pose_in_reference_frame_publisher_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_velocity_control_macro.xacro"/>
 </robot>

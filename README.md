@@ -13,7 +13,7 @@ If a specific sensor model needs a mesh, it is stored under the `meshes/` direct
 
 There is a `doc/` directory with documentation that could be useful for users, like `how_to_compute_inertia_w_meshlab.md`. It is expected that this documentation will grow over time as more resources are added to the package.
 
-The [`plugin_referenced_frame_pose_publisher`](doc/plugin_referenced_frame_pose_publisher.md) documentation explains the frame convention, offset semantics, and output interpretation for the Gazebo system plugin macro that wraps `gz::sim::systems::OdometryPublisher`. Read it before using that macro, because the generated messages use Gazebo odometry message types even when the published pose is not odometry in the semantic sense.
+The [`plugin_pose_in_reference_frame_publisher`](doc/plugin_pose_in_reference_frame_publisher.md) documentation explains the frame convention, offset semantics, and output interpretation for the Gazebo system plugin macro that wraps `gz::sim::systems::OdometryPublisher`. Read it before using that macro, because the generated messages use Gazebo odometry message types even when the published pose is not odometry in the semantic sense.
 
 When a xacro is too specific, like the [`robosense_helios_16_macro.xacro`](urdf/sensors/lidars/robosense_helios_16_macro.xacro) for example, it already contains the Gazebo plugin within it. Just check out the xacro macro parameters to see how to configure the macro in general and its Gazebo plugin in particular. Great care has been taken into make the interface of the xacro macros as consistent as possible across different sensor types and models, so the mental burden of using different macros for different sensors is minimized.
 

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!--
-This file defines the macro `plugin_referenced_frame_pose_publisher`.
+This file defines the macro `plugin_pose_in_reference_frame_publisher`.
 
-The `plugin_referenced_frame_pose_publisher` macro emits the XML for one Gazebo Sim plugin of type
+The `plugin_pose_in_reference_frame_publisher` macro emits the XML for one Gazebo Sim plugin of type
 `gz::sim::systems::OdometryPublisher` attached to a robot model.
 
 The Gazebo plugin publishes one message of type `gz::msgs::Odometry`, one message of type
@@ -149,9 +149,9 @@ The system plugin namespace and the wrapped `OdometryPublisher` plugin are docum
 https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
 -->
-<robot name="plugin_referenced_frame_pose_publisher_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
+<robot name="plugin_pose_in_reference_frame_publisher_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
        xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="plugin_referenced_frame_pose_publisher"
+  <xacro:macro name="plugin_pose_in_reference_frame_publisher"
                params="reference_frame
                        published_robot_frame
                        msg_publication_freq:=50
@@ -165,7 +165,7 @@ https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.h
                        rpy_global_offset:='0 0 0'
                        gaussian_noise:=0">
     <xacro:if value="${dimensions not in (2, 3)}">
-      ${xacro.fatal("plugin_referenced_frame_pose_publisher: dimensions must be 2 or 3")}
+      ${xacro.fatal("plugin_pose_in_reference_frame_publisher: dimensions must be 2 or 3")}
     </xacro:if>
 
     <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
