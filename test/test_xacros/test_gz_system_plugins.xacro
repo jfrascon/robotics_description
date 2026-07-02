@@ -17,12 +17,12 @@
       initial_linear="0 0 0"
       initial_angular="0 0 0"/>
 
-    <xacro:plugin_odometry_publisher
-      odom_frame="map"
-      robot_base_frame="base_link"
-      odom_publish_frequency="50"
-      odom_topic="/odom"
-      odom_covariance_topic="/odom_cov"
+    <xacro:plugin_referenced_frame_pose_publisher
+      reference_frame="map"
+      published_robot_frame="base_link"
+      msg_publication_freq="50"
+      topic="/odom"
+      topic_with_covariance="/odom_cov"
       tf_topic="/tf_odom"
       dimensions="2"
       xyz_offset="0 0 0"
