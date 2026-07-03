@@ -13,13 +13,13 @@ In this document the symbol ${}^{\mathrm{parent\_frame}}T_{\mathrm{child\_frame}
 With that convention, the pose published by this macro is:
 
 $$
-{}^{\mathrm{reference\_frame}}T_{\mathrm{published\_robot\_frame}}
+{}^{\mathrm{reference\_frame}}T_{\mathrm{robot\_frame}}
 =
 {}^{\mathrm{reference\_frame}}T_{\mathrm{sim\_global\_frame}}
 \cdot
 {}^{\mathrm{sim\_global\_frame}}T_{\mathrm{robot\_reference\_frame}}
 \cdot
-{}^{\mathrm{robot\_reference\_frame}}T_{\mathrm{published\_robot\_frame}}
+{}^{\mathrm{robot\_reference\_frame}}T_{\mathrm{robot\_frame}}
 $$
 
 where:
@@ -27,7 +27,7 @@ where:
 - `reference_frame` is the parent's frame name exposed by this macro. It is the frame in which the published pose is expressed.
 - `sim_global_frame` is the simulator's global frame used by Gazebo, i.e., the frame with respect to which the objects present in the world file are positioned.
 - `robot_reference_frame` is the reference frame attached to the robot, i.e., the robot's frame from which Gazebo computes the raw robot's pose. In typical robot descriptions this is `base_link`, `base_footprint_link`, or an equivalent frame.
-- `published_robot_frame` is the robot-attached frame whose pose is published by this macro.
+- `robot_frame` is the robot-attached frame whose pose is published by this macro.
 
 ## Global Offsets
 
@@ -91,10 +91,10 @@ In that case, `reference_frame` coincides with `sim_global_frame` (simulator's g
 
 ## Local Offsets
 
-The `xyz_offset` and `rpy_offset` values provided by the user in the macro define the position and orientation of an arbitrary robot-attached frame, `published_robot_frame`, expressed in the robot's reference frame, `robot_reference_frame`:
+The `xyz_offset` and `rpy_offset` values provided by the user in the macro define the position and orientation of an arbitrary robot-attached frame, `robot_frame`, expressed in the robot's reference frame, `robot_reference_frame`:
 
 $$
-{}^{\mathrm{robot\_reference\_frame}}T_{\mathrm{published\_robot\_frame}}
+{}^{\mathrm{robot\_reference\_frame}}T_{\mathrm{robot\_frame}}
 =
 \left[
 \begin{array}{c|c}
@@ -122,23 +122,23 @@ When the local offsets are zero:
 <rpy_offset>${rpy_offset}</rpy_offset>
 ```
 
-the transform ${}^{\mathrm{robot\_reference\_frame}}T_{\mathrm{published\_robot\_frame}}$ is the 4x4 identity matrix $I_4$.
-In that case, `published_robot_frame` coincides with `robot_reference_frame`.
+the transform ${}^{\mathrm{robot\_reference\_frame}}T_{\mathrm{robot\_frame}}$ is the 4x4 identity matrix $I_4$.
+In that case, `robot_frame` coincides with `robot_reference_frame`.
 
 ## How to interpret the published pose
 
-- If the global offsets are zero and the local offsets are zero, `reference_frame` coincides with `sim_global_frame`, and `published_robot_frame` coincides with `robot_reference_frame`.
+- If the global offsets are zero and the local offsets are zero, `reference_frame` coincides with `sim_global_frame`, and `robot_frame` coincides with `robot_reference_frame`.
 The plugin publishes the global pose of the robot's reference frame with respect to the simulator's global frame.
 This is simulator ground-truth localization, not odometry relative to the robot initial pose.
 
 - If the global offsets are zero and the local offsets are non-zero, `reference_frame` still coincides with `sim_global_frame`.
-The plugin publishes the global pose of `published_robot_frame` with respect to the simulator's global frame. This is also simulator ground-truth localization, but for the selected robot-attached frame instead of the robot's reference frame.
+The plugin publishes the global pose of `robot_frame` with respect to the simulator's global frame. This is also simulator ground-truth localization, but for the selected robot-attached frame instead of the robot's reference frame.
 
-- If the global offsets are non-zero and the local offsets are zero, `published_robot_frame` coincides with `robot_reference_frame`.
+- If the global offsets are non-zero and the local offsets are zero, `robot_frame` coincides with `robot_reference_frame`.
 The plugin publishes the pose of the robot's reference frame with respect to the configured `reference_frame`.
 **If the global offsets place `reference_frame` at the robot's initial frame, the output is interpreted as odometry for the robot's reference frame.**
 
-- If the global offsets are non-zero and the local offsets are non-zero, the plugin publishes the pose of `published_robot_frame` with respect to the configured `reference_frame`.
+- If the global offsets are non-zero and the local offsets are non-zero, the plugin publishes the pose of `robot_frame` with respect to the configured `reference_frame`.
 **If the global offsets place `reference_frame` at the robot's initial frame, the output is interpreted as odometry for the selected robot-attached frame.**
 
 Now that the physical meaning of the published pose is defined, the reader can understand better why we use at the beginning of the macro file a comment like this:
@@ -154,7 +154,7 @@ The message type alone does not define the physical meaning of the data. A `gz::
 The caller has to decide:
 
 - The parent's frame name through `reference_frame`.
-- The robot's frame name whose pose is published through `published_robot_frame`.
+- The robot's frame name whose pose is published, with the `robot_frame` parameter.
 - The publication frequency through `msg_publication_freq`.
 - The message topics through `topic` and `topic_with_covariance`.
 - The TF topic through `tf_topic`.

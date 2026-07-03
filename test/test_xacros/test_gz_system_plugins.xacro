@@ -19,7 +19,7 @@
 
     <xacro:plugin_pose_in_reference_frame_publisher
       reference_frame="map"
-      published_robot_frame="base_link"
+      robot_frame="base_link"
       msg_publication_freq="50"
       topic="/odom"
       topic_with_covariance="/odom_cov"
