@@ -17,7 +17,7 @@
       initial_linear="0 0 0"
       initial_angular="0 0 0"/>
 
-    <xacro:plugin_pose_in_reference_frame_publisher
+    <xacro:plugin_pose_publisher_in_reference_frame
       reference_frame="map"
       robot_frame="base_link"
       msg_publication_freq="50"

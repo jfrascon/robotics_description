@@ -1,6 +1,6 @@
-# `plugin_pose_in_reference_frame_publisher`
+# `plugin_pose_publisher_in_reference_frame`
 
-The `plugin_pose_in_reference_frame_publisher` macro emits the XML for one Gazebo Sim plugin of type `gz::sim::systems::OdometryPublisher` attached to a robot model.
+The `plugin_pose_publisher_in_reference_frame` macro emits the XML for one Gazebo Sim plugin of type `gz::sim::systems::OdometryPublisher` attached to a robot model.
 
 The Gazebo plugin publishes one message of type `gz::msgs::Odometry`, one message of type `gz::msgs::OdometryWithCovariance`, and it can also publish a transform. The odometry messages and the transform encode the pose of a **robot-attached frame with respect to the root frame selected through `reference_frame`**. Therefore, **the published pose is not necessarily odometry in the semantic sense.** However, depending on the frame names and offset values passed to the macro, the published pose can have different physical meanings.
 
