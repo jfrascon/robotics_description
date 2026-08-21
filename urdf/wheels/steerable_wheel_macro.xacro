@@ -1,6 +1,12 @@
 <?xml version="1.0"?>
 <!--
-This macro models one steerable wheel assembly: a steering joint plus a rotating wheel link/joint.
+This macro creates a wheel that can steer and roll. It uses two links:
+  - steerable_link turns left or right to set the direction of the wheel.
+  - rotation_link contains the wheel geometry and spins around the wheel axle to make it roll.
+
+Both link frames stay on the same vertical line, so they have the same X and Y coordinates.
+By default, they are at the same height, but rotation_link can be placed above or below
+steerable_link along the Z axis.
 
 Convention for parameter types:
 R means real number (with decimal point)
@@ -53,11 +59,15 @@ joint_parent_fr_wheel_fr (S): Pose of '${prefix}${name}_steerable_link' w.r.t th
     joint_parent_fr_wheel_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
     IMPORTANT:
     This value positions '${prefix}${name}_steerable_link' with respect to the parent frame.
-    The rotation frame '${prefix}${name}_rotation_link' is coincident with the steerable frame, in position, and
-    initially in orientation.
+    By default, the rotation frame '${prefix}${name}_rotation_link' is coincident with the steerable frame, in
+    position and initially in orientation.
     The steerable frame changes its orientation with respect to the parent when the wheel is steered.
     The rotation frame changes its orientation with respect to the steerable frame when the wheel spins.
-    This parameter does not define any offset between steerable and rotation frames.
+    This parameter does not define the position of the rotation frame relative to the steerable frame.
+z_joint_steering_fr_rotation_fr (R): Z coordinate of the rotation link with respect to the steering link.
+    A value of 0.0 makes the steering and rotation links positionally coincident.
+    The X and Y coordinates and the initial orientation of the rotation frame remain coincident with the steering
+    link.
 sim_enabled (B): if true, Gazebo contact/friction parameters are emitted for the wheel link.
 sim_max_contacts (I): maximum number of contact points between the wheel and other
     objects in simulation.
@@ -148,6 +158,7 @@ X axis is the rolling direction of the wheel.
                        rotation_joint_limits:='100.0 100000.0'
                        rotation_joint_dynamics:='0.0 0.0'
                        joint_parent_fr_wheel_fr
+                       z_joint_steering_fr_rotation_fr:=0.0
                        sim_enabled:=True
                        sim_max_contacts:=10
                        sim_mu:=1.0
@@ -292,11 +303,11 @@ X axis is the rolling direction of the wheel.
       <parent link="${prefix}${name}_steerable_link"/>
       <child link="${prefix}${name}_rotation_link"/>
       <!--
-      rotation_link and steerable_link start coincident (same position and orientation).
-      The zero origin below enforces that rule.
+      rotation_link is translated only along the Z axis of steerable_link. Their X and Y coordinates
+      and their initial orientations remain coincident.
       This joint adds only wheel spin around +Y of steerable_link.
       -->
-      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
+      <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 ${z_joint_steering_fr_rotation_fr}"/>
 
       <xacro:if value="${rotation_joint_type == 'continuous'}">
         <axis xyz="0 1 0"/>

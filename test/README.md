@@ -17,6 +17,7 @@ directly on their own.
 
 Current explicit test cases in `test/test_xacros/`:
 - `test_box_imu.xacro`
+- `test_caster_wheel.xacro`
 - `test_fork_simple.xacro`
 - `test_gz_system_plugins.xacro`
 - `test_orbbec_gemini335le_rgbd.xacro`
@@ -48,6 +49,7 @@ For every collected Xacro file, the test performs:
 
 Many files in `urdf/sensors/...` are macros such as:
 - `box_imu_macro.xacro`
+- `caster_wheel_macro.xacro`
 - `orbbec_gemini335le_split_macro.xacro`
 - `orbbec_gemini335le_rgbd_macro.xacro`
 - `realsense_d435_split_macro.xacro`

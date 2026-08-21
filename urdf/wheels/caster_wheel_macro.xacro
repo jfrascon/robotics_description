@@ -1,0 +1,329 @@
+<?xml version="1.0"?>
+<!--
+This macro creates a passive caster wheel that can swivel and roll. It uses two links:
+  - steering_link swivels freely around its Z axis to change the wheel direction.
+  - rotation_link contains the wheel geometry and rolls freely around its Y axis.
+
+The rotation frame is displaced from the steering frame along X. This horizontal displacement is
+the caster trail that allows contact forces from the ground to turn the wheel into its trailing
+direction. The rotation frame may also be displaced along Z, but a Z displacement is not required
+for the wheel to behave as a caster.
+
+Convention for parameter types:
+R means real number (with decimal point)
+I means integer (without decimal point)
+S means string (any sequence of characters)
+B means boolean (true or false)
+
+name (S): name of the caster wheel, used to name the links and joints.
+prefix (S): optional prefix for the names of the links and joints.
+parent_frame (S): name of the parent frame to which the caster wheel is attached.
+use_visual (B): if true, include the wheel visual element.
+use_inertial (B): if true, include the wheel inertial element.
+v_mesh (S): package-relative mesh path used only by the visual element of
+            '${prefix}${name}_rotation_link' (for example:
+            'robotics_description/meshes/.../wheel.dae').
+            If empty, the visual element falls back to a primitive cylinder defined by radius and
+            length. Ignored when use_visual is false.
+v_mesh_scale (S): scale of the visual mesh, if use_visual is true and v_mesh is provided.
+    v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
+color (S): string of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
+           If color is empty, the mesh color is used when available; otherwise Gazebo or the URDF
+           viewer chooses its default color.
+radius (R): wheel radius. Used for the primitive visual, collision and inertia.
+length (R): wheel length along the rotation axis (+Y). Used for the primitive visual, collision and
+            inertia.
+mass (R): wheel mass. Used only if use_inertial is true.
+steering_joint_limits (S): velocity and effort limits of the continuous steering joint.
+    steering_joint_limits (S) = 'velocity (R) effort (R)'.
+steering_joint_dynamics (S): damping and friction of the continuous steering joint.
+    steering_joint_dynamics (S) = 'damping (R) friction (R)'.
+rotation_joint_limits (S): velocity and effort limits of the continuous rotation joint.
+    rotation_joint_limits (S) = 'velocity (R) effort (R)'.
+rotation_joint_dynamics (S): damping and friction of the continuous rotation joint.
+    rotation_joint_dynamics (S) = 'damping (R) friction (R)'.
+joint_parent_fr_wheel_fr (S): pose of '${prefix}${name}_steering_link' with respect to parent_frame.
+    joint_parent_fr_wheel_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+x_joint_steering_fr_rotation_fr (R): X coordinate of rotation_link with respect to steering_link.
+    This value must have an absolute value greater than 1e-9 metres. A zero displacement would place
+    the wheel axle on the steering axis and the assembly would not have caster trail.
+    The sign selects whether rotation_link starts on the +X or -X side of steering_link.
+z_joint_steering_fr_rotation_fr (R): Z coordinate of rotation_link with respect to steering_link.
+    This value may be zero, positive or negative. It changes how the vertical position is distributed
+    between the two joints, but it does not create the caster self-alignment.
+sim_enabled (B): if true, Gazebo contact and friction parameters are emitted for rotation_link.
+sim_max_contacts (I): maximum number of contact points between the wheel and other objects.
+sim_mu (R): Gazebo friction coefficient in the fdir1 direction.
+sim_mu2 (R): Gazebo friction coefficient perpendicular to fdir1.
+sim_slip1 (R): Gazebo slip compliance in the fdir1 direction.
+sim_slip2 (R): Gazebo slip compliance perpendicular to fdir1.
+
+Two equivalent ways to place the vertical frames
+=================================================
+
+The following examples assume that roll, pitch and yaw are zero. Both examples place rotation_link
+at X = -0.05 m and Z = -0.10 m with respect to parent_frame when the steering angle is zero.
+Only the location chosen for the steering_link frame is different.
+
+Option A: put the vertical separation in rotation_joint.
+
+    joint_parent_fr_wheel_fr="0.0 0.0 0.0 0.0 0.0 0.0"
+    x_joint_steering_fr_rotation_fr="-0.05"
+    z_joint_steering_fr_rotation_fr="-0.10"
+
+Here steering_link is at the same height as parent_frame. rotation_link is 0.10 m below
+steering_link.
+
+Option B: put the vertical separation in steering_joint.
+
+    joint_parent_fr_wheel_fr="0.0 0.0 -0.10 0.0 0.0 0.0"
+    x_joint_steering_fr_rotation_fr="-0.05"
+    z_joint_steering_fr_rotation_fr="0.0"
+
+Here steering_link is 0.10 m below parent_frame. rotation_link is at the same height as
+steering_link.
+
+Both options describe the same steering axis line and the same rotation-link position. Moving the
+steering frame up or down along that vertical axis does not change how the caster swivels. The
+non-zero X displacement is what makes the assembly a caster; the Z displacement only determines
+where the frame origins are placed.
+
+How passive caster self-alignment works
+=======================================
+
+This macro uses the following frame convention:
+  - +Z is the steering axis and points upward.
+  - +Y is the wheel rotation axis.
+  - +X is the rolling direction.
+
+The wheel-ground contact point is horizontally displaced from the steering axis because
+x_joint_steering_fr_rotation_fr is non-zero. A lateral contact force therefore has a lever arm and
+produces a torque around the steering axis. For a horizontal displacement r = (x, y, z) and a
+horizontal contact force F = (F_x, F_y, 0), that torque is:
+
+    tau_z = x * F_y - y * F_x
+
+This macro fixes y to zero, so:
+
+    tau_z = x * F_y
+
+The Z coordinate does not occur in this expression. This is why X must be non-zero and Z may be
+zero. When the robot moves, the contact force and this torque swivel the wheel until it trails the
+steering axis and rolls in the direction of motion.
+
+The steering joint is passive: no ros2_control command interface is required to make it align.
+During Gazebo simulation, the Gazebo physics engine computes the wheel-ground contact forces and
+integrates the resulting steering-joint motion. ros2_control may still expose position and velocity
+state interfaces when another component needs to publish the caster pose, for example to display
+the measured joint position in RViz, but those state interfaces do not cause the self-alignment.
+On a physical robot, the same self-alignment is produced by real contact forces; Gazebo is involved
+only in simulation.
+
+Gazebo contact and friction
+===========================
+
+Gazebo uses fdir1 to select the first friction direction at the wheel-ground contact. This macro
+expresses fdir1 as +X of steering_link. steering_link swivels with the wheel direction but does not
+spin when rotation_link rolls, so its +X axis remains the correct rolling direction.
+
+The coefficient mu is applied along fdir1 and controls longitudinal traction. The coefficient mu2
+is applied perpendicular to fdir1 and controls lateral grip. slip1 and slip2 are compliance terms in
+those directions: larger values allow more sliding and smaller values make the contact more rigid.
+-->
+<robot name="caster_wheel_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:macro name="caster_wheel"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=true
+                       use_inertial:=true
+                       v_mesh:=''
+                       v_mesh_scale:='1.0 1.0 1.0'
+                       color:=''
+                       radius
+                       length
+                       mass
+                       steering_joint_limits:='100.0 100000.0'
+                       steering_joint_dynamics:='0.0 0.0'
+                       rotation_joint_limits:='100.0 100000.0'
+                       rotation_joint_dynamics:='0.0 0.0'
+                       joint_parent_fr_wheel_fr
+                       x_joint_steering_fr_rotation_fr
+                       z_joint_steering_fr_rotation_fr:=0.0
+                       sim_enabled:=True
+                       sim_max_contacts:=10
+                       sim_mu:=1.0
+                       sim_mu2:=1.0
+                       sim_slip1:=0.0
+                       sim_slip2:=0.0">
+
+    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+    <!-- Parsed as [x, y, z, roll, pitch, yaw]. -->
+    <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
+
+    <xacro:if value="${len(j) != 6}">
+      ${xacro.fatal(
+        "caster_wheel: joint_parent_fr_wheel_fr must have 6 elements: "
+        "'x y z roll pitch yaw'"
+      )}
+    </xacro:if>
+
+    <xacro:property name="caster_x" value="${float(x_joint_steering_fr_rotation_fr)}"/>
+
+    <xacro:if value="${python.abs(caster_x) &lt;= 1e-9}">
+      ${xacro.fatal(
+        "caster_wheel: x_joint_steering_fr_rotation_fr must have an absolute value "
+        "greater than 1e-9 m"
+      )}
+    </xacro:if>
+
+    <xacro:property name="steering_joint_limits_seq"   value="${str(steering_joint_limits).split()}"/>
+    <xacro:property name="steering_joint_dynamics_seq" value="${str(steering_joint_dynamics).split()}"/>
+    <xacro:property name="rotation_joint_limits_seq"   value="${str(rotation_joint_limits).split()}"/>
+    <xacro:property name="rotation_joint_dynamics_seq" value="${str(rotation_joint_dynamics).split()}"/>
+
+    <xacro:if value="${len(steering_joint_limits_seq) != 2}">
+      ${xacro.fatal(
+        "caster_wheel: steering_joint_limits must have 2 elements: "
+        "'velocity (R) effort (R)'"
+      )}
+    </xacro:if>
+
+    <xacro:if value="${len(steering_joint_dynamics_seq) != 2}">
+      ${xacro.fatal(
+        "caster_wheel: steering_joint_dynamics must have 2 elements: "
+        "'damping (R) friction (R)'"
+      )}
+    </xacro:if>
+
+    <xacro:if value="${len(rotation_joint_limits_seq) != 2}">
+      ${xacro.fatal(
+        "caster_wheel: rotation_joint_limits must have 2 elements: "
+        "'velocity (R) effort (R)'"
+      )}
+    </xacro:if>
+
+    <xacro:if value="${len(rotation_joint_dynamics_seq) != 2}">
+      ${xacro.fatal(
+        "caster_wheel: rotation_joint_dynamics must have 2 elements: "
+        "'damping (R) friction (R)'"
+      )}
+    </xacro:if>
+
+    <!--
+    steering_link is an articulation frame only. All wheel geometry and mass belong to
+    rotation_link so they are not duplicated.
+    -->
+    <link name="${prefix}${name}_steering_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_steering_joint" type="continuous">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_steering_link"/>
+      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+      <axis xyz="0 0 1"/>
+      <dynamics damping="${steering_joint_dynamics_seq[0]}"
+                friction="${steering_joint_dynamics_seq[1]}"/>
+      <limit velocity="${steering_joint_limits_seq[0]}"
+             effort="${steering_joint_limits_seq[1]}"/>
+    </joint>
+
+    <!--
+    A URDF cylinder and the documented wheel meshes initially have their symmetry axis along +Z.
+    Rotating them by +pi/2 around X aligns their symmetry axis with the wheel rotation axis +Y.
+    -->
+    <xacro:property name="wheel_origin" value="0.0 0.0 0.0 ${0.5 * pi} 0.0 0.0"/>
+
+    <link name="${prefix}${name}_rotation_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:visual_cylinder mesh="${v_mesh}"
+                               scale="${v_mesh_scale}"
+                               mesh_origin="${wheel_origin}"
+                               radius="${radius}"
+                               length="${length}"
+                               shape_origin="${wheel_origin}"
+                               color="${v_color}"/>
+      </xacro:if>
+
+      <!--
+      Collision is always enabled for wheel-ground contact and is represented as a primitive
+      cylinder for stable and fast simulation.
+      -->
+      <xacro:collision_cylinder radius="${radius}"
+                                length="${length}"
+                                shape_origin="${wheel_origin}"/>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_cylinder_inertia_y mass="${mass}"
+                                        radius="${radius}"
+                                        length="${length}"
+                                        origin="0.0 0.0 0.0 0.0 0.0 0.0"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <joint name="${prefix}${name}_rotation_joint" type="continuous">
+      <parent link="${prefix}${name}_steering_link"/>
+      <child link="${prefix}${name}_rotation_link"/>
+      <origin rpy="0.0 0.0 0.0"
+              xyz="${caster_x} 0.0 ${z_joint_steering_fr_rotation_fr}"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="${rotation_joint_dynamics_seq[0]}"
+                friction="${rotation_joint_dynamics_seq[1]}"/>
+      <limit velocity="${rotation_joint_limits_seq[0]}"
+             effort="${rotation_joint_limits_seq[1]}"/>
+    </joint>
+
+    <xacro:if value="${sim_enabled}">
+      <gazebo reference="${prefix}${name}_rotation_link">
+      <!--
+      This block configures contact/friction for the URDF collision already defined in rotation_link.
+      It does not create a second collision shape.
+      -->
+        <xacro:if value="${use_visual and color != ''}">
+          <material>
+            <ambient>${color}</ambient>
+            <diffuse>${color}</diffuse>
+          </material>
+        </xacro:if>
+
+        <collision>
+          <max_contacts>${sim_max_contacts}</max_contacts>
+          <surface>
+            <friction>
+              <ode>
+                <!--
+                In a caster wheel the rolling direction is along the x-axis of steering_link.
+                -->
+                <fdir1 gz:expressed_in="${prefix}${name}_steering_link">1 0 0</fdir1>
+                <!--
+                Friction coefficient in the fdir1 direction. For a normal wheel,
+                this controls longitudinal traction (agarre).
+                -->
+                <mu>${sim_mu}</mu>
+                <!--
+                Friction coefficient perpendicular to fdir1 in the contact plane.
+                For a normal wheel, this controls lateral grip.
+                -->
+                <mu2>${sim_mu2}</mu2>
+                <!--
+                Slip compliance in the fdir1 direction and perpendicular direction.
+                Smaller values allow less sliding (patinaje/deslizamiento).
+                -->
+                <slip1>${sim_slip1}</slip1>
+                <slip2>${sim_slip2}</slip2>
+              </ode>
+            </friction>
+          </surface>
+        </collision>
+      </gazebo>
+    </xacro:if>
+  </xacro:macro>
+</robot>

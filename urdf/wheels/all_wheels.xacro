@@ -2,5 +2,6 @@
 <robot name="all_wheels" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/wheels/wheel_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/wheels/steerable_wheel_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/wheels/caster_wheel_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/wheels/generic_macros/set_props_wheel_sim_macro.xacro"/>
 </robot>
