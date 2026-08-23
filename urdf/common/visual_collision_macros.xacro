@@ -5,364 +5,240 @@ R means real number
 I means integer
 S means string
 B means boolean
-
-Note: In some expressions used in <xacro:if> tags, the symbol '&lt;' appears instead of '<'.
-      This is because the character '<' is reserved in XML files. Therefore, to use it inside an attribute value, it
-      must be escaped as '&lt;'.
 -->
 
 <robot name="visual_collision_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
 
-  <xacro:include filename="$(find robotics_description)/urdf/common/set_basic_geometry_macro.xacro"/>
-
   <!--
-  Macro for visual element with box shape.
-  mesh (S): mesh filename. If mesh is empty string, then a box shape is used with the provided size.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
+  Macro for a visual element using a mesh.
+  mesh (S): Package-relative mesh path, including the package name. It must not be empty.
+  scale (S): Mesh scale.
+      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'
+  mesh_origin (S): Origin of the mesh.
       mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  size (S): In case mesh is not used, it is used to define a box shape.
-      size (S) = 'sx (R) sy (R) sz (R)'
-  shape_origin (S): Origin of the box shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  color (S): '<color_name> (S) r (R) g (R) b (R) a (R)'. If empty, and the mesh is used, and the mesh has color,
-               then the mesh color is displayed. If empty, and a mesh with no color is used, or a basic geometry is
-               used, then no color is set. If not empty, then the color is used either for the mesh or for the basic
-               geometry.
+  color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, the mesh may use its embedded color.
   -->
-  <xacro:macro name="visual_box"
-               params="mesh:=''
+  <xacro:macro name="visual_mesh"
+               params="mesh
                        scale:='1.0 1.0 1.0'
                        mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       size:='0.0 0.0 0.0'
-                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
                        color:=''">
-    <xacro:visual_element mesh="${mesh}"
-                          scale="${scale}"
-                          mesh_origin="${mesh_origin}"
-                          shape="b ${size}"
-                          shape_origin="${shape_origin}"
-                          color="${color}"/>
-  </xacro:macro>
-
-  <!--
-  Macro for collision element with box shape.
-  mesh (S): mesh filename. If mesh is empty string, then a box shape is used with the provided size.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  size (S): In case mesh is not used, it is used to define a box shape.
-      size (S) = 'sx (R) sy (R) sz (R)'
-  shape_origin (S): Origin of the box shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  -->
-  <xacro:macro name="collision_box"
-               params="mesh:=''
-                       scale:='1.0 1.0 1.0'
-                       mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       size:='0.0 0.0 0.0'
-                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
-    <xacro:collision_element mesh="${mesh}"
-                             scale="${scale}"
-                             mesh_origin="${mesh_origin}"
-                             shape="b ${size}"
-                             shape_origin="${shape_origin}"/>
-  </xacro:macro>
-
-  <!--
-  Macro for a visual element with cylinder shape.
-  mesh (S): mesh filename. If mesh is empty string, then a cylinder shape is used with the provided radius
-            and length.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  radius (R): radius of the cylinder, if mesh is not used.
-  length (R): length of the cylinder, if mesh is not used.
-  shape_origin (S): Origin of the cylinder shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  color (S): '<color_name> (S) r (R) g (R) b (R) a (R)'. If empty, and the mesh is used, and the mesh has color,
-               then the mesh color is displayed. If empty, and a mesh with no color is used, or a basic geometry is
-               used, then no color is set. If not empty, then the color is used either for the mesh or for the basic
-               geometry.
-  -->
-  <xacro:macro name="visual_cylinder"
-              params="mesh:=''
-                      scale:='1.0 1.0 1.0'
-                      mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                      radius:='0.0'
-                      length:='0.0'
-                      shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                      color:=''">
-    <xacro:visual_element mesh="${mesh}"
-                          scale="${scale}"
-                          mesh_origin="${mesh_origin}"
-                          shape="c ${radius} ${length}"
-                          shape_origin="${shape_origin}"
-                          color="${color}"/>
-  </xacro:macro>
-
-  <!--
-  Macro for collision element with cylinder shape.
-  mesh (S): mesh filename. If mesh is empty string, then a cylinder shape is used with the provided radius
-            and length.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  radius (R): radius of the cylinder, if mesh is not used.
-  length (R): length of the cylinder, if mesh is not used.
-  shape_origin (S): Origin of the cylinder shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  -->
-  <xacro:macro name="collision_cylinder"
-               params="mesh:=''
-                       scale:='1.0 1.0 1.0'
-                       mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       radius:='0.0'
-                       length:='0.0'
-                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
-    <xacro:collision_element mesh="${mesh}"
-                             scale="${scale}"
-                             mesh_origin="${mesh_origin}"
-                             shape="c ${radius} ${length}"
-                             shape_origin="${shape_origin}"/>
-  </xacro:macro>
-
-  <!--
-  Macro for visual element with sphere shape.
-  mesh (S): mesh filenane. If mesh is empty string, then a sphere shape is used with the provided radius.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  radius (R): radius of the sphere, if mesh is not used.
-  shape_origin (S): Origin of the sphere shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  color (S): '<color_name> (S) r (R) g (R) b (R) a (R)'. If empty, and the mesh is used, and the mesh has color,
-               then the mesh color is displayed. If empty, and a mesh with no color is used, or a basic geometry is
-               used, then no color is set. If not empty, then the color is used either for the mesh or for the basic
-               geometry.
-  -->
-  <xacro:macro name="visual_sphere"
-               params="mesh:=''
-                       scale:='1.0 1.0 1.0'
-                       mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       radius:='0.0'
-                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       color:=''">
-    <xacro:visual_element mesh="${mesh}"
-                          scale="${scale}"
-                          mesh_origin="${mesh_origin}"
-                          shape="s ${radius}"
-                          shape_origin="${shape_origin}"
-                          color="${color}"/>
-  </xacro:macro>
-
-  <!--
-  Macro for collision element with sphere shape.
-  mesh (S): mesh filenane. If mesh is empty string, then a sphere shape is used with the provided radius.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  radius (R): radius of the sphere, if mesh is not used.
-  shape_origin (S): Origin of the sphere shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  -->
-  <xacro:macro name="collision_sphere"
-               params="mesh:=''
-                       scale:='1.0 1.0 1.0'
-                       mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       radius:='0.0'
-                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
-    <xacro:collision_element mesh="${mesh}"
-                             scale="${scale}"
-                             mesh_origin="${mesh_origin}"
-                             shape="s ${radius}"
-                             shape_origin="${shape_origin}"/>
-  </xacro:macro>
-
-
-  <!--
-  Macro for internal use to define visual elements.
-  mesh (S): mesh filename. If mesh is empty string, then a basic geometry is used.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  shape (S): Shape to use if no mesh is provided.
-      shape (S) ='b  sx (R)      sy (R)       sz (R)' -> box, size_x, size_y, size_z
-      shape (S) ='c  radius (R)  length (R)'          -> cylinder
-      shape (S) ='s  radius (R)'                      -> sphere
-  shape_origin (S): Origin of the shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  color (S): '<color_name> (S) r (R) g (R) b (R) a (R)'. If empty, and the mesh is used, and the mesh has color,
-             then the mesh color is displayed. If empty, and a mesh with no color is used, or a basic geometry is used,
-             then no color is set. If not empty, then the color is used either for the mesh or for the basic geometry.
-  -->
-  <xacro:macro name="visual_element"
-              params="mesh:=''
-                      scale:='1.0 1.0 1.0'
-                      mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                      shape:='b 0.0 0.0 0.0'
-                      shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                      color:=''">
-    <xacro:property name="c" value="${color.split()}"/>
-
     <visual>
-      <xacro:vc_common mesh="${mesh}"
-                       scale="${scale}"
-                       mesh_origin="${mesh_origin}"
-                       shape="${shape}"
-                       shape_origin="${shape_origin}"/>
-      <!--
-      If color is empty, then no color is set explicitely.
-      If color is not empty, then it must be in the form 'color_name r g b a' (length is 5), otherwise an error is
-      raised.
-      -->
-      <xacro:if value="${color != ''}">
-        <xacro:if value="${len(c) != 5}">
-          ${xacro.fatal("v_element: color must be 'color_name r g b a'")}
-        </xacro:if>
-        <material name="${c[0]}">
-          <color rgba="${c[1]} ${c[2]} ${c[3]} ${c[4]}"/>
-        </material>
-      </xacro:if>
+      <xacro:mesh_geometry mesh="${mesh}" scale="${scale}"/>
+      <xacro:origin_element origin="${mesh_origin}"/>
+      <xacro:visual_material color="${color}"/>
     </visual>
   </xacro:macro>
 
   <!--
-  Macro for internal use to define collision elements.
-  mesh (S): msh filename. If mesh is empty string, then a basic geometry is used.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
+  Macro for a collision element using a mesh.
+  mesh (S): Package-relative mesh path, including the package name. It must not be empty.
+  scale (S): Mesh scale.
+      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'
+  mesh_origin (S): Origin of the mesh.
       mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  shape (S): Shape to use if no mesh is provided.
-      shape (S) ='b  sx (R)      sy (R)       sz (R)' -> box, size_x, size_y, size_z
-      shape (S) ='c  radius (R)  length (R)'          -> cylinder, radius, length
-      shape (S) ='s  radius (R)'                      -> sphere, radius
-  shape_origin (S): Origin of the shape, if mesh is not used.
+  -->
+  <xacro:macro name="collision_mesh"
+               params="mesh
+                       scale:='1.0 1.0 1.0'
+                       mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
+    <collision>
+      <xacro:mesh_geometry mesh="${mesh}" scale="${scale}"/>
+      <xacro:origin_element origin="${mesh_origin}"/>
+    </collision>
+  </xacro:macro>
+
+  <!--
+  Macro for a visual element using a box primitive.
+  size (S): Box dimensions.
+      size (S) = 'size_x (R) size_y (R) size_z (R)'
+  shape_origin (S): Origin of the box.
+      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+  color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, no explicit color is set.
+  -->
+  <xacro:macro name="visual_box"
+               params="size
+                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       color:=''">
+    <xacro:property name="size_items" value="${size.split()}"/>
+
+    <xacro:if value="${len(size_items) != 3}">
+      ${xacro.fatal("visual_box: size must be 'size_x size_y size_z'")}
+    </xacro:if>
+
+    <visual>
+      <geometry>
+        <box size="${size}"/>
+      </geometry>
+      <xacro:origin_element origin="${shape_origin}"/>
+      <xacro:visual_material color="${color}"/>
+    </visual>
+  </xacro:macro>
+
+  <!--
+  Macro for a collision element using a box primitive.
+  size (S): Box dimensions.
+      size (S) = 'size_x (R) size_y (R) size_z (R)'
+  shape_origin (S): Origin of the box.
       shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
   -->
-  <xacro:macro name="collision_element"
-               params="mesh:=''
-                       scale:='1.0 1.0 1.0'
-                       mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                       shape:='b 0.0 0.0 0.0'
+  <xacro:macro name="collision_box"
+               params="size
+                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
+    <xacro:property name="size_items" value="${size.split()}"/>
+
+    <xacro:if value="${len(size_items) != 3}">
+      ${xacro.fatal("collision_box: size must be 'size_x size_y size_z'")}
+    </xacro:if>
+
+    <collision>
+      <geometry>
+        <box size="${size}"/>
+      </geometry>
+      <xacro:origin_element origin="${shape_origin}"/>
+    </collision>
+  </xacro:macro>
+
+  <!--
+  Macro for a visual element using a cylinder primitive.
+  radius (R): Cylinder radius.
+  length (R): Cylinder length.
+  shape_origin (S): Origin of the cylinder.
+      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+  color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, no explicit color is set.
+  -->
+  <xacro:macro name="visual_cylinder"
+               params="radius
+                       length
+                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       color:=''">
+    <visual>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+      <xacro:origin_element origin="${shape_origin}"/>
+      <xacro:visual_material color="${color}"/>
+    </visual>
+  </xacro:macro>
+
+  <!--
+  Macro for a collision element using a cylinder primitive.
+  radius (R): Cylinder radius.
+  length (R): Cylinder length.
+  shape_origin (S): Origin of the cylinder.
+      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+  -->
+  <xacro:macro name="collision_cylinder"
+               params="radius
+                       length
                        shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
     <collision>
-      <xacro:vc_common mesh="${mesh}"
-                       scale="${scale}"
-                       mesh_origin="${mesh_origin}"
-                       shape="${shape}"
-                       shape_origin="${shape_origin}"/>
+      <geometry>
+        <cylinder radius="${radius}" length="${length}"/>
+      </geometry>
+      <xacro:origin_element origin="${shape_origin}"/>
+    </collision>
+  </xacro:macro>
+
+  <!--
+  Macro for a visual element using a sphere primitive.
+  radius (R): Sphere radius.
+  shape_origin (S): Origin of the sphere.
+      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+  color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, no explicit color is set.
+  -->
+  <xacro:macro name="visual_sphere"
+               params="radius
+                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
+                       color:=''">
+    <visual>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+      <xacro:origin_element origin="${shape_origin}"/>
+      <xacro:visual_material color="${color}"/>
+    </visual>
+  </xacro:macro>
+
+  <!--
+  Macro for a collision element using a sphere primitive.
+  radius (R): Sphere radius.
+  shape_origin (S): Origin of the sphere.
+      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+  -->
+  <xacro:macro name="collision_sphere"
+               params="radius
+                       shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
+    <collision>
+      <geometry>
+        <sphere radius="${radius}"/>
+      </geometry>
+      <xacro:origin_element origin="${shape_origin}"/>
     </collision>
   </xacro:macro>
 
   <!-- ===================================================================== -->
-  <!-- MACROS BELOW ARE FOR INNER USE ONLY -->
+  <!-- MACROS BELOW ARE FOR INTERNAL USE ONLY -->
   <!-- ===================================================================== -->
 
   <!--
-  Macro for internal use to set the common elements of the visual and collision tags.
-  mesh (S): mesh filename. If mesh is empty string, then a basic geometry is used.
-  scale (S): Scale of the mesh, if mesh is used.
-      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'.
-  mesh_origin (S): Origin of the mesh, if mesh is used.
-      mesh_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-  shape (S): Shape to use if no mesh is provided.
-      shape (S) ='b  sx (R)      sy (R)       sz (R)' -> box, size_x, size_y, size_z
-      shape (S) ='c  radius (R)  length (R)'          -> cylinder, radius, length
-      shape (S) ='s  radius (R)'                      -> sphere, radius
-  shape_origin: (S): Origin of the shape, if mesh is not used.
-      shape_origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
+  Internal macro that validates and creates mesh geometry.
+  mesh (S): Package-relative mesh path, including the package name. It must not be empty.
+  scale (S): Mesh scale.
+      scale (S) = 'scale_x (R) scale_y (R) scale_z (R)'
   -->
-  <xacro:macro name="vc_common"
-              params="mesh:=''
-                      scale:='1.0 1.0 1.0'
-                      mesh_origin:='0.0 0.0 0.0 0.0 0.0 0.0'
-                      shape:='b 0.0 0.0 0.0'
-                      shape_origin:='0.0 0.0 0.0 0.0 0.0 0.0'">
-
-    <xacro:if value="${mesh != ''}">
-      <xacro:property name="scale_items" value="${scale.split()}"/>
-
-      <xacro:if value="${len(scale_items) != 3}">
-        ${xacro.fatal("vc_common: scale must be 'scale_x scale_y scale_z'")}
-      </xacro:if>
-
-      <xacro:property name="mo_items" value="${mesh_origin.split()}"/>
-
-      <xacro:if value="${len(mo_items) != 6}">
-        ${xacro.fatal("vc_common: mesh origin must be 'x y z roll pitch yaw'")}
-      </xacro:if>
-
-      <geometry>
-        <mesh filename="package://${mesh}" scale="${scale}"/>
-      </geometry>
-      <origin rpy="${mo_items[3]} ${mo_items[4]} ${mo_items[5]}"
-              xyz="${mo_items[0]} ${mo_items[1]} ${mo_items[2]}"/>
-    </xacro:if>
-
+  <xacro:macro name="mesh_geometry" params="mesh scale">
     <xacro:if value="${mesh == ''}">
-      <xacro:property name="so_seq" value="${shape_origin.split()}"/>
-
-      <xacro:if value="${len(so_seq) != 6}">
-        ${xacro.fatal("vc_common: shape origin must be 'x y z roll pitch yaw'")}
-      </xacro:if>
-
-      <xacro:set_basic_geometry shape="${shape}"/>
-      <origin rpy="${so_seq[3]} ${so_seq[4]} ${so_seq[5]}" xyz="${so_seq[0]} ${so_seq[1]} ${so_seq[2]}"/>
+      ${xacro.fatal("mesh_geometry: mesh must not be empty")}
     </xacro:if>
+
+    <xacro:property name="scale_items" value="${scale.split()}"/>
+
+    <xacro:if value="${len(scale_items) != 3}">
+      ${xacro.fatal("mesh_geometry: scale must be 'scale_x scale_y scale_z'")}
+    </xacro:if>
+
+    <geometry>
+      <mesh filename="package://${mesh}" scale="${scale}"/>
+    </geometry>
   </xacro:macro>
 
   <!--
-  Macro for internal use to set basic geometry
-  shape (S) ='b  sx (R)      sy (R)       sz (R)' -> box, size_x, size_y, size_z
-  shape (S) ='c  radius (R)  length (R)'          -> cylinder, radius, length
-  shape (S) ='s  radius (R)'                      -> sphere, radius
+  Internal macro that validates and creates an origin element.
+  origin (S): Position and orientation.
+      origin (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
   -->
-  <xacro:macro name="set_basic_geometry" params="shape:='b 0.0 0.0 0.0'">
-    <xacro:property name="shape_items"  value="${shape.split()}"/>
+  <xacro:macro name="origin_element" params="origin">
+    <xacro:property name="origin_items" value="${origin.split()}"/>
 
-    <xacro:if value="${len(shape_items) &lt; 2}">
-      ${xacro.fatal("set_basic_geometry: shape parameter is too short")}
+    <xacro:if value="${len(origin_items) != 6}">
+      ${xacro.fatal("origin_element: origin must be 'x y z roll pitch yaw'")}
     </xacro:if>
 
-    <xacro:property name="shape_type" value="${shape_items[0]}"/>
+    <origin xyz="${origin_items[0]} ${origin_items[1]} ${origin_items[2]}"
+            rpy="${origin_items[3]} ${origin_items[4]} ${origin_items[5]}"/>
+  </xacro:macro>
 
-    <xacro:if value="${shape_type not in ('b', 'c', 's')}">
-      ${xacro.fatal("The field 'shape' must be one of: 'b' (box), 'c' (cylinder), 's' (sphere)")}
-    </xacro:if>
+  <!--
+  Internal macro that validates and creates an optional visual material.
+  color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, no material element is created.
+  -->
+  <xacro:macro name="visual_material" params="color">
+    <xacro:if value="${color != ''}">
+      <xacro:property name="color_items" value="${color.split()}"/>
 
-    <xacro:if value="${shape_type == 'b'}">
-      <xacro:if value="${len(shape_items) &lt; 4}">
-        ${xacro.fatal("set_basic_geometry: invalid box shape. Expected: 'b sx sy sz'")}
+      <xacro:if value="${len(color_items) != 5}">
+        ${xacro.fatal("visual_material: color must be 'color_name r g b a'")}
       </xacro:if>
 
-      <geometry>
-        <box size="${shape_items[1]} ${shape_items[2]} ${shape_items[3]}"/>
-      </geometry>
-    </xacro:if>
-
-    <xacro:if value="${shape_type == 'c'}">
-      <xacro:if value="${len(shape_items) &lt; 3}">
-        ${xacro.fatal("set_basic_geometry: invalid cylinder shape. Expected: 'c radius length'")}
-      </xacro:if>
-
-      <geometry>
-        <cylinder radius="${shape_items[1]}" length="${shape_items[2]}"/>
-      </geometry>
-    </xacro:if>
-
-    <xacro:if value="${shape_type == 's'}">
-      <geometry>
-        <sphere radius="${shape_items[1]}"/>
-      </geometry>
+      <material name="${color_items[0]}">
+        <color rgba="${color_items[1]} ${color_items[2]} ${color_items[3]} ${color_items[4]}"/>
+      </material>
     </xacro:if>
   </xacro:macro>
 </robot>
