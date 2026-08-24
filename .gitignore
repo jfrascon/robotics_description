@@ -1,20 +1,22 @@
-# OS / editor
-.DS_Store
-Thumbs.db
-*~
-*.swp
-*.swo
-.vscode/
-.idea/
+# ROS workspace artifacts
+build/
+install/
+devel/
+log/
+
+# Local dependencies
+src/0_deps/
+.devcontainer/
 
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
+*.egg-info/
+.eggs/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.ruff_cache
 .coverage
 .coverage.*
 htmlcov/
@@ -22,20 +24,20 @@ htmlcov/
 venv/
 env/
 
-# Tool caches
+# Tooling
 .cache/
 .pre-commit-cache/
+.devcontainer/
+.codex/
+.copilot/
+.github
 
-# ROS 2 / colcon / CMake build outputs
-build/
-install/
-log/
-cmake-build-*/
-CMakeFiles/
-CMakeCache.txt
-compile_commands.json
-Testing/
-CTestTestfile.cmake
-
-# Packaging / metadata
-*.egg-info/
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.code-workspace
