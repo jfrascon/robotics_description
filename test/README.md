@@ -2,21 +2,30 @@
 
 This directory contains the validation tests for the URDF/Xacro content of the `robotics_description` package.
 
-The main test entry point is:
+The generic Xacro test entry point is:
+
 - `test_xacro.py`
+
+Component-specific contract tests currently include:
+
+- `test_all_imus_macros.py`
+- `test_imu_box.py`
+- `test_set_props_plugin_imu.py`
+- `test_um7.py`
 
 ## What is tested
 
 `test_xacro.py` validates the explicit test cases under `test/test_xacros/`.
 
 These are small Xacro files that instantiate reusable macros with valid
-arguments and, when needed, example simulation configurations. They exist
-because most files in `robotics_description` are reusable macro building
-blocks, not standalone robot descriptions that can be rendered and validated
-directly on their own.
+arguments and, when needed, example simulation configurations.
+They exist because most files in `robotics_description` are reusable macro
+building blocks, not standalone robot descriptions that can be rendered and
+validated directly on their own.
 
 Current explicit test cases in `test/test_xacros/`:
-- `test_box_imu.xacro`
+
+- `test_imu_box.xacro`
 - `test_caster_wheel.xacro`
 - `test_fork_simple.xacro`
 - `test_gz_system_plugins.xacro`
@@ -48,7 +57,8 @@ For every collected Xacro file, the test performs:
 ## Why `test_xacros/` exists
 
 Many files in `urdf/sensors/...` are macros such as:
-- `box_imu_macro.xacro`
+
+- `imu_box_macro.xacro`
 - `caster_wheel_macro.xacro`
 - `orbbec_gemini335le_split_macro.xacro`
 - `orbbec_gemini335le_rgbd_macro.xacro`
@@ -62,6 +72,7 @@ Many files in `urdf/sensors/...` are macros such as:
 - `wheel_macro.xacro`
 
 These macros are reusable building blocks, not complete robot models. To test them properly, each one must be:
+
 - included from a small test Xacro
 - instantiated with valid arguments
 - connected to example simulation / bridge YAML files when needed
@@ -92,6 +103,7 @@ Relevant test dependencies in `../package.xml`:
 ```
 
 The important executables for this test are:
+
 - `xacro`
 - `check_urdf`
 

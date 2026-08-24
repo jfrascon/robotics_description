@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
-<robot name="test_box_imu" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/box_imu_macro.xacro"/>
+<robot name="test_imu_box" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/imu_box_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/set_props_plugin_imu_macro.xacro"/>
 
   <xacro:property name="imu_test_sim_cfg"
@@ -46,14 +45,14 @@
                                                                          stddev_z=0.0,
                                                                          corr_time_z=0.0),
                                  use_orientation=True,
-                                 topic='box_imu/data')}"/>
+                                 topic='imu_box/data')}"/>
 
   <xacro:set_props_plugin_imu prop_prefix="imu"
                               imu_sim_cfg="${imu_test_sim_cfg}"/>
 
   <link name="base_link"/>
 
-  <xacro:box_imu name="imu"
+  <xacro:imu_box name="imu"
                  parent_frame="base_link"
                  mass="0.01"
                  size="0.04 0.03 0.02"

@@ -1,6 +1,14 @@
 <?xml version="1.0"?>
-<robot name="all_imus" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/set_props_plugin_imu_macro.xacro"/>
-  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/box_imu_macro.xacro"/>
+<!--
+Public IMU macro aggregator.
+
+Each included component declares its own implementation dependencies.
+The includes here remain explicit so users can discover every public IMU macro and the
+simulation-configuration helper from this single entry point.
+-->
+<robot name="all_imus" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include
+    filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/set_props_plugin_imu_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/imu_box_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/um7_macro.xacro"/>
 </robot>

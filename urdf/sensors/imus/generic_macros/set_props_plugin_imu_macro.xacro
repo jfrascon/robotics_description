@@ -1,8 +1,25 @@
 <?xml version="1.0"?>
-<robot name="set_props_plugin_imu_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<!--
+IMU simulation configuration adapter.
+
+The macro converts an optional configuration dictionary into flat Xacro
+properties in the caller scope. prop_prefix must not be blank.
+
+If enabled is absent or false, all generated properties disable simulation and
+the remaining configuration fields are ignored. If enabled is true, the
+configuration must provide every field consumed by plugin_imu.
+
+Gaussian noise and bias dictionaries use mean_<axis> and stddev_<axis>.
+Dynamic-bias dictionaries use stddev_<axis> and corr_time_<axis>.
+-->
+<robot name="set_props_plugin_imu_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="set_props_plugin_imu"
                params="prop_prefix
-                       imu_sim_cfg:=dict()">
+                       imu_sim_cfg:=${dict()}">
+
+    <xacro:if value="${prop_prefix.strip() == ''}">
+      ${xacro.fatal("set_props_plugin_imu: prop_prefix must not be blank")}
+    </xacro:if>
 
     <!--
     If imu_sim_cfg does not have the field 'enabled' or if it is set to False, then set all the simulation
@@ -63,6 +80,26 @@
     values in imu_sim_cfg. The configuration is expected to be complete.
     -->
     <xacro:if value="${imu_sim_cfg.get('enabled', False)}">
+      <xacro:property name="required_fields"
+                      value="${['use_gravity',
+                                'always_on',
+                                'update_rate',
+                                'ang_vel_gaussian_noise',
+                                'ang_vel_gaussian_noise_bias',
+                                'ang_vel_gaussian_noise_dynamic_bias',
+                                'lin_acc_gaussian_noise',
+                                'lin_acc_gaussian_noise_bias',
+                                'lin_acc_gaussian_noise_dynamic_bias',
+                                'use_orientation',
+                                'topic']}"/>
+      <xacro:property name="missing_fields"
+                      value="${[field for field in required_fields if field not in imu_sim_cfg]}"/>
+
+      <xacro:if value="${len(missing_fields) != 0}">
+        ${xacro.fatal('set_props_plugin_imu: enabled configuration is missing fields: ' +
+                      ', '.join(missing_fields))}
+      </xacro:if>
+
       <xacro:property name="${prop_prefix}_enabled"
                       value="True"
                       scope="parent"/>

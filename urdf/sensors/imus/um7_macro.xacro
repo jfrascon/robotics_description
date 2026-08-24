@@ -1,49 +1,54 @@
 <?xml version="1.0"?>
 <!--
-Convention for parameter types:
-R means real number
-I means integer
-S means string
-B means boolean
+UM7 IMU macro.
 
-name (S): name of the imu, used to name the links and joints.
-prefix (S): optional prefix for the names of the links and joints.
-parent_frame (S): name of the parent frame to which the imu's root frame is attached.
-use_visual (B): if true, include visual element.
-use_collision (B): if true, include collision element.
-use_inertial (B): if true, include inertial element.
-use_v_mesh (B): if true, use the mesh for the visual element. If false, use a box shape.
-color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
-           If color is not empty, the provided color is applied to the object used in the visual element, either
-           a mesh (even if the mesh has its own color) or box shape.
-           If color is empty:
-               If a mesh is used and has its own color, the color of the mesh is displayed.
-               If a mesh is used with no color data associated or a box shape is used, a whitish default color is used
-               to display the visual element.
-use_c_mesh (B): if true, use the mesh for the collision element. If false, use a box shape.
-joint_parent_fr_root_fr (S): Pose of the imu's root frame w.r.t the parent's frame.
+The macro defines the fixed physical dimensions, mass, mesh and sensor data
+frame of a Redshift Labs UM7. It delegates body geometry, inertia, links, joints
+and Gazebo sensor generation to imu_box.
+
+Parameter type notation: R = real number, S = string, B = boolean.
+
+name (S): IMU name used to derive link, joint, material and sensor names.
+prefix (S): Optional prefix applied to generated names.
+parent_frame (S): Link to which the UM7 body frame is attached.
+use_visual (B): If true, create visual geometry.
+use_collision (B): If true, create collision geometry.
+use_inertial (B): If true, use the fixed UM7 mass and solid-box inertia. If
+                  false, use the null inertia supplied by imu_box.
+use_v_mesh (B): If true, use the UM7 mesh for visual geometry; otherwise use
+                the fixed box primitive.
+color (S): Optional visual color in the form 'r g b a'. A non-empty value
+           overrides the mesh material and colors the box primitive. If empty,
+           no explicit material is added, so a mesh may use its embedded color.
+use_c_mesh (B): If true, use the UM7 mesh for collision geometry; otherwise use
+                the fixed box primitive.
+joint_parent_fr_root_fr (S): UM7 body pose relative to parent_frame.
     joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
-sim_enabled (B): if true, include the Gazebo IMU plugin.
-sim_use_gravity (B): if true, the imu measures gravity in simulation.
-sim_always_on (B): if true, the imu is always on in simulation.
-sim_update_rate (R): update rate of the imu in simulation.
-sim_ang_vel_gaussian_noise (S): Gaussian noise parameters for angular velocity measurements.
-    sim_ang_vel_gaussian_noise (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
-sim_ang_vel_gaussian_noise_bias (S): Gaussian noise bias parameters for angular velocity measurements.
-    sim_ang_vel_gaussian_noise_bias (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
-sim_ang_vel_gaussian_noise_dynamic_bias (S): Gaussian noise dynamic bias parameters for angular velocity measurements.
-    sim_ang_vel_gaussian_noise_dynamic_bias (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
-sim_lin_acc_gaussian_noise (S): Gaussian noise parameters for linear acceleration measurements.
-    sim_lin_acc_gaussian_noise (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
-sim_lin_acc_gaussian_noise_bias (S): Gaussian noise bias parameters for linear acceleration measurements.
-    sim_lin_acc_gaussian_noise_bias (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
-sim_lin_acc_gaussian_noise_dynamic_bias (S): Gaussian noise dynamic bias parameters for linear acceleration measurements.
-    sim_lin_acc_gaussian_noise_dynamic_bias (S) = 'mean (R) stddev (R) bias_mean (R) bias_stddev (R) dynamic_bias_mean (R) dynamic_bias_stddev (R)'.
-sim_use_orientation (B): if true, the imu plugin provides orientation data in simulation.
-sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. This field is required.
-    If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot namespace.
+sim_enabled (B): If true, create the Gazebo IMU sensor on the UM7 data frame.
+sim_use_gravity (B): If true, measure gravity in simulation.
+sim_always_on (B): If true, keep the simulated sensor active.
+sim_update_rate (R): Simulated sensor update rate in hertz.
+
+The Gaussian noise and bias parameters use three axis pairs:
+    mean_x stddev_x mean_y stddev_y mean_z stddev_z
+The dynamic-bias parameters use:
+    stddev_x corr_time_x stddev_y corr_time_y stddev_z corr_time_z
+
+sim_ang_vel_gaussian_noise (S): Angular-velocity Gaussian noise.
+sim_ang_vel_gaussian_noise_bias (S): Angular-velocity Gaussian bias.
+sim_ang_vel_gaussian_noise_dynamic_bias (S): Angular-velocity dynamic bias.
+sim_lin_acc_gaussian_noise (S): Linear-acceleration Gaussian noise.
+sim_lin_acc_gaussian_noise_bias (S): Linear-acceleration Gaussian bias.
+sim_lin_acc_gaussian_noise_dynamic_bias (S): Linear-acceleration dynamic bias.
+sim_use_orientation (B): If true, publish orientation data in simulation.
+namespace (S): Optional namespace used to resolve a relative simulation topic.
+sim_topic (S): Gazebo IMU topic. It must not be blank when sim_enabled is true.
+               An absolute topic starts with '/'; otherwise it is resolved in
+               namespace.
 -->
-<robot name="um7_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="um7_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/imu_box_macro.xacro"/>
+
   <xacro:macro name="um7"
                params="name
                        prefix:=''
@@ -67,49 +72,44 @@ sim_topic (S): Topic used by the Gazebo IMU plugin in simulation. This field is 
                        sim_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
                        sim_use_orientation:=True
                        namespace:=''
-                       sim_topic">
-
-    <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/box_imu_macro.xacro"/>
-
-    <xacro:property name="mass"   value="0.0110"/>
+                       sim_topic:=''">
 
     <!--
-    The imu UM7 is approximated as a box with:
-    - size_x: 0.0285 m
-    - size_y: 0.0285 m
-    - size_z: 0.0128 m.
+    The DAE mesh frame is located at the mesh geometric center.
+    Therefore, it coincides with the center of a box primitive shape; so we can use the same
+    'body origin' for both the mesh and the box primitive.
+    The mesh is colored with a material that is embedded in the DAE file.
+    Its embedded color is preserved when color field is empty; a non-empty color overrides it for
+    the visual element.
     -->
-    <xacro:property name="size_x" value="0.0285"/>
-    <xacro:property name="size_y" value="0.0285"/>
-    <xacro:property name="size_z" value="0.0128"/>
+    <xacro:property name="body_mass"       value="0.0110"/>
+    <xacro:property name="body_size"       value="0.0285 0.0285 0.0128"/>
+    <xacro:property name="body_mesh"
+                    value="robotics_description/meshes/sensors/imus/um7/mesh.dae"/>
+    <xacro:property name="body_mesh_scale" value="1.0 1.0 1.0"/>
 
     <!--
-    The frame of the mesh is located at its geometric center (see MeshLab), so it coincides with the frame of a box
-    shape.
-    Therefore, just one origin is needed no matter if use_<v|c>_mesh is true or false.
-    Scale is 1 1 1.
-    The mesh has its own color, so no color is needed.
-    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    Position and orientation of the IMU data frame relative to the UM7 body frame.
     -->
-    <xacro:property name="mesh"       value="robotics_description/meshes/sensors/imus/um7/mesh.dae"/>
-    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+    <xacro:property name="data_origin"
+                    value="-0.00785 0.00785 0.01118 ${pi} 0.0 0.0"/>
 
-    <xacro:box_imu
+    <xacro:imu_box
       name="${name}"
       prefix="${prefix}"
       parent_frame="${parent_frame}"
-      mass="${mass}"
-      size="${size_x} ${size_y} ${size_z}"
+      mass="${body_mass}"
+      size="${body_size}"
       use_visual="${use_visual}"
       use_collision="${use_collision}"
       use_inertial="${use_inertial}"
-      v_mesh="${mesh if use_v_mesh else ''}"
-      v_mesh_scale="${mesh_scale}"
+      v_mesh="${body_mesh if use_v_mesh else ''}"
+      v_mesh_scale="${body_mesh_scale}"
       color="${color}"
-      c_mesh="${mesh if use_c_mesh else ''}"
-      c_mesh_scale="${mesh_scale}"
+      c_mesh="${body_mesh if use_c_mesh else ''}"
+      c_mesh_scale="${body_mesh_scale}"
       joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"
-      joint_root_fr_data_fr="-0.00785 0.00785 0.01118 ${pi} 0.0 0.0"
+      joint_root_fr_data_fr="${data_origin}"
       sim_enabled="${sim_enabled}"
       sim_use_gravity="${sim_use_gravity}"
       sim_always_on="${sim_always_on}"

@@ -2,24 +2,47 @@
 <!--
 Generic rectangular IMU macro.
 
-This macro defines a generic IMU with a rectangular body. It can represent the
-body with a basic box primitive or with optional visual and collision meshes.
+This macro defines an IMU with a nominal rectangular envelope given by size.
+All three size values must be greater than zero. When inertial data is enabled,
+mass must also be greater than zero, and mass and size define a solid-box
+inertia; using a visual or collision mesh does not change the inertial model.
+When inertial data is disabled, mass is ignored and a small null inertia is
+inserted to keep the root link valid.
+
+Visual and collision geometry are selected independently:
+- If use_visual is false, no visual element is created.
+- If use_visual is true, an empty v_mesh selects a box primitive and a non-empty
+  v_mesh selects the visual mesh.
+- If use_collision is false, no collision element is created.
+- If use_collision is true, an empty c_mesh selects a box primitive and a
+  non-empty c_mesh selects the collision mesh.
+
+This permits any combination of mesh and primitive representations. A mesh path
+must be package-relative and include the package name. v_mesh_scale and
+c_mesh_scale apply only to their corresponding meshes.
+
+If sim_enabled is false, no Gazebo IMU sensor is created. If it is true,
+sim_topic must not be blank.
 
 The root link frame is located at the center of the lower face of the IMU box.
 The visual, collision, and inertial elements are shifted upward by half the box
-height so that the box volume sits above the root frame.
+height. A mesh frame is therefore expected at the geometric center of the mesh,
+and its scaled bounds should represent the same nominal envelope as size. The
+mesh may contain non-box details, but size still controls the primitive fallback
+and solid-box inertia. The macro does not verify that a mesh file exists or infer
+or validate its dimensions.
 
-If a visual or collision mesh is provided, the mesh frame is expected to be at
-the geometric center of the mesh. The same convention is used by the basic box
-primitive. Because of that convention, the visual, collision, and inertial
-elements are translated upward by size.z / 2. This keeps the IMU root frame at
-the center of the lower face independently of whether the body is represented
-with a mesh or with the basic box primitive. The corresponding mesh scale must
-make the scaled mesh match the size declared through the size parameter. This
-macro does not try to infer or validate mesh dimensions.
+${prefix}${name}_root_link contains the body geometry and inertia.
+joint_parent_fr_root_fr places that body frame relative to parent_frame.
+${prefix}${name}_link is the sensor data frame, and joint_root_fr_data_fr places
+it relative to the body frame. The Gazebo IMU sensor is attached to this data
+frame.
 -->
-<robot name="box_imu_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
-  <xacro:macro name="box_imu"
+<robot name="imu_box_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
+
+  <xacro:macro name="imu_box"
                params="name
                        prefix:=''
                        parent_frame
@@ -49,42 +72,61 @@ macro does not try to infer or validate mesh dimensions.
                        namespace:=''
                        sim_topic:=''">
 
-    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
-
     <xacro:property name="size_seq" value="${size.split()}"/>
 
     <xacro:if value="${len(size_seq) != 3}">
-      ${xacro.fatal("box_imu: size must be 'len_x len_y len_z'")}
+      ${xacro.fatal("imu_box: size must be 'len_x len_y len_z'")}
+    </xacro:if>
+
+    <xacro:if value="${float(size_seq[0]) &lt;= 0.0 or
+                       float(size_seq[1]) &lt;= 0.0 or
+                       float(size_seq[2]) &lt;= 0.0}">
+      ${xacro.fatal("imu_box: size values must be greater than zero")}
     </xacro:if>
 
     <!--
     The root link frame is located at the center of the lower face of the IMU box.
     -->
-    <xacro:property name="origin"
+    <xacro:property name="body_origin"
                     value="0 0 ${0.5 * float(size_seq[2])} 0 0 0"/>
 
     <link name="${prefix}${name}_root_link">
       <xacro:if value="${use_visual}">
         <xacro:property name="v_color"
                         value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
-        <xacro:visual_box mesh="${v_mesh}"
-                          scale="${v_mesh_scale}"
-                          mesh_origin="${origin}"
-                          size="${size}"
-                          shape_origin="${origin}"
-                          color="${v_color}"/>
+
+        <xacro:if value="${v_mesh != ''}">
+          <xacro:visual_mesh mesh="${v_mesh}"
+                             scale="${v_mesh_scale}"
+                             mesh_origin="${body_origin}"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${v_mesh != ''}">
+          <xacro:visual_box size="${size}"
+                            shape_origin="${body_origin}"
+                            color="${v_color}"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_collision}">
-        <xacro:collision_box mesh="${c_mesh}"
-                             scale="${c_mesh_scale}"
-                             mesh_origin="${origin}"
-                             size="${size}"
-                             shape_origin="${origin}"/>
+        <xacro:if value="${c_mesh != ''}">
+          <xacro:collision_mesh mesh="${c_mesh}"
+                                scale="${c_mesh_scale}"
+                                mesh_origin="${body_origin}"/>
+        </xacro:if>
+
+        <xacro:unless value="${c_mesh != ''}">
+          <xacro:collision_box size="${size}"
+                               shape_origin="${body_origin}"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertia mass="${mass}" size="${size}" origin="${origin}"/>
+        <xacro:if value="${float(mass) &lt;= 0.0}">
+          ${xacro.fatal("imu_box: mass must be greater than zero when inertial data is enabled")}
+        </xacro:if>
+        <xacro:solid_box_inertia mass="${mass}" size="${size}" origin="${body_origin}"/>
       </xacro:if>
 
       <xacro:unless value="${use_inertial}">
@@ -95,7 +137,7 @@ macro does not try to infer or validate mesh dimensions.
     <xacro:property name="parent_root_seq" value="${joint_parent_fr_root_fr.split()}"/>
 
     <xacro:if value="${len(parent_root_seq) != 6}">
-      ${xacro.fatal("box_imu: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
+      ${xacro.fatal("imu_box: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
     </xacro:if>
 
     <joint name="${prefix}${name}_root_joint" type="fixed">
@@ -112,7 +154,7 @@ macro does not try to infer or validate mesh dimensions.
     <xacro:property name="root_data_seq" value="${joint_root_fr_data_fr.split()}"/>
 
     <xacro:if value="${len(root_data_seq) != 6}">
-      ${xacro.fatal("box_imu: joint_root_fr_data_fr must be 'x y z roll pitch yaw'")}
+      ${xacro.fatal("imu_box: joint_root_fr_data_fr must be 'x y z roll pitch yaw'")}
     </xacro:if>
 
     <joint name="${prefix}${name}_joint" type="fixed">
@@ -122,7 +164,11 @@ macro does not try to infer or validate mesh dimensions.
               xyz="${root_data_seq[0]} ${root_data_seq[1]} ${root_data_seq[2]}"/>
     </joint>
 
-    <xacro:if value="${sim_enabled and sim_topic != ''}">
+    <xacro:if value="${sim_enabled}">
+      <xacro:if value="${sim_topic.strip() == ''}">
+        ${xacro.fatal("imu_box: sim_topic must not be blank when simulation is enabled")}
+      </xacro:if>
+
       <xacro:if value="${use_visual and color != ''}">
         <gazebo reference="${prefix}${name}_root_link">
           <material>
@@ -131,8 +177,6 @@ macro does not try to infer or validate mesh dimensions.
           </material>
         </gazebo>
       </xacro:if>
-
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
 
       <xacro:plugin_imu
         sensor_name="${prefix}${name}_gz"
