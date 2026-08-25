@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <robot name="test_realsense_d435_rgbd" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_rgbd_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/set_props_plugin_camera_rgbd_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/set_props_plugin_camera_macro.xacro"/>

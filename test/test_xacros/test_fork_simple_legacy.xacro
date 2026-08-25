@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot name="test_fork_simple_legacy" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_legacy_macro.xacro"/>
+
+  <link name="base_link"/>
+
+  <xacro:fork_simple_legacy name="fork_legacy_closed"
+                            parent_frame="base_link"
+                            scale="1.0 1.0 1.0"
+                            use_inertial="True"
+                            open_tines="False"
+                            limits="-0.10 0.10 1.0 100.0"
+                            joint_parent_fr_root_fr="0 0 0 0 0 0"/>
+
+  <xacro:fork_simple_legacy name="fork_legacy_open"
+                            parent_frame="base_link"
+                            scale="0.8 1.0 1.2"
+                            use_inertial="False"
+                            open_tines="True"
+                            limits="-0.05 0.15 0.5 50.0"
+                            joint_parent_fr_root_fr="0 1 0 0 0 0"/>
+</robot>

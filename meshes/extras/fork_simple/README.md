@@ -79,7 +79,7 @@ in open-tines mode. The default value is `0.10 m`.
 `--open-tines` is disabled by default. When it is not passed, the script keeps
 the tines closed and generates the closed-tines mesh.
 
-To regenerate the two STL files used by the current macro in one step, run:
+To regenerate the two STL files used by the legacy macro in one step, run:
 
 ```bash
 ./create_fork_simple_stl_meshes.sh
@@ -87,11 +87,12 @@ To regenerate the two STL files used by the current macro in one step, run:
 
 ## URDF/Xacro integration
 
-The generated mesh is used by the generic macro:
+The generated whole-fork meshes are retained for the legacy macro:
 
-- [`urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro`](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro)
+- [`urdf/extras/fork_simple/fork_simple_legacy_macro.xacro`](../../../urdf/extras/fork_simple/fork_simple_legacy_macro.xacro)
+- [`urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro`](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro)
 
-The concrete `fork_simple` wrapper uses two STL files:
+`fork_simple_legacy` selects one of two STL files:
 
 - `fork_simple_closed_tines.stl`
 - `fork_simple_open_tines.stl`
@@ -101,5 +102,5 @@ It also uses two MeshLab reports:
 - `fork_simple_closed_tines_meshlab_geometric_measures.txt`
 - `fork_simple_open_tines_meshlab_geometric_measures.txt`
 
-The wrapper macro selects the matching mesh and the matching inertial reference
-data according to the provided value of `open_tines`.
+The legacy wrapper selects the matching mesh and inertial reference data from `open_tines`.
+The current `fork_simple` macro does not use these whole-fork meshes.

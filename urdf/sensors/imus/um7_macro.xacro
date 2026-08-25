@@ -75,9 +75,12 @@ sim_topic (S): Gazebo IMU topic. It must not be blank when sim_enabled is true.
                        sim_topic:=''">
 
     <!--
-    The DAE mesh frame is located at the mesh geometric center.
-    Therefore, it coincides with the center of a box primitive shape; so we can use the same
-    'body origin' for both the mesh and the box primitive.
+    The DAE mesh represents the rectangular body of the UM7.
+    Its coordinate frame is at the geometric center of the mesh, as verified in MeshLab.
+    A URDF box primitive is also centered on its coordinate frame and its dimensions follow X, Y
+    and Z.
+    Therefore, the mesh and box primitive have the same center and axis orientation.
+    Visual and collision geometry can use the same body_origin whether they select the mesh or box.
     The mesh is colored with a material that is embedded in the DAE file.
     Its embedded color is preserved when color field is empty; a non-empty color overrides it for
     the visual element.

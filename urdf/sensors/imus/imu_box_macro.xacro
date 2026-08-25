@@ -24,13 +24,14 @@ c_mesh_scale apply only to their corresponding meshes.
 If sim_enabled is false, no Gazebo IMU sensor is created. If it is true,
 sim_topic must not be blank.
 
-The root link frame is located at the center of the lower face of the IMU box.
-The visual, collision, and inertial elements are shifted upward by half the box
-height. A mesh frame is therefore expected at the geometric center of the mesh,
-and its scaled bounds should represent the same nominal envelope as size. The
-mesh may contain non-box details, but size still controls the primitive fallback
-and solid-box inertia. The macro does not verify that a mesh file exists or infer
-or validate its dimensions.
+The root-link frame is at the center of the lower face of the nominal IMU box.
+body_origin shifts the visual, collision and inertial elements upward by half the box height.
+A URDF box primitive is centered on its coordinate frame and its dimensions follow X, Y and Z.
+A supplied mesh is therefore expected to have its coordinate frame at its geometric center.
+Its scaled bounds and axis orientation should represent the same nominal envelope as size.
+When those conditions are met, the mesh and box primitive can use the same body_origin.
+The mesh may contain non-box details, but size still controls the box fallback and inertia.
+The macro does not verify that a mesh exists or infer or validate its dimensions.
 
 ${prefix}${name}_root_link contains the body geometry and inertia.
 joint_parent_fr_root_fr places that body frame relative to parent_frame.

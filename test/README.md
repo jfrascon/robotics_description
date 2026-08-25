@@ -9,7 +9,11 @@ The generic Xacro test entry point is:
 Component-specific contract tests currently include:
 
 - `test_all_imus_macros.py`
+- `test_box_geometry_migrations.py`
+- `test_cylinder_geometry_migrations.py`
+- `test_fork_simple_legacy.py`
 - `test_imu_box.py`
+- `test_orbbec_gemini335le.py`
 - `test_set_props_plugin_imu.py`
 - `test_um7.py`
 
@@ -17,17 +21,15 @@ Component-specific contract tests currently include:
 
 `test_xacro.py` validates the explicit test cases under `test/test_xacros/`.
 
-These are small Xacro files that instantiate reusable macros with valid
-arguments and, when needed, example simulation configurations.
-They exist because most files in `robotics_description` are reusable macro
-building blocks, not standalone robot descriptions that can be rendered and
-validated directly on their own.
+These are small Xacro files that instantiate reusable macros with valid arguments and, when needed, example simulation configurations.
+They exist because most files in `robotics_description` are reusable macro building blocks, not standalone robot descriptions that can be rendered and validated directly on their own.
 
 Current explicit test cases in `test/test_xacros/`:
 
 - `test_imu_box.xacro`
 - `test_caster_wheel.xacro`
 - `test_fork_simple.xacro`
+- `test_fork_simple_legacy.xacro`
 - `test_gz_system_plugins.xacro`
 - `test_orbbec_gemini335le_rgbd.xacro`
 - `test_orbbec_gemini335le_split.xacro`
@@ -71,7 +73,8 @@ Many files in `urdf/sensors/...` are macros such as:
 - `um7_macro.xacro`
 - `wheel_macro.xacro`
 
-These macros are reusable building blocks, not complete robot models. To test them properly, each one must be:
+These macros are reusable building blocks, not complete robot models.
+To test them properly, each one must be:
 
 - included from a small test Xacro
 - instantiated with valid arguments
@@ -81,23 +84,30 @@ That is exactly what the files under `test/test_xacros/` do.
 
 ## Package configuration required for testing
 
-The package is currently wired for testing with:
+The package registers its generic and component-specific pytest suites with CMake.
 
 In `../CMakeLists.txt`:
 
 ```cmake
 if(BUILD_TESTING)
   find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(all_imus_macros_test test/test_all_imus_macros.py)
+  ament_add_pytest_test(imu_box_test test/test_imu_box.py)
+  ament_add_pytest_test(set_props_plugin_imu_test test/test_set_props_plugin_imu.py)
+  ament_add_pytest_test(um7_test test/test_um7.py)
   ament_add_pytest_test(xacro_test test/test_xacro.py)
+  ament_add_pytest_test(bridge_configurations_test test/test_bridge_configurations.py)
+  ament_add_pytest_test(box_geometry_migrations_test test/test_box_geometry_migrations.py)
+  ament_add_pytest_test(cylinder_geometry_migrations_test test/test_cylinder_geometry_migrations.py)
+  ament_add_pytest_test(orbbec_gemini335le_test test/test_orbbec_gemini335le.py)
 endif()
 ```
 
 Relevant test dependencies in `../package.xml`:
 
 ```xml
+<test_depend>ament_index_python</test_depend>
 <test_depend>ament_cmake_pytest</test_depend>
-<test_depend>launch_testing_ament_cmake</test_depend>
-<test_depend>launch_testing_ros</test_depend>
 <test_depend>liburdfdom-tools</test_depend>
 <test_depend>xacro</test_depend>
 ```
@@ -119,7 +129,7 @@ colcon test-result --all --verbose
 For direct debugging with full output:
 
 ```bash
-pytest -s -v src/0_deps/robotics_description/test/test_xacro.py
+pytest -s -v src/0_deps/robotics_description/test
 ```
 
 You can also run the test file directly:
@@ -132,5 +142,4 @@ python3 src/0_deps/robotics_description/test/test_xacro.py
 
 - `colcon test-result --all --verbose` may show warnings caused by unrelated stale files in the workspace `build/` tree.
 - Those warnings do not necessarily mean that `robotics_description` itself is failing.
-- The authoritative result for this package is the `xacro_test` result under:
-  - `build/robotics_description/test_results/robotics_description/xacro_test.xunit.xml`
+- The package results are stored under `build/robotics_description/test_results/robotics_description/`.

@@ -19,25 +19,28 @@ prefix (S): optional prefix for the names of the links and joints.
 parent_frame (S): name of the parent frame to which the wheel's root link is attached.
 use_visual (B): if true, include visual element.
 use_inertial (B): if true, include inertial element.
-v_mesh (S): package-relative mesh path used only by the visual element of '${prefix}${name}_rotation_link'
-            (for example: 'robotics_description/meshes/.../wheel.dae').
-            If empty, the visual element falls back to a primitive cylinder defined by 'radius' and 'length'.
-            Ignored when use_visual is false.
+v_mesh (S): package-relative mesh path for the visual element of the rotation link.
+            Example: 'robotics_description/meshes/wheels/standard_wheels/wheel.dae'.
+            If empty, the visual element uses a primitive cylinder.
+            This field is ignored when use_visual is false.
 v_mesh_scale (S): Scale of the visual mesh, if use_visual is true and v_mesh is provided.
     v_mesh_scale (S) = 'sx (R) sy (R) sz (R)'.
-color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
-           If color is not empty, the provided color is applied to the object used in the visual element, either
-           a mesh (even if the mesh has its own color) or cylinder shape.
-           If color is empty:
-               If a mesh is used and has its own color, the color of the mesh is displayed.
-               If a mesh is used with no color data associated or a cylinder shape is used, a whitish default color is used
-               to display the visual element.
-radius (R): wheel radius. Used for primitive visual (when v_mesh is empty), always used for collision
-            (collision is always a primitive cylinder), and used for inertia if use_inertial is true.
-length (R): wheel length along the rotation axis (+Y). Used for primitive visual (when v_mesh is empty), always used
-            for collision, and used for inertia if use_inertial is true.
-mass (R): mass of the wheel. Used only if use_inertial is true.
-steering_joint_type (S): type of the joint connecting the wheel's steerable link to the parent frame.
+color (S): visual color in the form 'r (R) g (R) b (R) a (R)'.
+           This field is used only when use_visual is true.
+           A non-empty value creates an explicit material for either mesh or cylinder geometry.
+           That material overrides any color embedded in the visual mesh.
+           An empty value preserves an embedded mesh material when one is available.
+           If no mesh material exists, or a cylinder is used, the renderer chooses the appearance.
+radius (R): positive wheel radius.
+            It defines the cylinder visual when v_mesh is empty.
+            It always defines the primitive collision and is used by the optional inertia.
+length (R): positive wheel length along the rotation axis (+Y).
+            It defines the cylinder visual when v_mesh is empty.
+            It always defines the primitive collision and is used by the optional inertia.
+mass (R): wheel mass.
+          It must be positive when use_inertial is true.
+          It is ignored when use_inertial is false.
+steering_joint_type (S): joint type connecting the steerable link to the parent frame.
     steering_joint_type (S) = 'revolute' | 'fixed'.
     If 'fixed' is used, the wheel will not be able to steer in simulation.
 steering_joint_limits (S): limits of the steering joint.
@@ -59,15 +62,13 @@ joint_parent_fr_wheel_fr (S): Pose of '${prefix}${name}_steerable_link' w.r.t th
     joint_parent_fr_wheel_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
     IMPORTANT:
     This value positions '${prefix}${name}_steerable_link' with respect to the parent frame.
-    By default, the rotation frame '${prefix}${name}_rotation_link' is coincident with the steerable frame, in
-    position and initially in orientation.
-    The steerable frame changes its orientation with respect to the parent when the wheel is steered.
-    The rotation frame changes its orientation with respect to the steerable frame when the wheel spins.
-    This parameter does not define the position of the rotation frame relative to the steerable frame.
-z_joint_steering_fr_rotation_fr (R): Z coordinate of the rotation link with respect to the steering link.
+    By default, the rotation and steerable frames have the same position and initial orientation.
+    The steerable frame rotates relative to the parent when the wheel is steered.
+    The rotation frame rotates relative to the steerable frame when the wheel spins.
+    This parameter does not place the rotation frame relative to the steerable frame.
+z_joint_steering_fr_rotation_fr (R): Z offset from the steerable link to the rotation link.
     A value of 0.0 makes the steering and rotation links positionally coincident.
-    The X and Y coordinates and the initial orientation of the rotation frame remain coincident with the steering
-    link.
+    X, Y and the initial orientation remain coincident with the steerable link.
 sim_enabled (B): if true, Gazebo contact/friction parameters are emitted for the wheel link.
 sim_max_contacts (I): maximum number of contact points between the wheel and other
     objects in simulation.
@@ -77,15 +78,9 @@ sim_mu2 (R): Gazebo friction coefficient perpendicular to fdir1. See the contact
 sim_slip1 (R): Gazebo slip compliance in the fdir1 direction. See the contact/friction note below.
 sim_slip2 (R): Gazebo slip compliance perpendicular to fdir1. See the contact/friction note below.
 
-Explanation of the default values for the field 'steering_joint_limits: "-3.14159265 3.14159265 100 100000"'
-and 'rotation_joint_limits: "100 100000"':
-======================================================================================================================
-The 'effort' and 'velocity' limits for these joints are intentionally set to extremely high, non-physical values.
-This is a common and deliberate practice in simulation for the specific reason of modeling an 'ideal' actuator.
-By setting virtually infinite limits, the simulator's physics engine is prevented from becoming the limiting
-factor in the joint's performance. This allows developers to test high-level control algorithms (e.g., navigation,
-trajectory following) without being constrained by the physical limitations of real-world motors.
-in essence, the software logic is tested in isolation.
+The default steering and rotation limits intentionally approximate ideal actuators.
+They prevent simulator joint limits from becoming the bottleneck in high-level control tests.
+These defaults are deliberately non-physical and do not represent real steering or drive hardware.
 
 steering_joint_limits.lower_limit = "-3.14159265" (radians).
 This allows the wheel to steer a full -180 degrees.
@@ -94,26 +89,25 @@ steering_joint_limits.upper_limit = "3.14159265" (radians).
 This allows the wheel to steer a full +180 degrees.
 
 steering_joint_limits.velocity = "100" (radians/second).
-This means the wheel can orient itself extremely quickly.
+This allows the wheel to change its steering angle extremely quickly.
+It is intended to avoid constraining controller tests, not to model a physical steering actuator.
 
 steering_joint_limits.effort = "100000" (newton-meters).
-For a steering joint, this represents the maximum torque the joint can apply to change its orientation. It is not
-an important value for most robot applications, as steering usually requires much less torque than driving. However,
-setting it to a very high value ensures that the steering action is not limited by the simulator.
+This intentionally extreme torque limit prevents steering effort from limiting the simulation.
+For scale, even 500 N m is 200 times smaller than this default.
 
 rotation_joint_limits.velocity = "100" (radians/second).
-This translates to approximately 955 rpm. for context, a typical educational robot wheel (like a turtlebot) spins
-at around 70-100 rpm. so, 955 rpm is extremely fast.
+This is approximately 955 rpm.
+For comparison, 70 to 100 rpm corresponds to approximately 7.3 to 10.5 rad/s.
+The default is therefore roughly one order of magnitude faster than that illustrative range.
 
 rotation_joint_limits.effort = "100000" (newton-meters).
-This represents the maximum torque the joint can apply. to put this into perspective, a high-performance
-passenger car engine produces between 200-500 n·m of torque. a value of 100000 n·m is more in the realm of
-industrial cranes or ship engines. it is an astronomically high value for a robot wheel.
+This intentionally extreme torque limit prevents wheel torque from limiting controller tests.
+It is not a realistic wheel-actuator specification.
 
-For a realistic simulation of a physical robot, these values should be replaced with wheel specifications.
-For a typical medium-sized wheel, realistic values would be in the range of:
-effort:   10 to 100 n·m
-velocity: 10 to 30 rad/s
+Replace these defaults with physical wheel specifications when actuator limits must be realistic.
+As an illustrative starting range, a medium robot wheel might use 10 to 30 rad/s and 10 to 100 N m.
+The actual steering, motor, transmission and wheel specifications must take precedence.
 -->
 <!--
 Contact and friction note for steerable wheels.
@@ -139,6 +133,8 @@ The steerable link turns with the steering joint, but it does not spin with whee
 X axis is the rolling direction of the wheel.
 -->
 <robot name="steerable_wheel_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
   <xacro:macro name="steerable_wheel"
                params="name
                        prefix:=''
@@ -166,24 +162,33 @@ X axis is the rolling direction of the wheel.
                        sim_slip1:=0.0
                        sim_slip2:=0.0">
 
-    <!-- A steerable wheel is cylinder with its rotation axis along the y-axis that can change its orientation. -->
+    <xacro:if value="${float(radius) &lt;= 0}">
+      ${xacro.fatal("steerable_wheel: radius must be greater than zero")}
+    </xacro:if>
 
-    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:if value="${float(length) &lt;= 0}">
+      ${xacro.fatal("steerable_wheel: length must be greater than zero")}
+    </xacro:if>
+
+    <xacro:if value="${use_inertial and float(mass) &lt;= 0}">
+      ${xacro.fatal("steerable_wheel: mass must be greater than zero when inertial data is enabled")}
+    </xacro:if>
+
+    <!-- A steerable wheel is a cylinder whose rotation axis can change its orientation. -->
 
     <!--
-    If a wheel mesh is provided through `v_mesh`, that mesh must be modeled with the wheel "lying on
-    the ground". In that initial orientation, the wheel symmetry axis must be +Z.
-
-    This requirement is used so that meshes follow the same initial convention as the primitive
-    cylinder used when `v_mesh` is empty. A URDF cylinder is Z-axis aligned by default.
+    A URDF cylinder primitive is centered on its coordinate frame and uses Z as its symmetry axis.
+    A wheel mesh supplied through v_mesh must follow that same frame convention.
+    Its coordinate frame must be at the geometric center and its symmetry axis must be +Z.
+    The macro does not inspect the mesh file to verify this requirement.
 
     This macro uses the following wheel frame convention:
       - +Y is wheel spin axis.
       - +X is rolling direction.
       - +Z points upward.
 
-    For that reason, both the visual geometry and the collision geometry are rotated by +pi/2 around X
-    before they are attached to '${prefix}${name}_rotation_link'.
+    The mesh and cylinder primitive can therefore use the same wheel_origin.
+    wheel_origin rotates either geometry by +pi/2 around X before attachment to the rotation link.
 
     If `v_mesh` is empty, that +pi/2 rotation is applied to the primitive cylinder.
     If `v_mesh` is provided, the same +pi/2 rotation is applied to the visual mesh.
@@ -197,7 +202,7 @@ X axis is the rolling direction of the wheel.
     <link name="${prefix}${name}_steerable_link">
       <!--
       Steerable link is an articulation frame only.
-      Geometry and wheel mass are defined in rotation_link to avoid duplicated visuals/collisions/inertia.
+      Geometry and wheel mass belong to rotation_link to avoid duplication.
       -->
       <xacro:null_inertia/>
     </link>
@@ -207,9 +212,9 @@ X axis is the rolling direction of the wheel.
     </xacro:if>
 
     <!-- Parsed as [x, y, z, roll, pitch, yaw]. -->
-    <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
+    <xacro:property name="parent_wheel_items" value="${joint_parent_fr_wheel_fr.split()}"/>
 
-    <xacro:if value="${len(j) != 6}">
+    <xacro:if value="${len(parent_wheel_items) != 6}">
       ${xacro.fatal(
         "steerable_wheel: joint_parent_fr_wheel_fr must have 6 elements: "
         "'x y z roll pitch yaw'"
@@ -230,7 +235,8 @@ X axis is the rolling direction of the wheel.
     <joint name="${prefix}${name}_steering_joint" type="${steering_joint_type}">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_steerable_link"/>
-      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+      <origin rpy="${parent_wheel_items[3]} ${parent_wheel_items[4]} ${parent_wheel_items[5]}"
+              xyz="${parent_wheel_items[0]} ${parent_wheel_items[1]} ${parent_wheel_items[2]}"/>
 
       <xacro:if value="${steering_joint_type == 'revolute'}">
         <axis xyz="0 0 1"/>
@@ -246,13 +252,20 @@ X axis is the rolling direction of the wheel.
       <xacro:if value="${use_visual}">
         <xacro:property name="v_color"
                         value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
-        <xacro:visual_cylinder mesh="${v_mesh}"
-                               scale="${v_mesh_scale}"
-                               mesh_origin="${wheel_origin}"
-                               radius="${radius}"
-                               length="${length}"
-                               shape_origin="${wheel_origin}"
-                               color="${v_color}"/>
+
+        <xacro:if value="${v_mesh != ''}">
+          <xacro:visual_mesh mesh="${v_mesh}"
+                             scale="${v_mesh_scale}"
+                             mesh_origin="${wheel_origin}"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${v_mesh != ''}">
+          <xacro:visual_cylinder radius="${radius}"
+                                 length="${length}"
+                                 shape_origin="${wheel_origin}"
+                                 color="${v_color}"/>
+        </xacro:unless>
       </xacro:if>
 
       <!--
@@ -264,15 +277,18 @@ X axis is the rolling direction of the wheel.
                                 shape_origin="${wheel_origin}"/>
 
       <xacro:if value="${use_inertial}">
-      <!--
-      The inertia of a solid cylinder with uniform mass distribution, radius and length is used, with symmetry axis
-      is the y-axis and center of mass is at the origin of the wheel's frame.
-      For that reason, the origin used is "0 0 0 0 0 0", unlike the rotated geometry origin used for
-      visual and collision elements.
-      In other words, solid_cylinder_inertia_y computes the same inertia as if solid_cylinder_inertia_z were used
-      (assuming the cylinder's symmetry axis is along the z-axis, which is the default for a cylinder shape) but using
-      origin "0 0 0 0.5*pi 0 0" to rotate the inertia tensor accordingly.
-      -->
+        <!--
+        The inertia models the wheel as a uniform solid cylinder using mass, radius and length.
+        This approximation remains active when the visual geometry uses a mesh.
+        A URDF cylinder is naturally aligned with Z, so visual and collision use +pi/2 roll to align
+        their symmetry axis with the rotation-link Y axis.
+        solid_cylinder_inertia_y computes the tensor directly for that Y-aligned cylinder.
+        This is equivalent to computing a Z-aligned tensor and rotating it by +pi/2 around X.
+        The center of mass is at the rotation-link origin.
+        The inertial origin is therefore an identity pose.
+        The geometry roll is not repeated in the inertial origin because the tensor is already
+        expressed for symmetry axis Y.
+        -->
         <xacro:solid_cylinder_inertia_y mass="${mass}"
                                         radius="${radius}"
                                         length="${length}"
@@ -319,7 +335,7 @@ X axis is the rolling direction of the wheel.
     <xacro:if value="${sim_enabled}">
       <gazebo reference="${prefix}${name}_rotation_link">
       <!--
-      This block configures contact/friction for the URDF collision already defined in rotation_link.
+      This block configures contact and friction for the collision in rotation_link.
       It does not create a second collision shape.
       -->
         <xacro:if value="${use_visual and color != ''}">

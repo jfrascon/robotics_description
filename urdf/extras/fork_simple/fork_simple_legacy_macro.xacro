@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <!--
-This file defines the public `fork_simple` model macro.
-It reuses the generic `fork_simple_links_joints` macro and provides the reference geometry, reference inertial data,
-and scaling rules needed to describe a concrete `fork_simple` instance.
+This file defines the legacy `fork_simple_legacy` model macro.
+It is retained temporarily for compatibility while users migrate to `fork_simple`.
+It reuses `fork_simple_links_joints_legacy` and provides the reference geometry, inertial data and
+scaling rules needed to describe the former mesh-based fork model.
 
 Reference mesh path:
     robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl
@@ -16,27 +17,27 @@ robotics_description/meshes/extras/fork_simple/fork_simple_open_tines_meshlab_ge
 
 Inertia-scaling procedure:
 robotics_description/doc/how_to_compute_inertia_w_meshlab.md
-MeshLab works with rho=1 (it does not model a specific material here), so the reference volume and the reference
-inertia tensor stored below correspond to the reference mesh with unit density.
+MeshLab works with rho=1 and does not model a specific material here.
+The reference volume and inertia tensor below therefore correspond to unit density.
 
-This macro interprets `scale='sx sy sz'` as a geometric scaling of that reference mesh and of the fork geometry
-derived from it.
+This macro interprets `scale='sx sy sz'` as a geometric scaling of the reference mesh.
+The fork geometry derived from that mesh uses the same scale.
 - The mesh sent to visual and collision is scaled through `mesh_scale`.
 - Geometric values such as tine sizes and tine separation are recomputed from the same `sx sy sz`.
 - The center of mass is scaled component-wise from the reference center of mass.
 - The mass scales with volume, which means constant density is assumed across scaled variants.
-- The inertia tensor is recomputed for anisotropic scaling (`sx`, `sy`, `sz` can differ), instead of applying a
-  single scalar factor to the reference tensor.
+- The inertia tensor is recomputed for anisotropic scaling because `sx`, `sy` and `sz` can differ.
+- A single scalar factor is not applied to the reference tensor.
 
-The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
+The scale `'1.0 1.0 1.0'` reproduces the reference legacy model.
 -->
-<robot name="fork_simple_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="fork_simple_legacy_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- Import the generic links-and-joints implementation used by the concrete fork model wrapper below. -->
-  <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_macro.xacro"/>
+  <!-- Import the links-and-joints implementation used only by this legacy wrapper. -->
+  <xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro"/>
 
-  <xacro:macro name="fork_simple"
-               params="name:='fork_simple'
+  <xacro:macro name="fork_simple_legacy"
+               params="name:='fork_simple_legacy'
                        prefix:=''
                        parent_frame
                        scale:='1.0 1.0 1.0'
@@ -46,19 +47,19 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
                        open_tines:=False
                        joint_parent_fr_root_fr">
 
-    <xacro:property name="scale_seq" value="${scale.split()}"/>
+    <xacro:property name="scale_items" value="${scale.split()}"/>
 
-    <xacro:if value="${len(scale_seq) != 3}">
-      ${xacro.fatal("fork_simple macro: invalid scale. Expected: 'sx sy sz'")}
+    <xacro:if value="${len(scale_items) != 3}">
+      ${xacro.fatal("fork_simple_legacy: scale must be 'sx sy sz'")}
     </xacro:if>
 
-    <!-- Convert the three scale components to floats so geometry, mass, and inertia can be recomputed from them. -->
-    <xacro:property name="sx" value="${float(scale_seq[0])}"/>
-    <xacro:property name="sy" value="${float(scale_seq[1])}"/>
-    <xacro:property name="sz" value="${float(scale_seq[2])}"/>
+    <!-- Convert scale components to floats before recomputing geometry, mass and inertia. -->
+    <xacro:property name="sx" value="${float(scale_items[0])}"/>
+    <xacro:property name="sy" value="${float(scale_items[1])}"/>
+    <xacro:property name="sz" value="${float(scale_items[2])}"/>
 
     <xacro:if value="${sx &lt;= 0.0 or sy &lt;= 0.0 or sz &lt;= 0.0}">
-      ${xacro.fatal("fork_simple macro: scale values must be > 0")}
+      ${xacro.fatal("fork_simple_legacy: scale values must be greater than zero")}
     </xacro:if>
 
     <!--
@@ -86,8 +87,8 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
 
     <!--
     Reference geometry constants (meters), matching the reference mesh generator inputs.
-    These values are scaled below with `sx`, `sy`, and `sz` before they are passed to the generic links-and-joints
-    macro.
+    These values are scaled below with `sx`, `sy` and `sz`.
+    The resulting values are passed to the legacy links-and-joints macro.
     -->
     <xacro:property name="tine_size_x_ref"       value="1.20"/>
     <xacro:property name="tine_size_y_ref"       value="0.12"/>
@@ -104,32 +105,33 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
 
     <!-- Path for simulation setups where inertial data is intentionally disabled. -->
     <xacro:unless value="${use_inertial}">
-      <xacro:fork_simple_links_joints name="${name}"
-                                      prefix="${prefix}"
-                                      parent_frame="${parent_frame}"
-                                      mesh="${mesh}"
-                                      mesh_scale="${mesh_scale}"
-                                      color="${color}"
-                                      tine_size="${tine_size}"
-                                      tine_separation="${tine_separation}"
-                                      tine_union_size_x="${tine_union_size_x}"
-                                      limits="${limits}"
-                                      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+      <xacro:fork_simple_links_joints_legacy name="${name}"
+                                             prefix="${prefix}"
+                                             parent_frame="${parent_frame}"
+                                             mesh="${mesh}"
+                                             mesh_scale="${mesh_scale}"
+                                             color="${color}"
+                                             tine_size="${tine_size}"
+                                             tine_separation="${tine_separation}"
+                                             tine_union_size_x="${tine_union_size_x}"
+                                             limits="${limits}"
+                                             joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
     </xacro:unless>
 
-    <!-- Inertial path: scale the reference fork geometry, mass, center of mass, and inertia tensor consistently. -->
+    <!-- Scale geometry, mass, center of mass and inertia consistently. -->
     <xacro:if value="${use_inertial}">
       <!--
-      The reference mesh was measured in MeshLab with rho=1, so the stored volume and inertia tensor below are
-      unit-density reference values. The physical reference model used in this macro has a real mass of 100 kg at
-      scale 1.0. Therefore, the real material density used for all scaled variants is:
+      The reference mesh was measured in MeshLab with rho=1.
+      The stored volume and inertia tensor are therefore unit-density reference values.
+      The physical reference model has a real mass of 100 kg at scale 1.0.
+      Therefore, every scaled variant uses this material density:
         density = mass_ref_real / mesh_volume_ref
 
       Once `sx`, `sy`, and `sz` are known:
       - volume scales as `sx * sy * sz`
       - center of mass scales component-wise
       - second moments and products of inertia are recomputed with the anisotropic-scaling factors
-      - the resulting rho=1 inertia tensor is multiplied by `density` to obtain the real inertia tensor
+      - the rho=1 inertia tensor is multiplied by `density` to obtain the real inertia tensor
       -->
       <xacro:property name="mass_ref_real" value="100.0"/>
 
@@ -202,7 +204,7 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
       <xacro:property name="jy_ref" value="${0.5 * (ixx_ref + izz_ref - iyy_ref)}"/>
       <xacro:property name="jz_ref" value="${0.5 * (ixx_ref + iyy_ref - izz_ref)}"/>
 
-      <!-- Scale the rho=1 second moments and products of inertia for the anisotropic scaling `sx sy sz`. -->
+      <!-- Scale rho=1 second moments and products of inertia anisotropically. -->
       <xacro:property name="jx_scaled_ref"  value="${(sx ** 3) * sy * sz * jx_ref}"/>
       <xacro:property name="jy_scaled_ref"  value="${sx * (sy ** 3) * sz * jy_ref}"/>
       <xacro:property name="jz_scaled_ref"  value="${sx * sy * (sz ** 3) * jz_ref}"/>
@@ -211,7 +213,7 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
       <xacro:property name="ixz_scaled_ref" value="${(sx ** 2) * sy * (sz ** 2) * ixz_ref}"/>
       <xacro:property name="iyz_scaled_ref" value="${sx * (sy ** 2) * (sz ** 2) * iyz_ref}"/>
 
-      <!-- Rebuild the scaled rho=1 inertia tensor and then convert it to the real fork mass using `density_scale`. -->
+      <!-- Rebuild the rho=1 tensor and convert it to the real fork mass with density_scale. -->
       <xacro:property name="ixx_scaled_ref" value="${jy_scaled_ref + jz_scaled_ref}"/>
       <xacro:property name="iyy_scaled_ref" value="${jx_scaled_ref + jz_scaled_ref}"/>
       <xacro:property name="izz_scaled_ref" value="${jx_scaled_ref + jy_scaled_ref}"/>
@@ -224,20 +226,20 @@ The scale `'1.0 1.0 1.0'` reproduces the reference `fork_simple` model.
       <xacro:property name="izz" value="${density_scale * izz_scaled_ref}"/>
       <xacro:property name="inertial_elements" value="${ixx} ${ixy} ${ixz} ${iyy} ${iyz} ${izz}"/>
 
-      <xacro:fork_simple_links_joints name="${name}"
-                                      prefix="${prefix}"
-                                      parent_frame="${parent_frame}"
-                                      mesh="${mesh}"
-                                      mesh_scale="${mesh_scale}"
-                                      color="${color}"
-                                      mass="${mass}"
-                                      tine_size="${tine_size}"
-                                      tine_separation="${tine_separation}"
-                                      tine_union_size_x="${tine_union_size_x}"
-                                      inertial_elements="${inertial_elements}"
-                                      center_of_mass="${center_of_mass}"
-                                      limits="${limits}"
-                                      joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+      <xacro:fork_simple_links_joints_legacy name="${name}"
+                                             prefix="${prefix}"
+                                             parent_frame="${parent_frame}"
+                                             mesh="${mesh}"
+                                             mesh_scale="${mesh_scale}"
+                                             color="${color}"
+                                             mass="${mass}"
+                                             tine_size="${tine_size}"
+                                             tine_separation="${tine_separation}"
+                                             tine_union_size_x="${tine_union_size_x}"
+                                             inertial_elements="${inertial_elements}"
+                                             center_of_mass="${center_of_mass}"
+                                             limits="${limits}"
+                                             joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
     </xacro:if>
   </xacro:macro>
 </robot>

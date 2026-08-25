@@ -30,10 +30,12 @@ v_mesh_scale (S): scale of the visual mesh, if use_visual is true and v_mesh is 
 color (S): string of the form 'r (R) g (R) b (R) a (R)'. Used only if use_visual is true.
            If color is empty, the mesh color is used when available; otherwise Gazebo or the URDF
            viewer chooses its default color.
-radius (R): wheel radius. Used for the primitive visual, collision and inertia.
-length (R): wheel length along the rotation axis (+Y). Used for the primitive visual, collision and
-            inertia.
-mass (R): wheel mass. Used only if use_inertial is true.
+radius (R): positive wheel radius used by the primitive visual, collision and inertia.
+length (R): wheel length along the rotation axis (+Y).
+            It is used by the primitive visual, collision and inertia.
+            It must be positive.
+mass (R): wheel mass.
+          It must be positive when use_inertial is true.
 steering_joint_limits (S): velocity and effort limits of the continuous steering joint.
     steering_joint_limits (S) = 'velocity (R) effort (R)'.
 steering_joint_dynamics (S): damping and friction of the continuous steering joint.
@@ -49,8 +51,9 @@ x_joint_steering_fr_rotation_fr (R): X coordinate of rotation_link with respect 
     the wheel axle on the steering axis and the assembly would not have caster trail.
     The sign selects whether rotation_link starts on the +X or -X side of steering_link.
 z_joint_steering_fr_rotation_fr (R): Z coordinate of rotation_link with respect to steering_link.
-    This value may be zero, positive or negative. It changes how the vertical position is distributed
-    between the two joints, but it does not create the caster self-alignment.
+    This value may be zero, positive or negative.
+    It changes how vertical position is distributed between the two joints.
+    It does not create the caster self-alignment.
 sim_enabled (B): if true, Gazebo contact and friction parameters are emitted for rotation_link.
 sim_max_contacts (I): maximum number of contact points between the wheel and other objects.
 sim_mu (R): Gazebo friction coefficient in the fdir1 direction.
@@ -131,6 +134,8 @@ is applied perpendicular to fdir1 and controls lateral grip. slip1 and slip2 are
 those directions: larger values allow more sliding and smaller values make the contact more rigid.
 -->
 <robot name="caster_wheel_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
   <xacro:macro name="caster_wheel"
                params="name
                        prefix:=''
@@ -157,12 +162,22 @@ those directions: larger values allow more sliding and smaller values make the c
                        sim_slip1:=0.0
                        sim_slip2:=0.0">
 
-    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+    <xacro:if value="${float(radius) &lt;= 0}">
+      ${xacro.fatal("caster_wheel: radius must be greater than zero")}
+    </xacro:if>
+
+    <xacro:if value="${float(length) &lt;= 0}">
+      ${xacro.fatal("caster_wheel: length must be greater than zero")}
+    </xacro:if>
+
+    <xacro:if value="${use_inertial and float(mass) &lt;= 0}">
+      ${xacro.fatal("caster_wheel: mass must be greater than zero when inertial data is enabled")}
+    </xacro:if>
 
     <!-- Parsed as [x, y, z, roll, pitch, yaw]. -->
-    <xacro:property name="j" value="${joint_parent_fr_wheel_fr.split()}"/>
+    <xacro:property name="parent_wheel_items" value="${joint_parent_fr_wheel_fr.split()}"/>
 
-    <xacro:if value="${len(j) != 6}">
+    <xacro:if value="${len(parent_wheel_items) != 6}">
       ${xacro.fatal(
         "caster_wheel: joint_parent_fr_wheel_fr must have 6 elements: "
         "'x y z roll pitch yaw'"
@@ -222,7 +237,8 @@ those directions: larger values allow more sliding and smaller values make the c
     <joint name="${prefix}${name}_steering_joint" type="continuous">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_steering_link"/>
-      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+      <origin rpy="${parent_wheel_items[3]} ${parent_wheel_items[4]} ${parent_wheel_items[5]}"
+              xyz="${parent_wheel_items[0]} ${parent_wheel_items[1]} ${parent_wheel_items[2]}"/>
       <axis xyz="0 0 1"/>
       <dynamics damping="${steering_joint_dynamics_seq[0]}"
                 friction="${steering_joint_dynamics_seq[1]}"/>
@@ -231,8 +247,11 @@ those directions: larger values allow more sliding and smaller values make the c
     </joint>
 
     <!--
-    A URDF cylinder and the documented wheel meshes initially have their symmetry axis along +Z.
-    Rotating them by +pi/2 around X aligns their symmetry axis with the wheel rotation axis +Y.
+    A URDF cylinder primitive is centered on its coordinate frame and uses Z as its symmetry axis.
+    A wheel mesh supplied through v_mesh must have its frame at its geometric center and use +Z as
+    its symmetry axis.
+    The mesh and cylinder primitive can therefore use the same wheel_origin.
+    wheel_origin rotates either geometry by +pi/2 around X to align its symmetry axis with +Y.
     -->
     <xacro:property name="wheel_origin" value="0.0 0.0 0.0 ${0.5 * pi} 0.0 0.0"/>
 
@@ -240,13 +259,20 @@ those directions: larger values allow more sliding and smaller values make the c
       <xacro:if value="${use_visual}">
         <xacro:property name="v_color"
                         value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
-        <xacro:visual_cylinder mesh="${v_mesh}"
-                               scale="${v_mesh_scale}"
-                               mesh_origin="${wheel_origin}"
-                               radius="${radius}"
-                               length="${length}"
-                               shape_origin="${wheel_origin}"
-                               color="${v_color}"/>
+
+        <xacro:if value="${v_mesh != ''}">
+          <xacro:visual_mesh mesh="${v_mesh}"
+                             scale="${v_mesh_scale}"
+                             mesh_origin="${wheel_origin}"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${v_mesh != ''}">
+          <xacro:visual_cylinder radius="${radius}"
+                                 length="${length}"
+                                 shape_origin="${wheel_origin}"
+                                 color="${v_color}"/>
+        </xacro:unless>
       </xacro:if>
 
       <!--
@@ -284,7 +310,7 @@ those directions: larger values allow more sliding and smaller values make the c
     <xacro:if value="${sim_enabled}">
       <gazebo reference="${prefix}${name}_rotation_link">
       <!--
-      This block configures contact/friction for the URDF collision already defined in rotation_link.
+      This block configures contact and friction for the collision in rotation_link.
       It does not create a second collision shape.
       -->
         <xacro:if value="${use_visual and color != ''}">

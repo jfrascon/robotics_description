@@ -37,7 +37,8 @@ The `limits` argument is interpreted as `lower upper velocity effort`.
 The `joint_parent_fr_root_fr` argument is interpreted as
 `x y z roll pitch yaw`.
 -->
-<robot name="fork_simple_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="fork_simple_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
   <xacro:macro name="fork_simple"
                params="name:='fork_simple'
@@ -64,6 +65,14 @@ The `joint_parent_fr_root_fr` argument is interpreted as
     <xacro:property name="tine_separation"     value="0.25"/>
     <xacro:property name="tine_mass"           value="20.0"/>
     <xacro:property name="tine_wall_thickness" value="0.001"/>
+
+    <!--
+    The tine mesh coordinate frame is at its geometric center, as verified in MeshLab.
+    Its bounds are aligned with X, Y and Z and match tine_size_x, tine_size_y and tine_size_z.
+    A URDF box primitive is also centered on its coordinate frame and uses those same dimensions.
+    Therefore, the tine mesh and box primitive have the same center and axis orientation.
+    Both visual and collision geometry can use the same tine_origin for either representation.
+    -->
 
     <!--
     Check limits for the prismatic joint.
@@ -98,18 +107,18 @@ The `joint_parent_fr_root_fr` argument is interpreted as
     </xacro:if>
 
     <!--
-    The carriage is the part that joints the tines.
+    The carriage is the part that joins the tines.
     A tine-shank is the vertical section above the tine that provides height and stability as the
     load is lifted.
-    A mast is the vertical row along with the carriage + tines + tine-shanks slide up and down.
-    There are two mast, left and right.
+    A mast is the vertical rail along which the carriage, tines and tine shanks move.
+    There are two masts, one on the left and one on the right.
     -->
     <xacro:property name="carriage_size_y" value="${tine_separation}"/>
 
     <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
 
     <xacro:if value="${carriage_size_z &lt;= 0.0}">
-      ${xacro.fatal("fork_simple macro: carriage_size_x must be > 0")}
+      ${xacro.fatal("fork_simple: carriage_size_z must be greater than zero")}
     </xacro:if>
 
     <xacro:property name="tine_shank_size_x" value="${0.5 * tine_size_z}"/>
@@ -117,23 +126,21 @@ The `joint_parent_fr_root_fr` argument is interpreted as
     <xacro:property name="tine_shank_size_z" value="${2 * tine_size_z}"/>
 
     <!--
-    mast_size_x + tine_stop_size_x (0.03) = carriage_size_x
-    mast_size_x = carriage_size_x - tine_stop_size_x > 0
-    Therefore, carriage_size_x must be > tine_stop_size_x, i.e.,
-    if carriage_size_x <= tine_stop_size_x, then raise an error.
-    To achive <=, an epsilon of 0.005 (5 mm) is added to tine_stop_size_x, so
-    the check is:
-    if carriage_size_x <= tine_stop_size_x + epsilon, then raise an error.
-
+    mast_size_x + tine_shank_size_x = carriage_size_x.
+    Therefore, mast_size_x = carriage_size_x - tine_shank_size_x.
+    tine_shank_size_x is currently 0.03 m.
+    mast_size_x is the X dimension of each mast and represents its thickness.
+    mast_size_x must be greater than 0.005 m.
+    Therefore, carriage_size_x must be greater than tine_shank_size_x + 0.005 m.
+    If carriage_size_x is less than or equal to that value, the macro raises an error.
     -->
     <xacro:if value="${carriage_size_x &lt;= (tine_shank_size_x + 0.005)}">
       ${xacro.fatal("fork_simple macro: carriage_size_x must be > tine_shank_size_x")}
     </xacro:if>
 
     <!--
-    Compute the carriage's mass in a simple way, just proportional to its size in x and z, so that
-    a tine_size_x * tine_size_y * tine_size_z m carriage has a mass of 20 kg, which is reasonable
-    for a steel box of that size.
+    Approximate the carriage mass proportionally to its X-Z cross-sectional area.
+    A carriage whose X and Z dimensions both equal tine_size_z has a mass of 20 kg.
     -->
     <xacro:property name="carriage_mass"
                     value="${20.0 * (carriage_size_x * carriage_size_z) / (tine_size_z * tine_size_z)}"/>
@@ -156,16 +163,17 @@ The `joint_parent_fr_root_fr` argument is interpreted as
       <xacro:null_inertia/>
     </link>
 
-    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+    <xacro:property name="parent_root_items" value="${joint_parent_fr_root_fr.split()}"/>
 
-    <xacro:if value="${len(j) != 6}">
-      ${xacro.fatal("fork_simple macro: invalid joint_parent_fr_root_fr. Expected: 'x y z roll pitch yaw'")}
+    <xacro:if value="${len(parent_root_items) != 6}">
+      ${xacro.fatal("fork_simple: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
     </xacro:if>
 
     <joint name="${prefix}${name}_root_joint" type="fixed">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_root_link"/>
-      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+      <origin rpy="${parent_root_items[3]} ${parent_root_items[4]} ${parent_root_items[5]}"
+              xyz="${parent_root_items[0]} ${parent_root_items[1]} ${parent_root_items[2]}"/>
     </joint>
 
     <xacro:property name="carriage_origin_x" value="${-0.5 * carriage_size_x}"/>
@@ -230,20 +238,31 @@ The `joint_parent_fr_root_fr` argument is interpreted as
 
     <link name="${prefix}${name}_left_tine_link">
       <xacro:if value="${use_visual}">
-        <xacro:visual_box mesh="${tine_mesh if use_v_mesh else ''}"
-                          scale="1.0 1.0 1.0"
-                          mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
-                          size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
-                          shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
-                          color="${v_color}"/>
+        <xacro:if value="${use_v_mesh}">
+          <xacro:visual_mesh mesh="${tine_mesh}"
+                             scale="1.0 1.0 1.0"
+                             mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_v_mesh}">
+          <xacro:visual_box size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                            shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                            color="${v_color}"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_collision}">
-        <xacro:collision_box mesh="${tine_mesh if use_c_mesh else ''}"
-                             scale="1.0 1.0 1.0"
-                             mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
-                             size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
-                             shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+        <xacro:if value="${use_c_mesh}">
+          <xacro:collision_mesh mesh="${tine_mesh}"
+                                scale="1.0 1.0 1.0"
+                                mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_c_mesh}">
+          <xacro:collision_box size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                               shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
@@ -478,20 +497,31 @@ The `joint_parent_fr_root_fr` argument is interpreted as
 
     <link name="${prefix}${name}_right_tine_link">
       <xacro:if value="${use_visual}">
-        <xacro:visual_box mesh="${tine_mesh if use_v_mesh else ''}"
-                          scale="1.0 1.0 1.0"
-                          mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
-                          size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
-                          shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
-                          color="${v_color}"/>
+        <xacro:if value="${use_v_mesh}">
+          <xacro:visual_mesh mesh="${tine_mesh}"
+                             scale="1.0 1.0 1.0"
+                             mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_v_mesh}">
+          <xacro:visual_box size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                            shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
+                            color="${v_color}"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_collision}">
-        <xacro:collision_box mesh="${tine_mesh if use_c_mesh else ''}"
-                             scale="1.0 1.0 1.0"
-                             mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"
-                             size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
-                             shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+        <xacro:if value="${use_c_mesh}">
+          <xacro:collision_mesh mesh="${tine_mesh}"
+                                scale="1.0 1.0 1.0"
+                                mesh_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_c_mesh}">
+          <xacro:collision_box size="${tine_size_x} ${tine_size_y} ${tine_size_z}"
+                               shape_origin="${tine_origin_x} ${tine_origin_y} ${tine_origin_z} 0 0 0"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">

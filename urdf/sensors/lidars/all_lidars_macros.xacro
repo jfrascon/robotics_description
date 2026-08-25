@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="all_lidars" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="all_lidars" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_2d_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/set_props_plugin_lidar_3d_ring_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/hokuyo_utm30lx_macro.xacro"/>

@@ -135,9 +135,11 @@ topic already starts with `/`, it is kept as an absolute topic.
 
 sim_color_image_topic (S):
 Gazebo topic used for the color image stream.
+This field must not be empty when sim_color_enabled is true.
 
 sim_color_camera_info_topic (S):
 Gazebo topic used for the color `camera_info` stream.
+This field must not be empty when sim_color_enabled is true.
 
 sim_color_trigger_topic (S):
 Gazebo topic used to trigger the color camera.
@@ -150,35 +152,45 @@ limits used to generate the depth image.
 Unlike `sim_depth_clip`, these values affect only the depth image data.
 Format: 'near (R) far (R)'.
 
-sim_depth_depth_image_topic (S):
+sim_depth_image_topic (S):
 Gazebo topic used for the depth image stream.
+This field must not be empty when sim_depth_enabled is true.
 
 sim_depth_camera_info_topic (S):
 Gazebo topic used for the depth `camera_info` stream.
+This field must not be empty when sim_depth_enabled is true.
 
 sim_depth_trigger_topic (S):
 Gazebo topic used to trigger the depth camera.
 
 sim_infra1_image_topic (S):
 Gazebo topic used for the first infrared image stream.
+This field must not be empty when sim_infra1_enabled is true.
 
 sim_infra1_camera_info_topic (S):
 Gazebo topic used for the first infrared `camera_info` stream.
+This field must not be empty when sim_infra1_enabled is true.
 
 sim_infra1_trigger_topic (S):
 Gazebo topic used to trigger the first infrared camera.
 
 sim_infra2_image_topic (S):
 Gazebo topic used for the second infrared image stream.
+This field must not be empty when sim_infra2_enabled is true.
 
 sim_infra2_camera_info_topic (S):
 Gazebo topic used for the second infrared `camera_info` stream.
+This field must not be empty when sim_infra2_enabled is true.
 
 sim_infra2_trigger_topic (S):
 Gazebo topic used to trigger the second infrared camera.
 -->
 
-<robot name="realsense_d435_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="realsense_d435_split_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_links_joints_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
+
   <xacro:macro name="realsense_d435"
                params="name
                        prefix:=''
@@ -269,20 +281,18 @@ Gazebo topic used to trigger the second infrared camera.
                        sim_infra2_distortion_center:='0.5 0.5'
                        sim_infra2_gaussian_noise:='0.0 0.0'
                        namespace:=''
-                       sim_color_image_topic
-                       sim_color_camera_info_topic
+                       sim_color_image_topic:=''
+                       sim_color_camera_info_topic:=''
                        sim_color_trigger_topic:=''
-                       sim_depth_image_topic
-                       sim_depth_camera_info_topic
+                       sim_depth_image_topic:=''
+                       sim_depth_camera_info_topic:=''
                        sim_depth_trigger_topic:=''
-                       sim_infra1_image_topic
-                       sim_infra1_camera_info_topic
+                       sim_infra1_image_topic:=''
+                       sim_infra1_camera_info_topic:=''
                        sim_infra1_trigger_topic:=''
-                       sim_infra2_image_topic
-                       sim_infra2_camera_info_topic
+                       sim_infra2_image_topic:=''
+                       sim_infra2_camera_info_topic:=''
                        sim_infra2_trigger_topic:=''">
-
-    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_links_joints_macro.xacro"/>
 
     <!-- Reuse the links and joints from the main D435 macro. -->
     <xacro:realsense_d435_links_joints name="${name}"
@@ -297,6 +307,46 @@ Gazebo topic used to trigger the second infrared camera.
                                        use_sensor_frames_and_joints="${use_sensor_frames_and_joints}"
                                        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
+    <xacro:if value="${sim_color_enabled}">
+      <xacro:if value="${sim_color_image_topic.strip() == '' or sim_color_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: color image and camera-info topics must not be empty when color simulation is enabled")}
+      </xacro:if>
+
+      <xacro:if value="${sim_color_triggered and sim_color_trigger_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: color trigger topic must not be empty when triggered color simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_depth_enabled}">
+      <xacro:if value="${sim_depth_image_topic.strip() == '' or sim_depth_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: depth image and camera-info topics must not be empty when depth simulation is enabled")}
+      </xacro:if>
+
+      <xacro:if value="${sim_depth_triggered and sim_depth_trigger_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: depth trigger topic must not be empty when triggered depth simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_infra1_enabled}">
+      <xacro:if value="${sim_infra1_image_topic.strip() == '' or sim_infra1_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: infra1 image and camera-info topics must not be empty when infra1 simulation is enabled")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_triggered and sim_infra1_trigger_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: infra1 trigger topic must not be empty when triggered infra1 simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_infra2_enabled}">
+      <xacro:if value="${sim_infra2_image_topic.strip() == '' or sim_infra2_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: infra2 image and camera-info topics must not be empty when infra2 simulation is enabled")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra2_triggered and sim_infra2_trigger_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435: infra2 trigger topic must not be empty when triggered infra2 simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
     <xacro:if value="${use_visual and color != '' and (sim_color_enabled or sim_depth_enabled or sim_infra1_enabled or sim_infra2_enabled)}">
       <gazebo reference="${prefix}${name}_bottom_screw_frame">
         <material>
@@ -307,8 +357,6 @@ Gazebo topic used to trigger the second infrared camera.
     </xacro:if>
 
     <xacro:if value="${sim_depth_enabled}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
-
       <xacro:plugin_camera_depth name="${prefix}${name}_depth"
                                  reference_frame="${prefix}${name}_depth_frame"
                                  optical_frame="${prefix}${name}_depth_optical_frame"
@@ -337,15 +385,7 @@ Gazebo topic used to trigger the second infrared camera.
                                  trigger_topic="${sim_depth_trigger_topic}"/>
     </xacro:if>
 
-    <xacro:if value="${sim_color_enabled or sim_infra1_enabled or sim_infra2_enabled}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
-
-      <!--
-      If sim_color_enabled is true and topic and info_topic are not empty include the GZ plugin.
-      trigger_topic is only required if triggered is true, but this is check inside the plugin.
-      If any of these fields is not true, the plugin is not included.
-      -->
-      <xacro:if value="${sim_color_enabled and sim_color_image_topic != '' and sim_color_camera_info_topic != ''}">
+      <xacro:if value="${sim_color_enabled}">
         <xacro:plugin_camera name="${prefix}${name}_color"
                              reference_frame="${prefix}${name}_color_frame"
                              optical_frame="${prefix}${name}_color_optical_frame"
@@ -373,8 +413,7 @@ Gazebo topic used to trigger the second infrared camera.
                              trigger_topic="${sim_color_trigger_topic}"/>
       </xacro:if>
 
-      <xacro:if value="${sim_infra1_enabled and sim_infra1_image_topic != '' and
-                        sim_infra1_camera_info_topic != ''}">
+      <xacro:if value="${sim_infra1_enabled}">
         <xacro:plugin_camera name="${prefix}${name}_infra1"
                              reference_frame="${prefix}${name}_infra1_frame"
                              optical_frame="${prefix}${name}_infra1_optical_frame"
@@ -402,8 +441,7 @@ Gazebo topic used to trigger the second infrared camera.
                              trigger_topic="${sim_infra1_trigger_topic}"/>
       </xacro:if>
 
-      <xacro:if value="${sim_infra2_enabled and sim_infra2_image_topic != '' and
-                        sim_infra2_camera_info_topic != ''}">
+      <xacro:if value="${sim_infra2_enabled}">
         <xacro:plugin_camera name="${prefix}${name}_infra2"
                              reference_frame="${prefix}${name}_infra2_frame"
                              optical_frame="${prefix}${name}_infra2_optical_frame"
@@ -430,6 +468,5 @@ Gazebo topic used to trigger the second infrared camera.
                              info_topic="${sim_infra2_camera_info_topic}"
                              trigger_topic="${sim_infra2_trigger_topic}"/>
       </xacro:if>
-    </xacro:if>
   </xacro:macro>
 </robot>

@@ -45,8 +45,8 @@ color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if `use_visua
 
 use_c_mesh (B): if true, use the camera mesh for the collision element. If false, use a box shape.
 
-use_sensor_frames_and_joints (B): if true, create the depth, color, infra1, and infra2 frames using the
-nominal extrinsics of the RealSense model.
+use_sensor_frames_and_joints (B): if true, create the depth, color, infra1 and infra2 frames.
+The frames use the nominal extrinsics of the RealSense model.
 If false, this macro only creates the mechanical body link and its attachment joint. This is useful
 when calibrated extrinsics are expected to be published elsewhere, for example by a driver or TF
 publisher.
@@ -56,7 +56,9 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
 
 -->
 
-<robot name="realsense_d435_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="realsense_d435_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
   <xacro:macro name="realsense_d435_links_joints"
                params="name
                        prefix:=''
@@ -69,8 +71,6 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
                        use_c_mesh:=False
                        use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
-    <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
-
     <!--
     These offsets are approximate.
     If a camera node or driver publishes calibrated TF values, those calibrated extrinsics should be
@@ -84,10 +84,12 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
     These dimensions model the aluminum outer case of the D435 camera.
     The camera attachment joint is represented at the physical tripod-mount location of the camera.
     -->
-    <xacro:property name="size_x"                       value="0.02505"/>
-    <xacro:property name="size_y"                       value="0.090"/>
-    <xacro:property name="size_z"                       value="0.025"/>
-    <xacro:property name="size"                         value="${size_x} ${size_y} ${size_z}"/>
+    <xacro:property name="body_size_x"                  value="0.02505"/>
+    <xacro:property name="body_size_y"                  value="0.090"/>
+    <xacro:property name="body_size_z"                  value="0.025"/>
+    <xacro:property name="body_size"
+                    value="${body_size_x} ${body_size_y} ${body_size_z}"/>
+    <xacro:property name="body_mass"                    value="0.072"/>
     <!-- glass cover is 0.1 mm inwards from front aluminium plate -->
     <xacro:property name="glass_to_front"               value="0.1e-3"/>
     <!-- see datasheet Revision 007, Fig. 4-4 page 65 -->
@@ -100,12 +102,15 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
     <!-- This offset is expressed relative to the physical D435 tripod mount. -->
     <xacro:property name="cam_depth_px" value="${cam_mount_from_center_offset}"/>
     <xacro:property name="cam_depth_py" value="0.0175"/>
-    <xacro:property name="cam_depth_pz" value="${size_z * 0.5}"/>
+    <xacro:property name="cam_depth_pz" value="${body_size_z * 0.5}"/>
 
     <!--
-    The mesh frame is located at its geometric center, so it coincides with the frame of the
-    equivalent box shape.
-    Because of that, a single origin is enough whether `use_v_mesh` / `use_c_mesh` is true or false.
+    The mesh represents the rectangular body of the RealSense D435.
+    Its coordinate frame is at the geometric center of the mesh, as verified in MeshLab.
+    A URDF box primitive is also centered on its coordinate frame and its dimensions follow X, Y
+    and Z.
+    Therefore, the mesh and box primitive have the same center and axis orientation.
+    Visual and collision geometry can use the same body_origin whether they select the mesh or box.
     The mesh scale is `1 1 1`.
     The mesh does not include color information, so providing `color` is recommended.
     Mesh paths follow the usual `<package>/<path_within_package>` convention.
@@ -113,8 +118,8 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
     <xacro:property name="mesh"
                     value="robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
-    <xacro:property name="origin"
-                    value="${(-size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
+    <xacro:property name="body_origin"
+                    value="${(-body_size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
 
     <!-- Root frame of the camera. -->
     <link name="${prefix}${name}_bottom_screw_frame"/>
@@ -122,37 +127,54 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
     <!--
     Fixed joint that attaches `${prefix}${name}_bottom_screw_frame` to `parent_frame`.
     -->
-    <xacro:property name="j" value="${joint_parent_fr_root_fr.split()}"/>
+    <xacro:property name="parent_root_items" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <xacro:if value="${len(parent_root_items) != 6}">
+      ${xacro.fatal("realsense_d435_links_joints: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
+    </xacro:if>
 
     <joint name="${prefix}${name}_joint" type="fixed">
       <parent link="${parent_frame}"/>
       <child link="${prefix}${name}_bottom_screw_frame" />
-      <origin rpy="${j[3]} ${j[4]} ${j[5]}" xyz="${j[0]} ${j[1]} ${j[2]}"/>
+      <origin rpy="${parent_root_items[3]} ${parent_root_items[4]} ${parent_root_items[5]}"
+              xyz="${parent_root_items[0]} ${parent_root_items[1]} ${parent_root_items[2]}"/>
     </joint>
 
     <link name="${prefix}${name}_link">
       <xacro:if value="${use_visual}">
-        <xacro:property name="v_mesh"  value="${mesh if use_v_mesh else ''}"/>
         <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
-        <xacro:visual_box mesh="${v_mesh}"
-                          scale="${mesh_scale}"
-                          mesh_origin="${origin}"
-                          size="${size}"
-                          shape_origin="${origin}"
-                          color="${v_color}"/>
+
+        <xacro:if value="${use_v_mesh}">
+          <xacro:visual_mesh mesh="${mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${body_origin}"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_v_mesh}">
+          <xacro:visual_box size="${body_size}"
+                            shape_origin="${body_origin}"
+                            color="${v_color}"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_collision}">
-        <xacro:property name="c_mesh" value="${mesh if use_c_mesh else ''}"/>
-        <xacro:collision_box mesh="${c_mesh}"
-                             scale="${mesh_scale}"
-                             mesh_origin="${origin}"
-                             size="${size}"
-                             shape_origin="${origin}"/>
+        <xacro:if value="${use_c_mesh}">
+          <xacro:collision_mesh mesh="${mesh}"
+                                scale="${mesh_scale}"
+                                mesh_origin="${body_origin}"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_c_mesh}">
+          <xacro:collision_box size="${body_size}"
+                               shape_origin="${body_origin}"/>
+        </xacro:unless>
       </xacro:if>
 
       <xacro:if value="${use_inertial}">
-        <xacro:solid_box_inertia mass="0.072" size="${size}" origin="${origin}"/>
+        <xacro:solid_box_inertia mass="${body_mass}"
+                                 size="${body_size}"
+                                 origin="${body_origin}"/>
       </xacro:if>
 
       <xacro:unless value="${use_inertial}">

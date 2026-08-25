@@ -141,30 +141,39 @@ sim_rgbd_base_topic (S):
 base topic for the RGB-D sensor.
 Gazebo publishes `${base_topic}/image`, `${base_topic}/depth_image`, `${base_topic}/points`, and
 `${base_topic}/camera_info`.
+This field must not be empty when sim_rgbd_enabled is true.
 
 sim_rgbd_trigger_topic (S):
 Gazebo topic used to trigger the RGB-D sensor.
 
 sim_infra1_image_topic (S):
 Gazebo topic used for the first infrared image stream.
+This field must not be empty when sim_infra1_enabled is true.
 
 sim_infra1_camera_info_topic (S):
 Gazebo topic used for the first infrared `camera_info` stream.
+This field must not be empty when sim_infra1_enabled is true.
 
 sim_infra1_trigger_topic (S):
 Gazebo topic used to trigger the first infrared camera.
 
 sim_infra2_image_topic (S):
 Gazebo topic used for the second infrared image stream.
+This field must not be empty when sim_infra2_enabled is true.
 
 sim_infra2_camera_info_topic (S):
 Gazebo topic used for the second infrared `camera_info` stream.
+This field must not be empty when sim_infra2_enabled is true.
 
 sim_infra2_trigger_topic (S):
 Gazebo topic used to trigger the second infrared camera.
 -->
 
-<robot name="realsense_d435_rgbd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="realsense_d435_rgbd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_links_joints_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_rgbd_macro.xacro"/>
+
   <xacro:macro name="realsense_d435_rgbd"
                params="name
                        prefix:=''
@@ -236,16 +245,14 @@ Gazebo topic used to trigger the second infrared camera.
                        sim_infra2_distortion_center:='0.5 0.5'
                        sim_infra2_gaussian_noise:='0.0 0.0'
                        namespace:=''
-                       sim_rgbd_base_topic
+                       sim_rgbd_base_topic:=''
                        sim_rgbd_trigger_topic:=''
-                       sim_infra1_image_topic
-                       sim_infra1_camera_info_topic
+                       sim_infra1_image_topic:=''
+                       sim_infra1_camera_info_topic:=''
                        sim_infra1_trigger_topic:=''
-                       sim_infra2_image_topic
-                       sim_infra2_camera_info_topic
+                       sim_infra2_image_topic:=''
+                       sim_infra2_camera_info_topic:=''
                        sim_infra2_trigger_topic:=''">
-
-    <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/realsense_d435_links_joints_macro.xacro"/>
 
     <!-- Reuse the links and joints from the main D435 macro. -->
     <xacro:realsense_d435_links_joints name="${name}"
@@ -260,6 +267,34 @@ Gazebo topic used to trigger the second infrared camera.
                                        use_sensor_frames_and_joints="${use_sensor_frames_and_joints}"
                                        joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
 
+    <xacro:if value="${sim_rgbd_enabled and sim_rgbd_base_topic.strip() == ''}">
+      ${xacro.fatal("realsense_d435_rgbd: RGB-D base topic must not be empty when RGB-D simulation is enabled")}
+    </xacro:if>
+
+    <xacro:if value="${sim_rgbd_enabled and sim_rgbd_triggered and sim_rgbd_trigger_topic.strip() == ''}">
+      ${xacro.fatal("realsense_d435_rgbd: RGB-D trigger topic must not be empty when triggered RGB-D simulation is enabled")}
+    </xacro:if>
+
+    <xacro:if value="${sim_infra1_enabled}">
+      <xacro:if value="${sim_infra1_image_topic.strip() == '' or sim_infra1_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435_rgbd: infra1 image and camera-info topics must not be empty when infra1 simulation is enabled")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra1_triggered and sim_infra1_trigger_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435_rgbd: infra1 trigger topic must not be empty when triggered infra1 simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_infra2_enabled}">
+      <xacro:if value="${sim_infra2_image_topic.strip() == '' or sim_infra2_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435_rgbd: infra2 image and camera-info topics must not be empty when infra2 simulation is enabled")}
+      </xacro:if>
+
+      <xacro:if value="${sim_infra2_triggered and sim_infra2_trigger_topic.strip() == ''}">
+        ${xacro.fatal("realsense_d435_rgbd: infra2 trigger topic must not be empty when triggered infra2 simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
     <xacro:if value="${use_visual and color != '' and (sim_rgbd_enabled or sim_infra1_enabled or sim_infra2_enabled)}">
       <gazebo reference="${prefix}${name}_bottom_screw_frame">
         <material>
@@ -269,12 +304,10 @@ Gazebo topic used to trigger the second infrared camera.
       </gazebo>
     </xacro:if>
 
-    <xacro:if value="${sim_rgbd_enabled and sim_rgbd_base_topic != ''}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_rgbd_macro.xacro"/>
+    <xacro:if value="${sim_rgbd_enabled}">
       <!--
-      When working with an `rgbd_camera` Gazebo plugin, the topics for image, depth_image, points and
-      camera_info all share the same base topic, so there is no need to pass `info_topic` separately
-      to the `plugin_camera_rgbd` macro.
+      The image, depth_image, points and camera_info streams share the same RGB-D base topic.
+      The plugin_camera_rgbd call therefore does not need a separate info_topic.
       -->
       <xacro:plugin_camera_rgbd  name="${prefix}${name}_rgbd"
                                  reference_frame="${prefix}${name}_depth_frame"
@@ -303,66 +336,60 @@ Gazebo topic used to trigger the second infrared camera.
                                  trigger_topic="${sim_rgbd_trigger_topic}"/>
     </xacro:if>
 
-    <xacro:if value="${sim_infra1_enabled or sim_infra2_enabled}">
-      <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
+    <xacro:if value="${sim_infra1_enabled}">
+      <xacro:plugin_camera name="${prefix}${name}_infra1"
+                            reference_frame="${prefix}${name}_infra1_frame"
+                            optical_frame="${prefix}${name}_infra1_optical_frame"
+                            use_gravity="${sim_infra1_use_gravity}"
+                            always_on="${sim_infra1_always_on}"
+                            visualize="${sim_infra1_visualize}"
+                            enable_metrics="${sim_infra1_enable_metrics}"
+                            save="${sim_infra1_save}"
+                            triggered="${sim_infra1_triggered}"
+                            visible_mask="${sim_infra1_visible_mask}"
+                            clip="${sim_infra1_clip}"
+                            update_rate="${sim_infra1_update_rate}"
+                            image="${sim_infra1_image}"
+                            lens_single_elements="${sim_infra1_lens_single_elements}"
+                            lens_custom_function="${sim_infra1_lens_custom_function}"
+                            lens_intrinsics="${sim_infra1_lens_intrinsics}"
+                            lens_projection="${sim_infra1_lens_projection}"
+                            lens_xy_skew="${sim_infra1_lens_xy_skew}"
+                            distortion_k_p="${sim_infra1_distortion_k_p}"
+                            distortion_center="${sim_infra1_distortion_center}"
+                            gaussian_noise="${sim_infra1_gaussian_noise}"
+                            namespace="${namespace}"
+                            topic="${sim_infra1_image_topic}"
+                            info_topic="${sim_infra1_camera_info_topic}"
+                            trigger_topic="${sim_infra1_trigger_topic}"/>
+    </xacro:if>
 
-      <xacro:if value="${sim_infra1_enabled and sim_infra1_image_topic != '' and
-                        sim_infra1_camera_info_topic != ''}">
-        <xacro:plugin_camera name="${prefix}${name}_infra1"
-                             reference_frame="${prefix}${name}_infra1_frame"
-                             optical_frame="${prefix}${name}_infra1_optical_frame"
-                             use_gravity="${sim_infra1_use_gravity}"
-                             always_on="${sim_infra1_always_on}"
-                             visualize="${sim_infra1_visualize}"
-                             enable_metrics="${sim_infra1_enable_metrics}"
-                             save="${sim_infra1_save}"
-                             triggered="${sim_infra1_triggered}"
-                             visible_mask="${sim_infra1_visible_mask}"
-                             clip="${sim_infra1_clip}"
-                             update_rate="${sim_infra1_update_rate}"
-                             image="${sim_infra1_image}"
-                             lens_single_elements="${sim_infra1_lens_single_elements}"
-                             lens_custom_function="${sim_infra1_lens_custom_function}"
-                             lens_intrinsics="${sim_infra1_lens_intrinsics}"
-                             lens_projection="${sim_infra1_lens_projection}"
-                             lens_xy_skew="${sim_infra1_lens_xy_skew}"
-                             distortion_k_p="${sim_infra1_distortion_k_p}"
-                             distortion_center="${sim_infra1_distortion_center}"
-                             gaussian_noise="${sim_infra1_gaussian_noise}"
-                             namespace="${namespace}"
-                             topic="${sim_infra1_image_topic}"
-                             info_topic="${sim_infra1_camera_info_topic}"
-                             trigger_topic="${sim_infra1_trigger_topic}"/>
-      </xacro:if>
-
-      <xacro:if value="${sim_infra2_enabled and sim_infra2_image_topic != '' and
-                        sim_infra2_camera_info_topic != ''}">
-        <xacro:plugin_camera name="${prefix}${name}_infra2"
-                             reference_frame="${prefix}${name}_infra2_frame"
-                             optical_frame="${prefix}${name}_infra2_optical_frame"
-                             use_gravity="${sim_infra2_use_gravity}"
-                             always_on="${sim_infra2_always_on}"
-                             visualize="${sim_infra2_visualize}"
-                             enable_metrics="${sim_infra2_enable_metrics}"
-                             save="${sim_infra2_save}"
-                             triggered="${sim_infra2_triggered}"
-                             visible_mask="${sim_infra2_visible_mask}"
-                             clip="${sim_infra2_clip}"
-                             update_rate="${sim_infra2_update_rate}"
-                             image="${sim_infra2_image}"
-                             lens_single_elements="${sim_infra2_lens_single_elements}"
-                             lens_custom_function="${sim_infra2_lens_custom_function}"
-                             lens_intrinsics="${sim_infra2_lens_intrinsics}"
-                             lens_projection="${sim_infra2_lens_projection}"
-                             lens_xy_skew="${sim_infra2_lens_xy_skew}"
-                             distortion_k_p="${sim_infra2_distortion_k_p}"
-                             distortion_center="${sim_infra2_distortion_center}"
-                             gaussian_noise="${sim_infra2_gaussian_noise}"
-                             namespace="${namespace}"
-                             topic="${sim_infra2_image_topic}"
-                             info_topic="${sim_infra2_camera_info_topic}"
-                             trigger_topic="${sim_infra2_trigger_topic}"/>
-      </xacro:if>
+    <xacro:if value="${sim_infra2_enabled}">
+      <xacro:plugin_camera name="${prefix}${name}_infra2"
+                            reference_frame="${prefix}${name}_infra2_frame"
+                            optical_frame="${prefix}${name}_infra2_optical_frame"
+                            use_gravity="${sim_infra2_use_gravity}"
+                            always_on="${sim_infra2_always_on}"
+                            visualize="${sim_infra2_visualize}"
+                            enable_metrics="${sim_infra2_enable_metrics}"
+                            save="${sim_infra2_save}"
+                            triggered="${sim_infra2_triggered}"
+                            visible_mask="${sim_infra2_visible_mask}"
+                            clip="${sim_infra2_clip}"
+                            update_rate="${sim_infra2_update_rate}"
+                            image="${sim_infra2_image}"
+                            lens_single_elements="${sim_infra2_lens_single_elements}"
+                            lens_custom_function="${sim_infra2_lens_custom_function}"
+                            lens_intrinsics="${sim_infra2_lens_intrinsics}"
+                            lens_projection="${sim_infra2_lens_projection}"
+                            lens_xy_skew="${sim_infra2_lens_xy_skew}"
+                            distortion_k_p="${sim_infra2_distortion_k_p}"
+                            distortion_center="${sim_infra2_distortion_center}"
+                            gaussian_noise="${sim_infra2_gaussian_noise}"
+                            namespace="${namespace}"
+                            topic="${sim_infra2_image_topic}"
+                            info_topic="${sim_infra2_camera_info_topic}"
+                            trigger_topic="${sim_infra2_trigger_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>

@@ -2,11 +2,18 @@
 <!--
 Orbbec Gemini 335Le split simulation macro.
 
-This macro includes the Orbbec Gemini 335Le links and joints and adds separate Gazebo
-plugins for depth, color, left infrared, right infrared, and IMU data.
+The macro creates the complete camera frame tree and body by calling
+orbbec_gemini335le_links_joints.
+It can add five independent Gazebo sensors: depth on the depth frame, color on the color frame, left
+and right infrared on their corresponding frames, and IMU on the IMU frame.
+
+The geometry parameters are forwarded unchanged to the links-and-joints macro.
+Each sim_<stream>_enabled parameter controls only its corresponding Gazebo sensor.
+The associated image, camera-info or IMU topic must be non-empty when that sensor is enabled.
+A trigger topic is required only when triggered mode is enabled for the corresponding camera sensor.
 -->
 
-<robot name="orbbec_gemini335le_split_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="orbbec_gemini335le_split_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/orbbec_gemini335le_links_joints_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_macro.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/cameras/generic_macros/plugin_camera_depth_macro.xacro"/>
@@ -114,19 +121,19 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                        sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
                        sim_imu_use_orientation:=True
                        namespace:=''
-                       sim_depth_image_topic
-                       sim_depth_camera_info_topic
+                       sim_depth_image_topic:=''
+                       sim_depth_camera_info_topic:=''
                        sim_depth_trigger_topic:=''
-                       sim_color_image_topic
-                       sim_color_camera_info_topic
+                       sim_color_image_topic:=''
+                       sim_color_camera_info_topic:=''
                        sim_color_trigger_topic:=''
-                       sim_left_ir_image_topic
-                       sim_left_ir_camera_info_topic
+                       sim_left_ir_image_topic:=''
+                       sim_left_ir_camera_info_topic:=''
                        sim_left_ir_trigger_topic:=''
-                       sim_right_ir_image_topic
-                       sim_right_ir_camera_info_topic
+                       sim_right_ir_image_topic:=''
+                       sim_right_ir_camera_info_topic:=''
                        sim_right_ir_trigger_topic:=''
-                       sim_imu_topic">
+                       sim_imu_topic:=''">
 
     <xacro:orbbec_gemini335le_links_joints name="${name}"
                                            prefix="${prefix}"
@@ -140,6 +147,46 @@ plugins for depth, color, left infrared, right infrared, and IMU data.
                                            use_c_mesh="${use_c_mesh}"
                                            c_mesh_use_low_res="${c_mesh_use_low_res}"
                                            joint_parent_fr_root_fr="${joint_parent_fr_root_fr}"/>
+
+    <xacro:if value="${sim_depth_enabled}">
+      <xacro:if value="${sim_depth_image_topic.strip() == '' or sim_depth_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: depth image and camera-info topics must not be empty when depth simulation is enabled")}
+      </xacro:if>
+      <xacro:if value="${sim_depth_triggered and sim_depth_trigger_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: depth trigger topic must not be empty when triggered depth simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_color_enabled}">
+      <xacro:if value="${sim_color_image_topic.strip() == '' or sim_color_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: color image and camera-info topics must not be empty when color simulation is enabled")}
+      </xacro:if>
+      <xacro:if value="${sim_color_triggered and sim_color_trigger_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: color trigger topic must not be empty when triggered color simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_left_ir_enabled}">
+      <xacro:if value="${sim_left_ir_image_topic.strip() == '' or sim_left_ir_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: left infrared image and camera-info topics must not be empty when left infrared simulation is enabled")}
+      </xacro:if>
+      <xacro:if value="${sim_left_ir_triggered and sim_left_ir_trigger_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: left infrared trigger topic must not be empty when triggered left infrared simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_right_ir_enabled}">
+      <xacro:if value="${sim_right_ir_image_topic.strip() == '' or sim_right_ir_camera_info_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: right infrared image and camera-info topics must not be empty when right infrared simulation is enabled")}
+      </xacro:if>
+      <xacro:if value="${sim_right_ir_triggered and sim_right_ir_trigger_topic.strip() == ''}">
+        ${xacro.fatal("orbbec_gemini335le: right infrared trigger topic must not be empty when triggered right infrared simulation is enabled")}
+      </xacro:if>
+    </xacro:if>
+
+    <xacro:if value="${sim_imu_enabled and sim_imu_topic.strip() == ''}">
+      ${xacro.fatal("orbbec_gemini335le: IMU topic must not be empty when IMU simulation is enabled")}
+    </xacro:if>
 
     <xacro:if value="${use_visual and color != '' and (sim_depth_enabled or sim_color_enabled or sim_left_ir_enabled or sim_right_ir_enabled or sim_imu_enabled)}">
       <gazebo reference="${prefix}${name}_bottom_screw_frame">
