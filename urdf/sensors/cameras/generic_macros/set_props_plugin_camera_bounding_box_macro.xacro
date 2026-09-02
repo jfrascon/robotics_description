@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="set_props_plugin_camera_bounding_box_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="set_props_plugin_camera_bounding_box_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <!--
   Build parent-scope properties for a bounding-box camera plugin from a simulation configuration
   dictionary.

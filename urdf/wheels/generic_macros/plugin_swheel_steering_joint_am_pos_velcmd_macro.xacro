@@ -22,7 +22,7 @@ injected from a robot macro or xacro file.
 Reference:
 https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1JointPositionController.html
 -->
-<robot name="plugin_swheel_steering_joint_am_pos_velcmd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_swheel_steering_joint_am_pos_velcmd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_swheel_steering_joint_am_pos_velcmd"
                params="joint_name
                        joint_limits
@@ -48,7 +48,8 @@ https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1JointPositionContr
     <xacro:property name="resolved_initial_position"
                     value="${initial_position if initial_position != '' else default_initial_position}"/>
 
-    <!-- Clamp the requested tracking speed to the velocity limit declared in the steering joint. -->
+    <!-- Clamp the requested tracking speed to the velocity limit declared in the steering
+         joint. -->
     <xacro:property name="resolved_vel_max"
                     value="${min(float(vel_max), float(joint_limits_seq[2])) if vel_max != '' else float(joint_limits_seq[2])}"/>
 

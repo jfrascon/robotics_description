@@ -30,7 +30,7 @@ injected from a robot macro or xacro file.
 Reference:
 https://gazebosim.org/api/sim/9/classgz_1_1sim_1_1systems_1_1JointController.html
 -->
-<robot name="plugin_wheel_rotation_joint_am_force_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_wheel_rotation_joint_am_force_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_wheel_rotation_joint_am_force"
                params="joint_name
                        joint_limits

@@ -237,7 +237,7 @@ gaussian_noise (S): The properties of the noise model that should be applied to 
   mean (R): Mean of the Gaussian noise.
   stddev (R): Standard deviation of the Gaussian noise.
 -->
-<robot name="plugin_camera_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_camera_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_camera"
                params="name
                        reference_frame

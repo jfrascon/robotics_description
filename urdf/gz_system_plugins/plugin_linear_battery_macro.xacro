@@ -95,8 +95,7 @@ Charging:
 - If `recharge_by_topic` is true, the plugin also accepts `gz::msgs::Boolean` messages published on topics with those
   exact same names.
 -->
-<robot name="plugin_linear_battery_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
-       xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_linear_battery_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_linear_battery"
                params="name
                        voltage

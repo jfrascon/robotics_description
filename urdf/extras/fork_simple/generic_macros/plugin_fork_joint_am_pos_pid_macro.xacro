@@ -28,7 +28,7 @@ that can be injected from a robot macro or xacro file.
 Reference:
 https://gazebosim.org/api/sim/10/classgz_1_1sim_1_1systems_1_1JointPositionController.html
 -->
-<robot name="plugin_fork_joint_am_pos_pid_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_fork_joint_am_pos_pid_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_fork_joint_am_pos_pid"
                params="joint_name
                        joint_limits

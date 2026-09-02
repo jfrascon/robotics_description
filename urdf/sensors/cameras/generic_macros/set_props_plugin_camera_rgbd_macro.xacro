@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="set_props_plugin_camera_rgbd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="set_props_plugin_camera_rgbd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="set_props_plugin_camera_rgbd"
                params="prop_prefix
                        sim_cfg:=dict()">

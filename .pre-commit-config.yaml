@@ -33,7 +33,7 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: check-symlinks
       - id: check-yaml
-        exclude: '(^|/)\.clang-format$'
+        exclude: (^|/)\.clang-format$
       - id: check-json
       - id: check-xml
       - id: check-toml
@@ -108,7 +108,13 @@ repos:
         entry: ament_cpplint
         language: system
         files: '\.(h\+\+|h|hh|hxx|hpp|cuh|c|cc|cpp|cu|c\+\+|cxx|tpp|txx)$'
-        args: ["--linelength=120", "--filter=-whitespace/newline,-build/include_order,-runtime/indentation_namespace,-legal/copyright"]
+        args:
+          - --linelength=120
+          # Disable whitespace/newline because it conflicts with the configured brace layout.
+          # Disable build/include_order because .clang-format preserves the include order.
+          # Disable runtime/indentation_namespace because .clang-format controls that layout.
+          # Disable legal/copyright because the project has no copyright header policy.
+          - --filters=-whitespace/newline,-build/include_order,-runtime/indentation_namespace,-legal/copyright
 
       - id: ament_lint_cmake
         name: ament_lint_cmake

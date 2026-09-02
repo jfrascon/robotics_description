@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot name="plugin_lidar_2d_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_lidar_2d_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <!--
   Wrapper for a Gazebo 2D lidar built on top of the generic 3D ring lidar macro.
 

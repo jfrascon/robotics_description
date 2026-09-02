@@ -148,8 +148,7 @@ The system plugin namespace and the wrapped `OdometryPublisher` plugin are docum
 https://gazebosim.org/api/sim/8/namespacegz_1_1sim_1_1systems.html
 https://gazebosim.org/api/sim/8/classgz_1_1sim_1_1systems_1_1OdometryPublisher.html
 -->
-<robot name="plugin_pose_publisher_in_reference_frame_macro" xmlns:xacro="http://www.ros.org/wiki/xacro"
-       xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_pose_publisher_in_reference_frame_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_pose_publisher_in_reference_frame"
                params="reference_frame
                        robot_frame

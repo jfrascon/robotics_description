@@ -58,7 +58,7 @@ Mandatory parameters:
 - dist_span has 2 values between quotes in this order 'min_dist max_dist'
 - dist_res has 1 value, in meters.
 -->
-<robot name="plugin_lidar_3d_ring_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="plugin_lidar_3d_ring_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:macro name="plugin_lidar_3d_ring"
                params="sensor_name
                        reference_link

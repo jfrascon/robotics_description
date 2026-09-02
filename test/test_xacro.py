@@ -12,15 +12,19 @@ test_dir = os.path.dirname(os.path.abspath(__file__))
 package_root = os.path.dirname(test_dir)
 package_name = os.path.basename(package_root)
 test_xacros_dir = os.path.join(test_dir, 'test_xacros')
-all_xacro_files = []
 
 if os.path.isdir(test_xacros_dir):
-    for file in os.listdir(test_xacros_dir):
+    for file in sorted(os.listdir(test_xacros_dir)):
         if file.endswith('.xacro'):
             xacro_files.append(os.path.join(test_xacros_dir, file))
 
-for root_dir, _, files in os.walk(package_root):
-    for file in files:
+all_xacro_files = list(xacro_files)
+urdf_dir = os.path.join(package_root, 'urdf')
+
+for root_dir, directories, files in os.walk(urdf_dir):
+    directories.sort()
+
+    for file in sorted(files):
         if file.endswith('.xacro'):
             all_xacro_files.append(os.path.join(root_dir, file))
 
@@ -117,11 +121,7 @@ def test_macro_file_robot_name_uses_macro_suffix(xacro_file):
     _macros suffix. The public macro names themselves do not use that suffix.
     """
     root = ET.parse(xacro_file).getroot()
-    macro_elements = [
-        element
-        for element in root.iter()
-        if element.tag == '{http://www.ros.org/wiki/xacro}macro'
-    ]
+    macro_elements = [element for element in root.iter() if element.tag == '{http://www.ros.org/wiki/xacro}macro']
 
     if not macro_elements:
         return
@@ -130,18 +130,35 @@ def test_macro_file_robot_name_uses_macro_suffix(xacro_file):
     assert robot_name, f"Macro file '{xacro_file}' must set the top-level <robot name>"
     assert robot_name.endswith(('_macro', '_macros')), (
         f"Macro file '{xacro_file}' has robot name '{robot_name}', "
-        "but macro-container robot names must end with _macro or _macros"
+        'but macro-container robot names must end with _macro or _macros'
     )
 
     macro_names_with_suffix = [
-        macro.get('name')
-        for macro in macro_elements
-        if macro.get('name', '').endswith(('_macro', '_macros'))
+        macro.get('name') for macro in macro_elements if macro.get('name', '').endswith(('_macro', '_macros'))
     ]
     assert not macro_names_with_suffix, (
-        f"Macro file '{xacro_file}' has public macro names with a macro suffix: "
-        f"{macro_names_with_suffix}"
+        f"Macro file '{xacro_file}' has public macro names with a macro suffix: {macro_names_with_suffix}"
     )
+
+
+@pytest.mark.parametrize('xacro_file', all_xacro_files)
+def test_gz_namespace_is_used_when_declared(xacro_file):
+    """Require every declared ``gz`` XML namespace to qualify an element or attribute."""
+    namespace_events = ET.iterparse(xacro_file, events=('start-ns',))
+    gz_namespace_uris = {uri for _, (prefix, uri) in namespace_events if prefix == 'gz'}
+
+    if not gz_namespace_uris:
+        return
+
+    root = ET.parse(xacro_file).getroot()
+    expanded_names = tuple(f'{{{uri}}}' for uri in gz_namespace_uris)
+    uses_gz_namespace = any(
+        element.tag.startswith(expanded_names)
+        or any(attribute.startswith(expanded_names) for attribute in element.attrib)
+        for element in root.iter()
+    )
+
+    assert uses_gz_namespace, f"Xacro file '{xacro_file}' declares xmlns:gz but never uses it"
 
 
 @pytest.mark.parametrize('xacro_file', xacro_files)
@@ -168,9 +185,7 @@ def test_xacro_file(xacro_file):
     ament_prefix = create_source_package_ament_prefix()
     env = os.environ.copy()
     current_ament_prefix_path = env.get('AMENT_PREFIX_PATH', '')
-    env['AMENT_PREFIX_PATH'] = os.pathsep.join(
-        path for path in [ament_prefix.name, current_ament_prefix_path] if path
-    )
+    env['AMENT_PREFIX_PATH'] = os.pathsep.join(path for path in [ament_prefix.name, current_ament_prefix_path] if path)
 
     try:
         # Generate URDF file.

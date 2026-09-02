@@ -7,7 +7,7 @@ S means string
 B means boolean
 -->
 
-<robot name="visual_collision_macro" xmlns:xacro="http://www.ros.org/wiki/xacro" xmlns:gz="http://gazebosim.org/schema">
+<robot name="visual_collision_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!--
   Macro for a visual element using a mesh.

@@ -27,8 +27,7 @@ The caller still has to decide:
 - The command topic that will be published through `topic`.
 -->
 <robot name="plugin_joint_controller_f64_force_macro"
-       xmlns:xacro="http://www.ros.org/wiki/xacro"
-       xmlns:gz="http://gazebosim.org/schema">
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/gz_system_plugins/plugin_joint_controller_macro.xacro"/>
 
   <xacro:macro name="plugin_joint_controller_f64_force"
