@@ -1,6 +1,6 @@
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 
 from test_imu_box import _expanded_root, _source_test_env
 
@@ -33,10 +33,20 @@ def test_all_imus_macros_exports_public_entry_points(tmp_path: Path) -> None:
     )
 
     result = subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
     root = _expanded_root(result)
 
-    expected_links = {'base_link', 'generic_imu_root_link', 'generic_imu_link', 'um7_root_link', 'um7_link'}
+    expected_links = {
+        'base_link',
+        'generic_imu_root_link',
+        'generic_imu_link',
+        'um7_root_link',
+        'um7_link',
+    }
     assert expected_links.issubset({link.get('name') for link in root.findall('link')})
     assert root.findall('.//sensor') == []

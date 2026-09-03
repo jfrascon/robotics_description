@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import math
 from pathlib import Path
 
@@ -87,7 +86,7 @@ def build_ring(r_outer: float, r_inner: float, height: float, segments: int = 32
 
 
 def build_cylinder(radius: float, height: float, segments: int = 32):
-    """Closed cylinder with top/bottom caps and side wall."""
+    """Build a closed cylinder with top, bottom, and side faces."""
     hz = height / 2.0
     positions = []
 

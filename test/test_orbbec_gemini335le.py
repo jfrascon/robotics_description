@@ -1,8 +1,8 @@
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from xml.sax.saxutils import quoteattr
 
 import pytest
@@ -29,7 +29,9 @@ def _source_test_env(tmp_path: Path) -> dict[str, str]:
 
     env = os.environ.copy()
     current_ament_prefix_path = env.get('AMENT_PREFIX_PATH', '')
-    env['AMENT_PREFIX_PATH'] = os.pathsep.join(path for path in [str(ament_prefix), current_ament_prefix_path] if path)
+    env['AMENT_PREFIX_PATH'] = os.pathsep.join(
+        path for path in [str(ament_prefix), current_ament_prefix_path] if path
+    )
     return env
 
 
@@ -49,6 +51,10 @@ def _run_links_joints(
     """Expand a minimal robot containing the Orbbec links-and-joints macro."""
     xacro_path = shutil.which('xacro')
     assert xacro_path, 'xacro is not installed'
+    macro_path = (
+        '$(find robotics_description)/urdf/sensors/cameras/'
+        'orbbec_gemini335le_links_joints_macro.xacro'
+    )
 
     test_xacro = tmp_path / 'orbbec_gemini335le_links_joints_validation.xacro'
     test_xacro.write_text(
@@ -56,7 +62,7 @@ def _run_links_joints(
 <robot name="orbbec_gemini335le_links_joints_validation"
        xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include
-    filename="$(find robotics_description)/urdf/sensors/cameras/orbbec_gemini335le_links_joints_macro.xacro"/>
+    filename="{macro_path}"/>
   <link name="base_link"/>
   <xacro:orbbec_gemini335le_links_joints
     name="camera"
@@ -76,7 +82,11 @@ def _run_links_joints(
     )
 
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
 
 
@@ -119,7 +129,11 @@ def _run_wrapper(
     )
 
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
 
 
@@ -148,10 +162,15 @@ def _float_attribute(element: ET.Element, attribute: str) -> tuple[float, ...]:
 
 
 @pytest.mark.parametrize('joint_parent_fr_root_fr', ['0 0 0 0 0', '0 0 0 0 0 0 0'])
-def test_links_joints_rejects_invalid_parent_transform_arity(tmp_path: Path, joint_parent_fr_root_fr: str) -> None:
+def test_links_joints_rejects_invalid_parent_transform_arity(
+    tmp_path: Path, joint_parent_fr_root_fr: str
+) -> None:
     result = _run_links_joints(tmp_path, joint_parent_fr_root_fr=joint_parent_fr_root_fr)
 
-    _assert_fatal(result, "orbbec_gemini335le_links_joints: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")
+    _assert_fatal(
+        result,
+        "orbbec_gemini335le_links_joints: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'",
+    )
 
 
 @pytest.mark.parametrize(
@@ -191,9 +210,14 @@ def test_links_joints_selects_visual_and_collision_geometry_independently(
 
 @pytest.mark.parametrize(
     ('low_resolution', 'mesh_filename'),
-    [pytest.param('True', 'low_res_mesh.STL', id='low-resolution'), pytest.param('False', 'mesh.STL', id='detailed')],
+    [
+        pytest.param('True', 'low_res_mesh.STL', id='low-resolution'),
+        pytest.param('False', 'mesh.STL', id='detailed'),
+    ],
 )
-def test_links_joints_selects_mesh_resolution(tmp_path: Path, low_resolution: str, mesh_filename: str) -> None:
+def test_links_joints_selects_mesh_resolution(
+    tmp_path: Path, low_resolution: str, mesh_filename: str
+) -> None:
     root = _expanded_root(
         _run_links_joints(
             tmp_path,
@@ -218,9 +242,15 @@ def test_links_joints_selects_mesh_resolution(tmp_path: Path, low_resolution: st
     ],
 )
 def test_links_joints_respects_geometry_flags(
-    tmp_path: Path, use_visual: str, use_collision: str, expected_visual: str | None, expected_collision: str | None
+    tmp_path: Path,
+    use_visual: str,
+    use_collision: str,
+    expected_visual: str | None,
+    expected_collision: str | None,
 ) -> None:
-    root = _expanded_root(_run_links_joints(tmp_path, use_visual=use_visual, use_collision=use_collision))
+    root = _expanded_root(
+        _run_links_joints(tmp_path, use_visual=use_visual, use_collision=use_collision)
+    )
 
     visual = _geometry(root, 'visual')
     collision = _geometry(root, 'collision')
@@ -318,7 +348,10 @@ def test_links_joints_creates_complete_fixed_frame_tree(tmp_path: Path) -> None:
         ),
         pytest.param(
             'test_orbbec_gemini335le_rgbd.xacro',
-            {('camera_depth_frame', 'camera_rgbd_gz_sensor', 'rgbd_camera'), ('camera_imu_frame', 'camera_imu', 'imu')},
+            {
+                ('camera_depth_frame', 'camera_rgbd_gz_sensor', 'rgbd_camera'),
+                ('camera_imu_frame', 'camera_imu', 'imu'),
+            },
             id='rgbd-wrapper',
         ),
     ],
@@ -360,20 +393,33 @@ RGBD_DISABLED_SENSORS = {
 
 WRAPPERS_WITH_DISABLED_SENSORS = [
     pytest.param(
-        'orbbec_gemini335le_split_macro.xacro', 'orbbec_gemini335le', SPLIT_DISABLED_SENSORS, id='split-wrapper'
+        'orbbec_gemini335le_split_macro.xacro',
+        'orbbec_gemini335le',
+        SPLIT_DISABLED_SENSORS,
+        id='split-wrapper',
     ),
     pytest.param(
-        'orbbec_gemini335le_rgbd_macro.xacro', 'orbbec_gemini335le_rgbd', RGBD_DISABLED_SENSORS, id='rgbd-wrapper'
+        'orbbec_gemini335le_rgbd_macro.xacro',
+        'orbbec_gemini335le_rgbd',
+        RGBD_DISABLED_SENSORS,
+        id='rgbd-wrapper',
     ),
 ]
 
 
-@pytest.mark.parametrize(('macro_filename', 'macro_name', 'disabled_arguments'), WRAPPERS_WITH_DISABLED_SENSORS)
+@pytest.mark.parametrize(
+    ('macro_filename', 'macro_name', 'disabled_arguments'), WRAPPERS_WITH_DISABLED_SENSORS
+)
 def test_wrappers_allow_empty_topics_for_disabled_sensors(
     tmp_path: Path, macro_filename: str, macro_name: str, disabled_arguments: dict[str, str]
 ) -> None:
     root = _expanded_root(
-        _run_wrapper(tmp_path, macro_filename=macro_filename, macro_name=macro_name, arguments=disabled_arguments)
+        _run_wrapper(
+            tmp_path,
+            macro_filename=macro_filename,
+            macro_name=macro_name,
+            arguments=disabled_arguments,
+        )
     )
 
     assert root.findall('.//sensor') == []
@@ -443,7 +489,8 @@ def test_wrappers_allow_empty_topics_for_disabled_sensors(
             'orbbec_gemini335le_rgbd',
             RGBD_DISABLED_SENSORS,
             'sim_right_ir_enabled',
-            'orbbec_gemini335le_rgbd: right infrared image and camera-info topics must not be empty',
+            'orbbec_gemini335le_rgbd: right infrared image and camera-info topics '
+            'must not be empty',
             id='rgbd-right-infrared',
         ),
         pytest.param(
@@ -465,7 +512,9 @@ def test_wrappers_reject_empty_topics_for_enabled_sensors(
     message: str,
 ) -> None:
     arguments = disabled_arguments | {enabled_argument: 'True'}
-    result = _run_wrapper(tmp_path, macro_filename=macro_filename, macro_name=macro_name, arguments=arguments)
+    result = _run_wrapper(
+        tmp_path, macro_filename=macro_filename, macro_name=macro_name, arguments=arguments
+    )
 
     _assert_fatal(result, message)
 
@@ -500,7 +549,10 @@ def test_wrappers_reject_whitespace_only_topics(
     message: str,
 ) -> None:
     result = _run_wrapper(
-        tmp_path, macro_filename=macro_filename, macro_name=macro_name, arguments=disabled_arguments | arguments
+        tmp_path,
+        macro_filename=macro_filename,
+        macro_name=macro_name,
+        arguments=disabled_arguments | arguments,
     )
 
     _assert_fatal(result, message)
@@ -565,7 +617,11 @@ def test_wrappers_reject_whitespace_only_topics(
             'orbbec_gemini335le_rgbd_macro.xacro',
             'orbbec_gemini335le_rgbd',
             RGBD_DISABLED_SENSORS,
-            {'sim_rgbd_enabled': 'True', 'sim_rgbd_base_topic': 'rgbd', 'sim_rgbd_triggered': 'True'},
+            {
+                'sim_rgbd_enabled': 'True',
+                'sim_rgbd_base_topic': 'rgbd',
+                'sim_rgbd_triggered': 'True',
+            },
             'orbbec_gemini335le_rgbd: RGB-D trigger topic must not be empty',
             id='rgbd',
         ),
@@ -606,7 +662,10 @@ def test_wrappers_reject_empty_trigger_topics_in_triggered_mode(
     message: str,
 ) -> None:
     result = _run_wrapper(
-        tmp_path, macro_filename=macro_filename, macro_name=macro_name, arguments=disabled_arguments | arguments
+        tmp_path,
+        macro_filename=macro_filename,
+        macro_name=macro_name,
+        arguments=disabled_arguments | arguments,
     )
 
     _assert_fatal(result, message)

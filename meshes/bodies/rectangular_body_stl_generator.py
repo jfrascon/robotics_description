@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-"""Generate a simple thin-walled rectangular platform-body STL using CadQuery.
+"""
+Generate a simple thin-walled rectangular platform-body STL using CadQuery.
 
 The generated body is not a solid block. It is a closed shell built from six
 plates of constant thickness. Each plate is positioned so the final outer
@@ -15,7 +15,9 @@ from pathlib import Path
 try:
     import cadquery as cq
 except ImportError as exc:  # pragma: no cover
-    raise SystemExit('cadquery is required for this generator. Install it with: pip install cadquery') from exc
+    raise SystemExit(
+        'cadquery is required for this generator. Install it with: pip install cadquery'
+    ) from exc
 
 
 body_len_x = 1.044
@@ -26,11 +28,15 @@ wall_thickness = 0.001
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the platform-body mesh generator."""
-    parser = argparse.ArgumentParser(description='Generate a thin-walled rectangular platform-body STL using CadQuery.')
+    parser = argparse.ArgumentParser(
+        description='Generate a thin-walled rectangular platform-body STL using CadQuery.'
+    )
     parser.add_argument('--body-len-x', type=float, default=body_len_x, help='Body size in X in m.')
     parser.add_argument('--body-len-y', type=float, default=body_len_y, help='Body size in Y in m.')
     parser.add_argument('--body-len-z', type=float, default=body_len_z, help='Body size in Z in m.')
-    parser.add_argument('--wall-thickness', type=float, default=wall_thickness, help='Thickness of each plate in m.')
+    parser.add_argument(
+        '--wall-thickness', type=float, default=wall_thickness, help='Thickness of each plate in m.'
+    )
     parser.add_argument(
         '--output',
         type=Path,
@@ -41,7 +47,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def add_box(
-    body: cq.Workplane, x_min: float, x_max: float, y_min: float, y_max: float, z_min: float, z_max: float
+    body: cq.Workplane,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    z_min: float,
+    z_max: float,
 ) -> cq.Workplane:
     """Union one axis-aligned box into the current CadQuery solid."""
     lx = x_max - x_min

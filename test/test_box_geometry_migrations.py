@@ -1,17 +1,17 @@
+from pathlib import Path
 import shutil
 import subprocess
-from pathlib import Path
 
-import pytest
 from geometry_migration_helpers import (
-    PACKAGE_ROOT,
     assert_fatal,
     expanded_root,
     float_attribute,
     geometry,
+    PACKAGE_ROOT,
     run_macro,
     source_test_env,
 )
+import pytest
 
 LIDAR_SIMULATION_ARGUMENTS = {
     'sim_enabled': 'False',
@@ -20,7 +20,10 @@ LIDAR_SIMULATION_ARGUMENTS = {
     'sim_hor_res_deg': '0.5',
     'sim_dist_span': '0.1 30.0',
 }
-REALSENSE_ARGUMENTS = {'use_sensor_frames_and_joints': 'False', 'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
+REALSENSE_ARGUMENTS = {
+    'use_sensor_frames_and_joints': 'False',
+    'joint_parent_fr_root_fr': '0 0 0 0 0 0',
+}
 HOKUYO_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
 LEUZE_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
 SICK_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
@@ -122,7 +125,12 @@ def test_box_components_select_visual_and_collision_independently(
         geometry_arguments |= {'v_mesh_use_low_res': 'True', 'c_mesh_use_low_res': 'True'}
 
     root = expanded_root(
-        run_macro(tmp_path, macro_file=macro_file, macro_name=macro_name, arguments=base_arguments | geometry_arguments)
+        run_macro(
+            tmp_path,
+            macro_file=macro_file,
+            macro_name=macro_name,
+            arguments=base_arguments | geometry_arguments,
+        )
     )
     visual = geometry(root, body_link, 'visual')
     collision = geometry(root, body_link, 'collision')
@@ -177,7 +185,12 @@ def test_box_components_preserve_mesh_resolution_and_inertia(
         geometry_arguments |= {'v_mesh_use_low_res': 'False', 'c_mesh_use_low_res': 'True'}
 
     root = expanded_root(
-        run_macro(tmp_path, macro_file=macro_file, macro_name=macro_name, arguments=base_arguments | geometry_arguments)
+        run_macro(
+            tmp_path,
+            macro_file=macro_file,
+            macro_name=macro_name,
+            arguments=base_arguments | geometry_arguments,
+        )
     )
     visual = geometry(root, body_link, 'visual')
     collision = geometry(root, body_link, 'collision')
@@ -227,7 +240,12 @@ def test_box_components_preserve_mesh_resolution_and_inertia(
 )
 @pytest.mark.parametrize('transform', ['0 0 0 0 0', '0 0 0 0 0 0 0'])
 def test_box_components_reject_invalid_parent_transform(
-    tmp_path: Path, macro_file: str, macro_name: str, base_arguments: dict[str, str], message: str, transform: str
+    tmp_path: Path,
+    macro_file: str,
+    macro_name: str,
+    base_arguments: dict[str, str],
+    message: str,
+    transform: str,
 ) -> None:
     result = run_macro(
         tmp_path,
@@ -319,7 +337,11 @@ def _run_realsense_client_variant(
     test_xacro = tmp_path / filename
     test_xacro.write_text(source, encoding='utf-8')
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=source_test_env(tmp_path),
     )
 
 
@@ -409,7 +431,9 @@ def test_realsense_wrapper_clients_create_expected_sensors(
 def test_realsense_wrappers_reject_empty_topics_for_enabled_sensors(
     tmp_path: Path, filename: str, attribute: str, message: str
 ) -> None:
-    result = _run_realsense_client_variant(tmp_path, filename, {attribute: attribute.split('=', 1)[0] + '="   "'})
+    result = _run_realsense_client_variant(
+        tmp_path, filename, {attribute: attribute.split('=', 1)[0] + '="   "'}
+    )
 
     assert_fatal(result, message)
 
@@ -434,14 +458,21 @@ def test_realsense_wrappers_reject_empty_topics_for_enabled_sensors(
     ],
 )
 def test_realsense_wrappers_reject_empty_trigger_topics_in_triggered_mode(
-    tmp_path: Path, filename: str, triggered_attribute: str, trigger_topic_attribute: str, message: str
+    tmp_path: Path,
+    filename: str,
+    triggered_attribute: str,
+    trigger_topic_attribute: str,
+    message: str,
 ) -> None:
     triggered_name = triggered_attribute.split('=', 1)[0]
     trigger_topic_name = trigger_topic_attribute.split('=', 1)[0]
     result = _run_realsense_client_variant(
         tmp_path,
         filename,
-        {triggered_attribute: triggered_name + '="True"', trigger_topic_attribute: trigger_topic_name + '=""'},
+        {
+            triggered_attribute: triggered_name + '="True"',
+            trigger_topic_attribute: trigger_topic_name + '=""',
+        },
     )
 
     assert_fatal(result, message)

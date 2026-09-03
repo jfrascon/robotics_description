@@ -1,10 +1,17 @@
+from pathlib import Path
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 import pytest
-from test_imu_box import PACKAGE_ROOT, TEST_MESH, _expanded_root, _float_attribute, _geometry_name, _source_test_env
+from test_imu_box import (
+    _expanded_root,
+    _float_attribute,
+    _geometry_name,
+    _source_test_env,
+    PACKAGE_ROOT,
+    TEST_MESH,
+)
 
 
 def _run_um7(
@@ -51,7 +58,11 @@ def _run_um7(
     )
 
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
 
 
@@ -59,7 +70,11 @@ def _run_xacro_file(tmp_path: Path, xacro_file: Path) -> ET.Element:
     xacro_path = shutil.which('xacro')
     assert xacro_path, 'xacro is not installed'
     result = subprocess.run(
-        [xacro_path, str(xacro_file)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(xacro_file)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
     return _expanded_root(result)
 
@@ -123,7 +138,11 @@ def test_um7_selects_visual_and_collision_geometry_independently(
     ],
 )
 def test_um7_forwards_visual_and_collision_flags(
-    tmp_path: Path, use_visual: str, use_collision: str, expected_visual: str | None, expected_collision: str | None
+    tmp_path: Path,
+    use_visual: str,
+    use_collision: str,
+    expected_visual: str | None,
+    expected_collision: str | None,
 ) -> None:
     root = _expanded_root(_run_um7(tmp_path, use_visual=use_visual, use_collision=use_collision))
 
@@ -177,7 +196,13 @@ def test_um7_rejects_blank_topic_when_simulation_is_enabled(tmp_path: Path, sim_
 
 def test_um7_creates_simulated_sensor_on_data_frame(tmp_path: Path) -> None:
     root = _expanded_root(
-        _run_um7(tmp_path, sim_enabled='True', sim_update_rate='75.0', namespace='robot', sim_topic='imu/data')
+        _run_um7(
+            tmp_path,
+            sim_enabled='True',
+            sim_update_rate='75.0',
+            namespace='robot',
+            sim_topic='imu/data',
+        )
     )
 
     sensor = root.find("./gazebo[@reference='imu_link']/sensor[@type='imu']")

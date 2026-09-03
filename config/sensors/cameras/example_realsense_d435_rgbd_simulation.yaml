@@ -13,15 +13,15 @@
 
 # Configuration for a 'rgbd_camera' Gazebo plugin.
 rgbd:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_rgbd
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   clip:
     near: 0.1
@@ -39,10 +39,11 @@ rgbd:
     anti_aliasing: 4
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 90.0
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(90/2) = 640 / tan(45) = 640
   # fy = (image_height_px/2) / tan(vertical_fov/2)  = (720/2) / tan(63/2) = 360 / tan(31.5) = 588.2
@@ -54,8 +55,7 @@ rgbd:
     cx: 639.5
     cy: 359.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0
@@ -85,15 +85,15 @@ rgbd:
 
 # Configuration for a 'camera' Gazebo plugin.
 infra1:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_infra1
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   clip:
     near: 0.1
@@ -115,10 +115,11 @@ infra1:
     anti_aliasing: 4
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 91.2
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(91.2/2) = 640/tan(45.6) = 626.7
   # fy = (image_height_px/2) / tan(vertical_fov/2) = (720/2) / tan(65.5/2) = 360/tan(32.75) = 559.7
@@ -130,8 +131,7 @@ infra1:
     cx: 639.5
     cy: 359.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0
@@ -157,15 +157,15 @@ infra1:
 
 # Configuration for a 'camera' Gazebo plugin.
 infra2:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_infra2
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   clip:
     near: 0.1
@@ -187,10 +187,11 @@ infra2:
     anti_aliasing: 4
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 91.2
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(91.2/2) = 640/tan(45.6) = 626.7
   # fy = (image_height_px/2) / tan(vertical_fov/2) = (720/2) / tan(65.5/2) = 360/tan(32.75) = 559.7
@@ -202,8 +203,7 @@ infra2:
     cx: 639.5
     cy: 359.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0

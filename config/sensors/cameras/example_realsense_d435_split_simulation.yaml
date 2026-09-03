@@ -13,15 +13,15 @@
 
 # Configuration for a 'camera' Gazebo plugin.
 color:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_color
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   # Clip refers to the near and far clipping planes Gazebo uses when rendering the camera image.
   # Objects closer than near or farther than far are not rendered (captured by Gazebo in the image).
@@ -41,10 +41,9 @@ color:
   # | 424×240        | 16:9         | 60          | 69                 | 42               |
   # | 320×240        | 4:3          | 30, 60      | 60                 | 45               |
   # | 320×180        | 16:9         | 60          | 69                 | 42               |
-  # The RGB camera’s horizontal and vertical FOV are physically fixed (approximately 69° × 42° for the full 16:9 sensor
-  # area). When operating in 4:3 modes, the effective FOV changes only because the firmware applies a central crop of
-  # the native sensor, resulting in a reduced effective horizontal FOV and a slightly increased vertical FOV
-  # (approximately 60° × 45°).
+  # The full 16:9 RGB sensor has a fixed horizontal and vertical FOV of about 69° × 42°.
+  # In 4:3 modes, firmware crops the center of the native sensor.
+  # The crop changes the effective FOV to about 60° × 45°.
   update_rate: 30.0
   image:
     width: 1920
@@ -53,10 +52,11 @@ color:
     anti_aliasing: 4
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 69.0
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1920/2) / tan(69.0/2) = 960 / tan(34.5) = 1396.8
   # fy = (image_height_px/2) / tan(vertical_fov/2)  = (1080/2) / tan(42.0/2) = 540 / tan(21.0) = 1406.7
@@ -68,8 +68,7 @@ color:
     cx: 959.5
     cy: 539.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0
@@ -104,15 +103,15 @@ color:
 
 # Configuration for a 'depth_camera' Gazebo plugin.
 depth:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_depth
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   clip:
     near: 0.1
@@ -135,14 +134,15 @@ depth:
     height: 720
     format: R_FLOAT32
     anti_aliasing: 4
-  # No image.format is exposed here. For depth-only cameras, the published depth stream is always float32 and does not
-  # depend on <image><format>.
+  # This depth-only camera does not expose image.format.
+  # Its published depth stream is always float32 and does not depend on <image><format>.
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 90.0
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(90/2) = 640 / tan(45) = 640
   # fy = (image_height_px/2) / tan(vertical_fov/2)  = (720/2) / tan(63/2) = 360 / tan(31.5) = 588.2
@@ -154,8 +154,7 @@ depth:
     cx: 639.5
     cy: 359.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0
@@ -181,15 +180,15 @@ depth:
 
 # Configuration for a 'camera' Gazebo plugin.
 infra1:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_infra1
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   clip:
     near: 0.1
@@ -211,10 +210,11 @@ infra1:
     anti_aliasing: 4
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 91.2
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(91.2/2) = 640/tan(45.6) = 626.7
   # fy = (image_height_px/2) / tan(vertical_fov/2) = (720/2) / tan(65.5/2) = 360/tan(32.75) = 559.7
@@ -226,8 +226,7 @@ infra1:
     cx: 639.5
     cy: 359.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0
@@ -253,15 +252,15 @@ infra1:
 
 # Configuration for a 'camera' Gazebo plugin.
 infra2:
-  enabled: True
-  use_gravity: True
-  always_on: True
-  visualize: False
-  enable_metrics: False
+  enabled: true
+  use_gravity: true
+  always_on: true
+  visualize: false
+  enable_metrics: false
   save:
-    enabled: False
+    enabled: false
     path: /tmp/realsense_d435_infra2
-  triggered: False
+  triggered: false
   visible_mask: 4294967295
   clip:
     near: 0.1
@@ -283,10 +282,11 @@ infra2:
     anti_aliasing: 4
   lens_single_elements:
     type: gnomonical # DO NOT CHANGE
-    scale_to_hfov: True # DO NOT CHANGE
+    scale_to_hfov: true # DO NOT CHANGE
     cutoff_angle_deg: 91.2
     env_texture_size: 256
-  # Supported by the macro/plugin pipeline, but left empty in this example because the lens model is gnomonical.
+  # The macro and plugin support a custom lens function, but this example leaves it empty.
+  # The gnomonical lens model does not need a custom function.
   lens_custom_function: ""
   # fx = (image_width_px/2) / tan(horizontal_fov/2) = (1280/2) / tan(91.2/2) = 640/tan(45.6) = 626.7
   # fy = (image_height_px/2) / tan(vertical_fov/2) = (720/2) / tan(65.5/2) = 360/tan(32.75) = 559.7
@@ -298,8 +298,7 @@ infra2:
     cx: 639.5
     cy: 359.5
   lens_xy_skew: 0.0
-  # Supported by the macro/plugin pipeline, but left empty in this example because the projection matrix is not
-  # overridden.
+  # The macro and plugin support a custom projection matrix, but this example does not override it.
   lens_projection: ""
   distortion_k_p:
     k1: 0.0

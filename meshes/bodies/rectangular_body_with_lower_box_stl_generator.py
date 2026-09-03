@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-"""Generate a thin-walled rectangular body with an attached lower box.
+"""
+Generate a thin-walled rectangular body with an attached lower box.
 
 The main body is a closed six-plate shell. A second shell is attached to the
 bottom face of the main body. That lower shell is open on its top side because
@@ -16,7 +16,9 @@ from pathlib import Path
 try:
     import cadquery as cq
 except ImportError as exc:  # pragma: no cover
-    raise SystemExit('cadquery is required for this generator. Install it with: pip install cadquery') from exc
+    raise SystemExit(
+        'cadquery is required for this generator. Install it with: pip install cadquery'
+    ) from exc
 
 
 body_len_x = 1.044
@@ -31,15 +33,31 @@ wall_thickness = 0.001
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the composite rectangular-body generator."""
     parser = argparse.ArgumentParser(
-        description='Generate a thin-walled rectangular body with an attached lower box using CadQuery.'
+        description=(
+            'Generate a thin-walled rectangular body with an attached lower box using CadQuery.'
+        )
     )
-    parser.add_argument('--body-len-x', type=float, default=body_len_x, help='Main body size in X in m.')
-    parser.add_argument('--body-len-y', type=float, default=body_len_y, help='Main body size in Y in m.')
-    parser.add_argument('--body-len-z', type=float, default=body_len_z, help='Main body size in Z in m.')
-    parser.add_argument('--lower-len-x', type=float, default=lower_len_x, help='Lower body size in X in m.')
-    parser.add_argument('--lower-len-y', type=float, default=lower_len_y, help='Lower body size in Y in m.')
-    parser.add_argument('--lower-len-z', type=float, default=lower_len_z, help='Lower body size in Z in m.')
-    parser.add_argument('--wall-thickness', type=float, default=wall_thickness, help='Plate thickness in m.')
+    parser.add_argument(
+        '--body-len-x', type=float, default=body_len_x, help='Main body size in X in m.'
+    )
+    parser.add_argument(
+        '--body-len-y', type=float, default=body_len_y, help='Main body size in Y in m.'
+    )
+    parser.add_argument(
+        '--body-len-z', type=float, default=body_len_z, help='Main body size in Z in m.'
+    )
+    parser.add_argument(
+        '--lower-len-x', type=float, default=lower_len_x, help='Lower body size in X in m.'
+    )
+    parser.add_argument(
+        '--lower-len-y', type=float, default=lower_len_y, help='Lower body size in Y in m.'
+    )
+    parser.add_argument(
+        '--lower-len-z', type=float, default=lower_len_z, help='Lower body size in Z in m.'
+    )
+    parser.add_argument(
+        '--wall-thickness', type=float, default=wall_thickness, help='Plate thickness in m.'
+    )
     parser.add_argument(
         '--output',
         type=Path,
@@ -50,7 +68,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def add_box(
-    body: cq.Workplane, x_min: float, x_max: float, y_min: float, y_max: float, z_min: float, z_max: float
+    body: cq.Workplane,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    z_min: float,
+    z_max: float,
 ) -> cq.Workplane:
     """Union one axis-aligned box into the current CadQuery solid."""
     lx = x_max - x_min
@@ -190,7 +214,12 @@ def main() -> None:
         raise SystemExit('wall_thickness must be positive.')
 
     if args.wall_thickness * 2.0 >= min(
-        args.body_len_x, args.body_len_y, args.body_len_z, args.lower_len_x, args.lower_len_y, args.lower_len_z
+        args.body_len_x,
+        args.body_len_y,
+        args.body_len_z,
+        args.lower_len_x,
+        args.lower_len_y,
+        args.lower_len_z,
     ):
         raise SystemExit('wall_thickness is too large for the requested dimensions.')
 

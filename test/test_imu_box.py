@@ -1,8 +1,8 @@
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 import pytest
 
@@ -25,7 +25,9 @@ def _source_test_env(tmp_path: Path) -> dict[str, str]:
 
     env = os.environ.copy()
     current_ament_prefix_path = env.get('AMENT_PREFIX_PATH', '')
-    env['AMENT_PREFIX_PATH'] = os.pathsep.join(path for path in [str(ament_prefix), current_ament_prefix_path] if path)
+    env['AMENT_PREFIX_PATH'] = os.pathsep.join(
+        path for path in [str(ament_prefix), current_ament_prefix_path] if path
+    )
     return env
 
 
@@ -81,7 +83,11 @@ def _run_imu_box(
     )
 
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
 
 
@@ -148,14 +154,18 @@ def test_imu_box_allows_non_positive_mass_without_inertia(tmp_path: Path, mass: 
 
 
 @pytest.mark.parametrize('joint_parent_fr_root_fr', ['0 0 0 0 0', '0 0 0 0 0 0 0'])
-def test_imu_box_rejects_invalid_parent_to_root_transform_arity(tmp_path: Path, joint_parent_fr_root_fr: str) -> None:
+def test_imu_box_rejects_invalid_parent_to_root_transform_arity(
+    tmp_path: Path, joint_parent_fr_root_fr: str
+) -> None:
     result = _run_imu_box(tmp_path, joint_parent_fr_root_fr=joint_parent_fr_root_fr)
 
     _assert_fatal(result, "imu_box: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")
 
 
 @pytest.mark.parametrize('joint_root_fr_data_fr', ['0 0 0 0 0', '0 0 0 0 0 0 0'])
-def test_imu_box_rejects_invalid_root_to_data_transform_arity(tmp_path: Path, joint_root_fr_data_fr: str) -> None:
+def test_imu_box_rejects_invalid_root_to_data_transform_arity(
+    tmp_path: Path, joint_root_fr_data_fr: str
+) -> None:
     result = _run_imu_box(tmp_path, joint_root_fr_data_fr=joint_root_fr_data_fr)
 
     _assert_fatal(result, "imu_box: joint_root_fr_data_fr must be 'x y z roll pitch yaw'")
@@ -199,9 +209,15 @@ def test_imu_box_selects_visual_and_collision_geometry_independently(
     ],
 )
 def test_imu_box_respects_visual_and_collision_flags(
-    tmp_path: Path, use_visual: str, use_collision: str, expected_visual: str | None, expected_collision: str | None
+    tmp_path: Path,
+    use_visual: str,
+    use_collision: str,
+    expected_visual: str | None,
+    expected_collision: str | None,
 ) -> None:
-    root = _expanded_root(_run_imu_box(tmp_path, use_visual=use_visual, use_collision=use_collision))
+    root = _expanded_root(
+        _run_imu_box(tmp_path, use_visual=use_visual, use_collision=use_collision)
+    )
 
     assert _geometry_name(root, 'visual') == expected_visual
     assert _geometry_name(root, 'collision') == expected_collision
@@ -235,7 +251,11 @@ def test_imu_box_creates_null_inertia_when_inertial_data_is_disabled(tmp_path: P
 
 def test_imu_box_creates_body_and_data_frame_tree(tmp_path: Path) -> None:
     root = _expanded_root(
-        _run_imu_box(tmp_path, joint_parent_fr_root_fr='1 2 3 0.1 0.2 0.3', joint_root_fr_data_fr='4 5 6 0.4 0.5 0.6')
+        _run_imu_box(
+            tmp_path,
+            joint_parent_fr_root_fr='1 2 3 0.1 0.2 0.3',
+            joint_root_fr_data_fr='4 5 6 0.4 0.5 0.6',
+        )
     )
 
     assert root.find("./link[@name='imu_root_link']") is not None
@@ -293,7 +313,9 @@ def test_imu_box_applies_gazebo_material_when_visual_simulation_is_enabled(tmp_p
 
 
 def test_imu_box_omits_gazebo_material_when_visual_is_disabled(tmp_path: Path) -> None:
-    root = _expanded_root(_run_imu_box(tmp_path, use_visual='False', sim_enabled='True', sim_topic='imu/data'))
+    root = _expanded_root(
+        _run_imu_box(tmp_path, use_visual='False', sim_enabled='True', sim_topic='imu/data')
+    )
 
     assert root.find("./gazebo[@reference='imu_root_link']/material") is None
     assert root.find("./gazebo[@reference='imu_link']/sensor[@type='imu']") is not None

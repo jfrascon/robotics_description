@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Generate the fork_simple STL variants using CadQuery geometry.
+"""
+Generate the fork_simple STL variants using CadQuery geometry.
 
 This script generates the current fork-tines mesh variants. It can generate the
 closed-tines mesh and the open-tines mesh from the same geometry definition.
@@ -18,7 +19,9 @@ from pathlib import Path
 try:
     import cadquery as cq
 except ImportError as exc:  # pragma: no cover
-    raise SystemExit('cadquery is required for this generator. Install it with: pip install cadquery') from exc
+    raise SystemExit(
+        'cadquery is required for this generator. Install it with: pip install cadquery'
+    ) from exc
 
 # Editable tine dimensions (meters)
 tine_len_x = 1.20
@@ -37,17 +40,30 @@ tine_wall_thickness = 0.001
 
 def parse_args() -> argparse.Namespace:
     """Parse command-line arguments for the fork-tines mesh generator."""
-    parser = argparse.ArgumentParser(description='Generate fork-tines STL variants using CadQuery geometry.')
-    parser.add_argument('--tine-len-x', type=float, default=tine_len_x, help='Tine length in X in m.')
-    parser.add_argument('--tine-len-y', type=float, default=tine_len_y, help='Tine width in Y in m.')
+    parser = argparse.ArgumentParser(
+        description='Generate fork-tines STL variants using CadQuery geometry.'
+    )
+    parser.add_argument(
+        '--tine-len-x', type=float, default=tine_len_x, help='Tine length in X in m.'
+    )
+    parser.add_argument(
+        '--tine-len-y', type=float, default=tine_len_y, help='Tine width in Y in m.'
+    )
     parser.add_argument('--tine-len-z', type=float, default=tine_len_z, help='Tine size in Z (m).')
-    parser.add_argument('--tine-separation', type=float, default=tine_separation, help='Tine center Y offset in m.')
-    parser.add_argument('--tine-union-len-x', type=float, default=tine_union_len_x, help='Tine-union size in X (m).')
+    parser.add_argument(
+        '--tine-separation', type=float, default=tine_separation, help='Tine center Y offset in m.'
+    )
+    parser.add_argument(
+        '--tine-union-len-x', type=float, default=tine_union_len_x, help='Tine-union size in X (m).'
+    )
     parser.add_argument(
         '--pocket-depth-x',
         type=float,
         default=pocket_depth_x,
-        help='Distance from the original tine front face to the shifted front face in open-tines mode (m).',
+        help=(
+            'Distance from the original tine front face to the shifted front face in '
+            'open-tines mode (m).'
+        ),
     )
     parser.add_argument(
         '--open-tines',
@@ -64,7 +80,13 @@ def parse_args() -> argparse.Namespace:
 
 
 def add_box(
-    fork_simple: cq.Workplane, x_min: float, x_max: float, y_min: float, y_max: float, z_min: float, z_max: float
+    fork_simple: cq.Workplane,
+    x_min: float,
+    x_max: float,
+    y_min: float,
+    y_max: float,
+    z_min: float,
+    z_max: float,
 ) -> cq.Workplane:
     """Union one axis-aligned box into the current CadQuery solid."""
     lx = x_max - x_min
@@ -78,7 +100,11 @@ def add_box(
 
 
 def build_simple_fork(
-    tine_union_len_x_m: float, tine_sep_m: float, tine_len_x_m: float, tine_len_y_m: float, tine_len_z_m: float
+    tine_union_len_x_m: float,
+    tine_sep_m: float,
+    tine_len_x_m: float,
+    tine_len_y_m: float,
+    tine_len_z_m: float,
 ) -> cq.Workplane:
     """Build the baseline simple fork solid as union of boxes."""
     x_min_tine_union = 0.0
@@ -112,8 +138,12 @@ def build_simple_fork(
         z_min_tine_union,
         z_max_tine_union,
     )
-    fork_simple = add_box(fork_simple, x_min_tine, x_max_tine, y_min_tine, y_max_tine, z_min_tine, z_max_tine)
-    fork_simple = add_box(fork_simple, x_min_tine, x_max_tine, -y_max_tine, -y_min_tine, z_min_tine, z_max_tine)
+    fork_simple = add_box(
+        fork_simple, x_min_tine, x_max_tine, y_min_tine, y_max_tine, z_min_tine, z_max_tine
+    )
+    fork_simple = add_box(
+        fork_simple, x_min_tine, x_max_tine, -y_max_tine, -y_min_tine, z_min_tine, z_max_tine
+    )
     fork_simple = add_box(
         fork_simple,
         x_min_load_stop,
@@ -168,7 +198,9 @@ def add_hollow_tine(
     fork_simple = add_box(fork_simple, x_min, x_max, inner_y_max, y_max, inner_z_min, inner_z_max)
 
     # Front face. In open-tines mode this face is moved toward the rear.
-    fork_simple = add_box(fork_simple, front_face_x_min, front_face_x_max, y_min, y_max, z_min, z_max)
+    fork_simple = add_box(
+        fork_simple, front_face_x_min, front_face_x_max, y_min, y_max, z_min, z_max
+    )
     return fork_simple
 
 
@@ -267,7 +299,9 @@ def main() -> None:
     script_dir = Path(__file__).resolve().parent
 
     if args.output is None:
-        default_output_name = 'fork_simple_open_tines.stl' if args.open_tines else 'fork_simple_closed_tines.stl'
+        default_output_name = (
+            'fork_simple_open_tines.stl' if args.open_tines else 'fork_simple_closed_tines.stl'
+        )
         args.output = script_dir.joinpath(default_output_name)
 
     positive_params = {
@@ -295,7 +329,9 @@ def main() -> None:
         raise ValueError('2 * tine_wall_thickness must be smaller than tine_len_z.')
 
     if args.open_tines and args.pocket_depth_x <= tine_wall_thickness:
-        raise ValueError('pocket_depth_x must be larger than tine_wall_thickness in open-tines mode.')
+        raise ValueError(
+            'pocket_depth_x must be larger than tine_wall_thickness in open-tines mode.'
+        )
 
     fork_simple = build_open_tines_fork(
         tine_union_len_x_m=args.tine_union_len_x,

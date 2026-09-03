@@ -108,16 +108,10 @@ imu:
   always_on: true
   update_rate: 100.0
   use_orientation: true
-  ang_vel_gaussian_noise:
-    {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
-  ang_vel_gaussian_noise_bias:
-    {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
-  ang_vel_gaussian_noise_dynamic_bias:
-    {stddev_x: 0.0, corr_time_x: 0.0, stddev_y: 0.0, corr_time_y: 0.0, stddev_z: 0.0, corr_time_z: 0.0}
-  lin_acc_gaussian_noise:
-    {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
-  lin_acc_gaussian_noise_bias:
-    {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
-  lin_acc_gaussian_noise_dynamic_bias:
-    {stddev_x: 0.0, corr_time_x: 0.0, stddev_y: 0.0, corr_time_y: 0.0, stddev_z: 0.0, corr_time_z: 0.0}
+  ang_vel_gaussian_noise: {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
+  ang_vel_gaussian_noise_bias: {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
+  ang_vel_gaussian_noise_dynamic_bias: {stddev_x: 0.0, corr_time_x: 0.0, stddev_y: 0.0, corr_time_y: 0.0, stddev_z: 0.0, corr_time_z: 0.0}
+  lin_acc_gaussian_noise: {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
+  lin_acc_gaussian_noise_bias: {mean_x: 0.0, stddev_x: 0.0, mean_y: 0.0, stddev_y: 0.0, mean_z: 0.0, stddev_z: 0.0}
+  lin_acc_gaussian_noise_dynamic_bias: {stddev_x: 0.0, corr_time_x: 0.0, stddev_y: 0.0, corr_time_y: 0.0, stddev_z: 0.0, corr_time_z: 0.0}
   topic: orbbec_gemini335le/imu/data

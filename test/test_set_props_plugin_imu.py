@@ -1,7 +1,7 @@
+from pathlib import Path
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
 from test_imu_box import _source_test_env
 
@@ -10,12 +10,18 @@ COMPLETE_CONFIG = """dict(
     use_gravity=False,
     always_on=True,
     update_rate=42.0,
-    ang_vel_gaussian_noise=dict(mean_x=1, stddev_x=2, mean_y=3, stddev_y=4, mean_z=5, stddev_z=6),
-    ang_vel_gaussian_noise_bias=dict(mean_x=11, stddev_x=12, mean_y=13, stddev_y=14, mean_z=15, stddev_z=16),
+    ang_vel_gaussian_noise=dict(
+        mean_x=1, stddev_x=2, mean_y=3, stddev_y=4, mean_z=5, stddev_z=6
+    ),
+    ang_vel_gaussian_noise_bias=dict(
+        mean_x=11, stddev_x=12, mean_y=13, stddev_y=14, mean_z=15, stddev_z=16
+    ),
     ang_vel_gaussian_noise_dynamic_bias=dict(
         stddev_x=21, corr_time_x=22, stddev_y=23, corr_time_y=24, stddev_z=25, corr_time_z=26
     ),
-    lin_acc_gaussian_noise=dict(mean_x=31, stddev_x=32, mean_y=33, stddev_y=34, mean_z=35, stddev_z=36),
+    lin_acc_gaussian_noise=dict(
+        mean_x=31, stddev_x=32, mean_y=33, stddev_y=34, mean_z=35, stddev_z=36
+    ),
     lin_acc_gaussian_noise_bias=dict(
         mean_x=41, stddev_x=42, mean_y=43, stddev_y=44, mean_z=45, stddev_z=46
     ),
@@ -33,6 +39,10 @@ def _run_set_props(
     """Expand set_props_plugin_imu and expose its parent-scope properties."""
     xacro_path = shutil.which('xacro')
     assert xacro_path, 'xacro is not installed'
+    macro_path = (
+        '$(find robotics_description)/urdf/sensors/imus/generic_macros/'
+        'set_props_plugin_imu_macro.xacro'
+    )
 
     config_block = ''
     config_argument = ''
@@ -45,7 +55,7 @@ def _run_set_props(
         f"""<?xml version="1.0"?>
 <robot name="set_props_plugin_imu_validation" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include
-    filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/set_props_plugin_imu_macro.xacro"/>
+    filename="{macro_path}"/>
 {config_block}  <xacro:set_props_plugin_imu prop_prefix="{prop_prefix}"{config_argument}/>
   <result enabled="${{imu_enabled}}"
           use_gravity="${{imu_use_gravity}}"
@@ -65,7 +75,11 @@ def _run_set_props(
     )
 
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=_source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_source_test_env(tmp_path),
     )
 
 
@@ -96,7 +110,9 @@ def test_set_props_plugin_imu_uses_disabled_defaults_without_configuration(tmp_p
 
 
 def test_set_props_plugin_imu_ignores_partial_configuration_when_disabled(tmp_path: Path) -> None:
-    result = _result_element(_run_set_props(tmp_path, config_expression="dict(enabled=False, topic='ignored')"))
+    result = _result_element(
+        _run_set_props(tmp_path, config_expression="dict(enabled=False, topic='ignored')")
+    )
 
     assert result.get('enabled') == 'False'
     assert result.get('topic') == ''

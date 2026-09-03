@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>robotics_description</name>
   <version>2.0.0</version>
@@ -7,7 +6,7 @@
   <description>Reusable URDF/Xacro robot descriptions, meshes, and macros for ROS 2</description>
 
   <maintainer email="eurecat@eurecat.org">Juan Francisco Rascon Crespo</maintainer>
-  <license>BSD-3-Clause</license>
+  <license>Apache-2.0</license>
 
   <url type="website">https://github.com/jfrascon/robotics_description</url>
   <url type="repository">https://github.com/jfrascon/robotics_description.git</url>
@@ -19,8 +18,14 @@
   <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_index_python</test_depend>
+  <test_depend>ament_cmake_flake8</test_depend>
+  <test_depend>ament_cmake_lint_cmake</test_depend>
+  <test_depend>ament_cmake_pep257</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>ament_cmake_xmllint</test_depend>
+  <test_depend>ament_lint_auto</test_depend>
   <test_depend>liburdfdom-tools</test_depend>
+  <test_depend>python3-pytest</test_depend>
   <test_depend>xacro</test_depend>
 
   <export>

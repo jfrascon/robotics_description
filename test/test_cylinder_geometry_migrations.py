@@ -1,7 +1,13 @@
 from pathlib import Path
 
+from geometry_migration_helpers import (
+    assert_fatal,
+    expanded_root,
+    float_attribute,
+    geometry,
+    run_macro,
+)
 import pytest
-from geometry_migration_helpers import assert_fatal, expanded_root, float_attribute, geometry, run_macro
 
 WHEEL_MESH = 'robotics_description/meshes/wheels/standard_wheels/wheel.dae'
 AIRY_ARGUMENTS = {
@@ -53,7 +59,16 @@ ROBOSENSE_COMPONENTS = [
 
 
 @pytest.mark.parametrize(
-    ('macro_file', 'macro_name', 'base_arguments', 'radius', 'length', 'mass', 'detailed_mesh', 'low_resolution_mesh'),
+    (
+        'macro_file',
+        'macro_name',
+        'base_arguments',
+        'radius',
+        'length',
+        'mass',
+        'detailed_mesh',
+        'low_resolution_mesh',
+    ),
     ROBOSENSE_COMPONENTS,
 )
 @pytest.mark.parametrize(
@@ -109,7 +124,16 @@ def test_robosense_selects_visual_and_collision_independently(
 
 
 @pytest.mark.parametrize(
-    ('macro_file', 'macro_name', 'base_arguments', 'radius', 'length', 'mass', 'detailed_mesh', 'low_resolution_mesh'),
+    (
+        'macro_file',
+        'macro_name',
+        'base_arguments',
+        'radius',
+        'length',
+        'mass',
+        'detailed_mesh',
+        'low_resolution_mesh',
+    ),
     ROBOSENSE_COMPONENTS,
 )
 def test_robosense_collision_uses_its_own_mesh_selection(
@@ -130,7 +154,12 @@ def test_robosense_collision_uses_its_own_mesh_selection(
             macro_file=macro_file,
             macro_name=macro_name,
             arguments=base_arguments
-            | {'use_v_mesh': 'True', 'v_mesh_use_low_res': 'False', 'use_c_mesh': 'True', 'c_mesh_use_low_res': 'True'},
+            | {
+                'use_v_mesh': 'True',
+                'v_mesh_use_low_res': 'False',
+                'use_c_mesh': 'True',
+                'c_mesh_use_low_res': 'True',
+            },
         )
     )
     visual = geometry(root, 'component_root_link', 'visual')
@@ -149,7 +178,10 @@ def test_robosense_collision_uses_its_own_mesh_selection(
     ('macro_file', 'macro_name', 'base_arguments'),
     [
         pytest.param(
-            'urdf/sensors/lidars/robosense_airy_macro.xacro', 'robosense_airy', AIRY_ARGUMENTS, id='robosense-airy'
+            'urdf/sensors/lidars/robosense_airy_macro.xacro',
+            'robosense_airy',
+            AIRY_ARGUMENTS,
+            id='robosense-airy',
         ),
         pytest.param(
             'urdf/sensors/lidars/robosense_helios_16_macro.xacro',
@@ -256,10 +288,20 @@ WHEELS = [
     [pytest.param('', 'cylinder', id='primitive'), pytest.param(WHEEL_MESH, 'mesh', id='mesh')],
 )
 def test_wheels_select_visual_geometry_and_keep_primitive_collision(
-    tmp_path: Path, macro_file: str, macro_name: str, base_arguments: dict[str, str], v_mesh: str, expected_visual: str
+    tmp_path: Path,
+    macro_file: str,
+    macro_name: str,
+    base_arguments: dict[str, str],
+    v_mesh: str,
+    expected_visual: str,
 ) -> None:
     root = expanded_root(
-        run_macro(tmp_path, macro_file=macro_file, macro_name=macro_name, arguments=base_arguments | {'v_mesh': v_mesh})
+        run_macro(
+            tmp_path,
+            macro_file=macro_file,
+            macro_name=macro_name,
+            arguments=base_arguments | {'v_mesh': v_mesh},
+        )
     )
     visual = geometry(root, 'component_rotation_link', 'visual')
     collision = geometry(root, 'component_rotation_link', 'collision')
@@ -288,7 +330,12 @@ def test_wheels_select_visual_geometry_and_keep_primitive_collision(
     [
         pytest.param('radius', '0.0', 'radius must be greater than zero', id='zero-radius'),
         pytest.param('length', '-0.1', 'length must be greater than zero', id='negative-length'),
-        pytest.param('mass', '0.0', 'mass must be greater than zero when inertial data is enabled', id='zero-mass'),
+        pytest.param(
+            'mass',
+            '0.0',
+            'mass must be greater than zero when inertial data is enabled',
+            id='zero-mass',
+        ),
     ],
 )
 def test_wheels_reject_invalid_physical_properties(
@@ -301,7 +348,10 @@ def test_wheels_reject_invalid_physical_properties(
     message: str,
 ) -> None:
     result = run_macro(
-        tmp_path, macro_file=macro_file, macro_name=macro_name, arguments=base_arguments | {field: value}
+        tmp_path,
+        macro_file=macro_file,
+        macro_name=macro_name,
+        arguments=base_arguments | {field: value},
     )
 
     assert_fatal(result, f'{macro_name}: {message}')

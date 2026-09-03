@@ -4,8 +4,8 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-import pytest
 from ament_index_python.packages import get_package_share_directory
+import pytest
 
 xacro_files = []
 test_dir = os.path.dirname(os.path.abspath(__file__))
@@ -31,16 +31,10 @@ for root_dir, directories, files in os.walk(urdf_dir):
 
 def check_meshes(urdf_file):
     """
-    Check that all meshes in the URDF file exist and are valid.
-    This function verifies:
-    1. That every <mesh> tag has the mandatory 'filename' attribute.
-    2. That every 'filename' uses the 'package://' format.
-    3. That the file pointed to by the 'package://' path actually exists.
+    Validate every mesh reference in an expanded URDF file.
 
-    Args:
-        urdf_file (str): Path to the URDF file to check.
-    Raises:
-        AssertionError: If any of the above checks fail.
+    Each mesh must provide a filename, use a ``package://`` URI, and resolve to an existing file.
+    The function raises ``AssertionError`` when any mesh violates this contract.
     """
     print(f"Checking meshes from file '{os.path.basename(urdf_file)}'")
 
@@ -59,7 +53,8 @@ def check_meshes(urdf_file):
 
         if filename is None:
             failed_meshes.append(
-                f"A <mesh> tag was found without the mandatory 'filename' attribute in file '{urdf_file}'"
+                "A <mesh> tag was found without the mandatory 'filename' attribute in file "
+                f"'{urdf_file}'"
             )
 
             continue
@@ -90,7 +85,9 @@ def create_source_package_ament_prefix():
     files and miss newly added macros until the package is installed again.
     """
     ament_prefix = tempfile.TemporaryDirectory()
-    resource_dir = os.path.join(ament_prefix.name, 'share', 'ament_index', 'resource_index', 'packages')
+    resource_dir = os.path.join(
+        ament_prefix.name, 'share', 'ament_index', 'resource_index', 'packages'
+    )
     share_dir = os.path.join(ament_prefix.name, 'share')
     os.makedirs(resource_dir, exist_ok=True)
     os.makedirs(share_dir, exist_ok=True)
@@ -121,7 +118,9 @@ def test_macro_file_robot_name_uses_macro_suffix(xacro_file):
     _macros suffix. The public macro names themselves do not use that suffix.
     """
     root = ET.parse(xacro_file).getroot()
-    macro_elements = [element for element in root.iter() if element.tag == '{http://www.ros.org/wiki/xacro}macro']
+    macro_elements = [
+        element for element in root.iter() if element.tag == '{http://www.ros.org/wiki/xacro}macro'
+    ]
 
     if not macro_elements:
         return
@@ -134,10 +133,13 @@ def test_macro_file_robot_name_uses_macro_suffix(xacro_file):
     )
 
     macro_names_with_suffix = [
-        macro.get('name') for macro in macro_elements if macro.get('name', '').endswith(('_macro', '_macros'))
+        macro.get('name')
+        for macro in macro_elements
+        if macro.get('name', '').endswith(('_macro', '_macros'))
     ]
     assert not macro_names_with_suffix, (
-        f"Macro file '{xacro_file}' has public macro names with a macro suffix: {macro_names_with_suffix}"
+        f"Macro file '{xacro_file}' has public macro names with a macro suffix: "
+        f'{macro_names_with_suffix}'
     )
 
 
@@ -163,12 +165,7 @@ def test_gz_namespace_is_used_when_declared(xacro_file):
 
 @pytest.mark.parametrize('xacro_file', xacro_files)
 def test_xacro_file(xacro_file):
-    """Test that a xacro file can be converted to URDF and that the URDF file is valid.
-
-    Args:
-        xacro_file (str): Path to the xacro file to test.
-    """
-
+    """Convert one Xacro file to URDF and validate the resulting robot description."""
     xacro_filename_stem = os.path.splitext(os.path.basename(xacro_file))[0]
     tmp_urdf_output_file = os.path.join('/tmp', f'{xacro_filename_stem}.urdf')
 
@@ -179,27 +176,45 @@ def test_xacro_file(xacro_file):
     assert check_urdf_path, 'check_urdf is not installed'
 
     robot_id = 'tmp_robot'
-    xacro_command_list = [xacro_path, xacro_file, f'robot_id:={robot_id}', '-o', tmp_urdf_output_file]
+    xacro_command_list = [
+        xacro_path,
+        xacro_file,
+        f'robot_id:={robot_id}',
+        '-o',
+        tmp_urdf_output_file,
+    ]
     check_command_list = [check_urdf_path, tmp_urdf_output_file]
 
     ament_prefix = create_source_package_ament_prefix()
     env = os.environ.copy()
     current_ament_prefix_path = env.get('AMENT_PREFIX_PATH', '')
-    env['AMENT_PREFIX_PATH'] = os.pathsep.join(path for path in [ament_prefix.name, current_ament_prefix_path] if path)
+    env['AMENT_PREFIX_PATH'] = os.pathsep.join(
+        path for path in [ament_prefix.name, current_ament_prefix_path] if path
+    )
 
     try:
         # Generate URDF file.
         print(f"Testing xacro file '{xacro_file}'")
         print(f'Executing command: {" ".join(xacro_command_list)}')
 
-        xacro_process = subprocess.run(xacro_command_list, capture_output=True, text=True, check=False, env=env)
-        assert xacro_process.returncode == 0, f'xacro command failed with stderr: {xacro_process.stderr}'
-        assert os.path.exists(tmp_urdf_output_file), f"Output urdf file '{tmp_urdf_output_file}' not found"
+        xacro_process = subprocess.run(
+            xacro_command_list, capture_output=True, text=True, check=False, env=env
+        )
+        assert xacro_process.returncode == 0, (
+            f'xacro command failed with stderr: {xacro_process.stderr}'
+        )
+        assert os.path.exists(tmp_urdf_output_file), (
+            f"Output urdf file '{tmp_urdf_output_file}' not found"
+        )
 
         # Check URDF file.
         print(f'Executing command: {" ".join(check_command_list)}')
-        check_process = subprocess.run(check_command_list, capture_output=True, text=True, check=False, env=env)
-        assert check_process.returncode == 0, f'> check_urdf command failed with stderr: {check_process.stderr}'
+        check_process = subprocess.run(
+            check_command_list, capture_output=True, text=True, check=False, env=env
+        )
+        assert check_process.returncode == 0, (
+            f'> check_urdf command failed with stderr: {check_process.stderr}'
+        )
 
         # Check meshes
         check_meshes(tmp_urdf_output_file)

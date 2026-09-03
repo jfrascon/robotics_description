@@ -54,7 +54,9 @@ def test_create_battery_bridges() -> None:
         ('battery_recharge_stop_ros_topic', {'battery_recharge_stop_ros_topic': ''}),
     ],
 )
-def test_create_battery_bridges_rejects_empty_strings(field_name: str, kwargs: dict[str, str]) -> None:
+def test_create_battery_bridges_rejects_empty_strings(
+    field_name: str, kwargs: dict[str, str]
+) -> None:
     args = {
         'model_name': 'flart1',
         'battery_name': 'main_battery',

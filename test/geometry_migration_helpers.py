@@ -1,8 +1,8 @@
 import os
+from pathlib import Path
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
-from pathlib import Path
 from xml.sax.saxutils import quoteattr
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +23,9 @@ def source_test_env(tmp_path: Path) -> dict[str, str]:
 
     env = os.environ.copy()
     current_ament_prefix_path = env.get('AMENT_PREFIX_PATH', '')
-    env['AMENT_PREFIX_PATH'] = os.pathsep.join(path for path in [str(ament_prefix), current_ament_prefix_path] if path)
+    env['AMENT_PREFIX_PATH'] = os.pathsep.join(
+        path for path in [str(ament_prefix), current_ament_prefix_path] if path
+    )
     return env
 
 
@@ -34,7 +36,9 @@ def run_macro(
     xacro_path = shutil.which('xacro')
     assert xacro_path, 'xacro is not installed'
 
-    attributes = '\n'.join(f'    {name}={quoteattr(str(value))}' for name, value in arguments.items())
+    attributes = '\n'.join(
+        f'    {name}={quoteattr(str(value))}' for name, value in arguments.items()
+    )
     test_xacro = tmp_path / f'{macro_name}_validation.xacro'
     test_xacro.write_text(
         f"""<?xml version="1.0"?>
@@ -51,7 +55,11 @@ def run_macro(
     )
 
     return subprocess.run(
-        [xacro_path, str(test_xacro)], capture_output=True, text=True, check=False, env=source_test_env(tmp_path)
+        [xacro_path, str(test_xacro)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=source_test_env(tmp_path),
     )
 
 
