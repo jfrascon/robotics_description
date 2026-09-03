@@ -22,6 +22,8 @@ foreach(resource_directory IN LISTS resource_directories)
   endif()
 endforeach()
 
+install(FILES README.md DESTINATION share/${PROJECT_NAME})
+
 ament_python_install_package(${PROJECT_NAME})
 
 if(BUILD_TESTING)

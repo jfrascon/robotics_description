@@ -6,7 +6,7 @@ The xacro macros are located under the `urdf/` directory, and are organized into
 - `common/`: very generic macros. They do not define any specific robot component, but rather common operations such as **compute inertia for basic shapes**, **expand a topic with a namespace**, **create visual/collision/inertial elements for a <link>**, etc.
 - `extras/`: to be honest, components that are no sensors, like a `fork`, for example. Other components will be added here over time.
 - `gz_system_plugins/`: macros to set up Gazebo system plugins for simulation.
-- `sensors/`: macros for specific sensors. There are subdirectories for each sensor type (`lidars/`, `imus/`, `cameras/`), and specific sensor models are added here over time. Thera are also generic macros for each sensor type, reusable across specific sensor models of the same type.
+- `sensors/`: generic sensor macros and model-specific implementations organized under directories such as `lidars/`, `imus/`, and `cameras/`.
 - `wheels/`: macros for different types of wheels, such as `regular wheels`, `steerable wheels`, `caster wheels`, etc.
 
 If a specific sensor model needs a mesh, it is stored under the `meshes/` directory, inside a subdirectory for the sensor type (for example, `meshes/lidars/robosense_helios_16/`).
