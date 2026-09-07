@@ -54,7 +54,10 @@ def parse_args() -> argparse.Namespace:
         '--tine-separation', type=float, default=tine_separation, help='Tine center Y offset in m.'
     )
     parser.add_argument(
-        '--tine-union-len-x', type=float, default=tine_union_len_x, help='Tine-union size in X (m).'
+        '--tine-union-len-x',
+        type=float,
+        default=tine_union_len_x,
+        help='Tine-union size in X (m).',
     )
     parser.add_argument(
         '--pocket-depth-x',

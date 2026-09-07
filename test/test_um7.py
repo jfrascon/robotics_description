@@ -4,14 +4,13 @@ import subprocess
 import xml.etree.ElementTree as ET
 
 import pytest
-from test_imu_box import (
-    _expanded_root,
-    _float_attribute,
-    _geometry_name,
-    _source_test_env,
-    PACKAGE_ROOT,
-    TEST_MESH,
-)
+
+from test_imu_box import _expanded_root
+from test_imu_box import _float_attribute
+from test_imu_box import _geometry_name
+from test_imu_box import _source_test_env
+from test_imu_box import PACKAGE_ROOT
+from test_imu_box import TEST_MESH
 
 
 def _run_um7(
@@ -187,7 +186,9 @@ def test_um7_allows_omitted_topic_when_simulation_is_disabled(tmp_path: Path) ->
 
 
 @pytest.mark.parametrize('sim_topic', ['', '   '], ids=['empty', 'whitespace'])
-def test_um7_rejects_blank_topic_when_simulation_is_enabled(tmp_path: Path, sim_topic: str) -> None:
+def test_um7_rejects_blank_topic_when_simulation_is_enabled(
+    tmp_path: Path, sim_topic: str
+) -> None:
     result = _run_um7(tmp_path, sim_enabled='True', sim_topic=sim_topic)
 
     assert result.returncode != 0

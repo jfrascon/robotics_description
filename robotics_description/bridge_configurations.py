@@ -21,7 +21,9 @@ def create_battery_bridges(
     _validate_non_empty_string(model_name, 'model_name')
     _validate_non_empty_string(battery_name, 'battery_name')
     _validate_non_empty_string(battery_state_ros_topic, 'battery_state_ros_topic')
-    _validate_non_empty_string(battery_recharge_start_ros_topic, 'battery_recharge_start_ros_topic')
+    _validate_non_empty_string(
+        battery_recharge_start_ros_topic, 'battery_recharge_start_ros_topic'
+    )
     _validate_non_empty_string(battery_recharge_stop_ros_topic, 'battery_recharge_stop_ros_topic')
 
     battery_state_bridge_name = 'battery_state'

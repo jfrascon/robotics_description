@@ -185,7 +185,9 @@ def test_links_joints_rejects_invalid_parent_transform_arity(
 def test_links_joints_selects_visual_and_collision_geometry_independently(
     tmp_path: Path, use_v_mesh: str, use_c_mesh: str, expected_visual: str, expected_collision: str
 ) -> None:
-    root = _expanded_root(_run_links_joints(tmp_path, use_v_mesh=use_v_mesh, use_c_mesh=use_c_mesh))
+    root = _expanded_root(
+        _run_links_joints(tmp_path, use_v_mesh=use_v_mesh, use_c_mesh=use_c_mesh)
+    )
     visual = _geometry(root, 'visual')
     collision = _geometry(root, 'collision')
 
@@ -481,7 +483,8 @@ def test_wrappers_allow_empty_topics_for_disabled_sensors(
             'orbbec_gemini335le_rgbd',
             RGBD_DISABLED_SENSORS,
             'sim_left_ir_enabled',
-            'orbbec_gemini335le_rgbd: left infrared image and camera-info topics must not be empty',
+            'orbbec_gemini335le_rgbd: left infrared image and camera-info topics '
+            'must not be empty',
             id='rgbd-left-infrared',
         ),
         pytest.param(

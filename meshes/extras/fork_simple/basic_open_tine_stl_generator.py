@@ -46,7 +46,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         '--tine-len-y', type=float, default=tine_len_y, help='Tine width in Y in m.'
     )
-    parser.add_argument('--tine-len-z', type=float, default=tine_len_z, help='Tine size in Z in m.')
+    parser.add_argument(
+        '--tine-len-z', type=float, default=tine_len_z, help='Tine size in Z in m.'
+    )
     parser.add_argument(
         '--wall-thickness',
         type=float,

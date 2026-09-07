@@ -2,8 +2,12 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from geometry_migration_helpers import assert_fatal, expanded_root, run_macro, source_test_env
 import pytest
+
+from geometry_migration_helpers import assert_fatal
+from geometry_migration_helpers import expanded_root
+from geometry_migration_helpers import run_macro
+from geometry_migration_helpers import source_test_env
 
 LEGACY_MESH = 'robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl'
 
@@ -34,13 +38,15 @@ def test_current_and_legacy_fork_macros_can_be_included_together(tmp_path: Path)
     assert xacro_path, 'xacro is not installed'
 
     test_xacro = tmp_path / 'fork_current_and_legacy_validation.xacro'
+    legacy_macro = (
+        '$(find robotics_description)/urdf/extras/fork_simple/fork_simple_legacy_macro.xacro'
+    )
     test_xacro.write_text(
-        """<?xml version="1.0"?>
+        f"""<?xml version="1.0"?>
 <robot name="fork_current_and_legacy_validation" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include
     filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_macro.xacro"/>
-  <xacro:include
-    filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_legacy_macro.xacro"/>
+    <xacro:include filename="{legacy_macro}"/>
   <link name="base_link"/>
   <xacro:fork_simple name="fork_current"
                      parent_frame="base_link"
@@ -134,4 +140,6 @@ def test_legacy_helper_requires_mass_with_inertial_elements(tmp_path: Path) -> N
         ),
     )
 
-    assert_fatal(result, 'fork_simple_links_joints_legacy: mass is required with inertial_elements')
+    assert_fatal(
+        result, 'fork_simple_links_joints_legacy: mass is required with inertial_elements'
+    )

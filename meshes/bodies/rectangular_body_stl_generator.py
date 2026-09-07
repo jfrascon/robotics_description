@@ -31,11 +31,20 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description='Generate a thin-walled rectangular platform-body STL using CadQuery.'
     )
-    parser.add_argument('--body-len-x', type=float, default=body_len_x, help='Body size in X in m.')
-    parser.add_argument('--body-len-y', type=float, default=body_len_y, help='Body size in Y in m.')
-    parser.add_argument('--body-len-z', type=float, default=body_len_z, help='Body size in Z in m.')
     parser.add_argument(
-        '--wall-thickness', type=float, default=wall_thickness, help='Thickness of each plate in m.'
+        '--body-len-x', type=float, default=body_len_x, help='Body size in X in m.'
+    )
+    parser.add_argument(
+        '--body-len-y', type=float, default=body_len_y, help='Body size in Y in m.'
+    )
+    parser.add_argument(
+        '--body-len-z', type=float, default=body_len_z, help='Body size in Z in m.'
+    )
+    parser.add_argument(
+        '--wall-thickness',
+        type=float,
+        default=wall_thickness,
+        help='Thickness of each plate in m.',
     )
     parser.add_argument(
         '--output',

@@ -2,16 +2,15 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from geometry_migration_helpers import (
-    assert_fatal,
-    expanded_root,
-    float_attribute,
-    geometry,
-    PACKAGE_ROOT,
-    run_macro,
-    source_test_env,
-)
 import pytest
+
+from geometry_migration_helpers import assert_fatal
+from geometry_migration_helpers import expanded_root
+from geometry_migration_helpers import float_attribute
+from geometry_migration_helpers import geometry
+from geometry_migration_helpers import PACKAGE_ROOT
+from geometry_migration_helpers import run_macro
+from geometry_migration_helpers import source_test_env
 
 LIDAR_SIMULATION_ARGUMENTS = {
     'sim_enabled': 'False',

@@ -2,7 +2,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from test_imu_box import _expanded_root, _source_test_env
+from test_imu_box import _expanded_root
+from test_imu_box import _source_test_env
 
 
 def test_all_imus_macros_exports_public_entry_points(tmp_path: Path) -> None:

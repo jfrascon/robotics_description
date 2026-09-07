@@ -18,19 +18,31 @@ foreach(resource_directory IN LISTS resource_directories)
     install(
       DIRECTORY ${resource_directory}
       DESTINATION share/${PROJECT_NAME}
+      PATTERN "__pycache__" EXCLUDE
+      PATTERN "*.pyc" EXCLUDE
     )
   endif()
 endforeach()
 
-install(FILES README.md DESTINATION share/${PROJECT_NAME})
+install(FILES README.md LICENSE DESTINATION share/${PROJECT_NAME})
 
 ament_python_install_package(${PROJECT_NAME})
 
 if(BUILD_TESTING)
-  find_package(ament_cmake_flake8 REQUIRED)
-  find_package(ament_cmake_pytest REQUIRED)
   find_package(ament_lint_auto REQUIRED)
+
+  # Exclude linters that require package-specific configuration.
+  list(APPEND AMENT_LINT_AUTO_EXCLUDE ament_cmake_flake8)
+
+  # Register the remaining linters declared as test dependencies in package.xml.
+  ament_lint_auto_find_test_dependencies()
+
+  find_package(ament_cmake_flake8 REQUIRED)
+
+  ament_flake8(CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ament_flake8.ini")
+
   ament_add_pytest_test(all_imus_macros_test test/test_all_imus_macros.py)
+  ament_add_pytest_test(basket_test test/test_basket.py)
   ament_add_pytest_test(fork_simple_legacy_test test/test_fork_simple_legacy.py)
   ament_add_pytest_test(imu_box_test test/test_imu_box.py)
   ament_add_pytest_test(set_props_plugin_imu_test test/test_set_props_plugin_imu.py)
@@ -40,14 +52,6 @@ if(BUILD_TESTING)
   ament_add_pytest_test(box_geometry_migrations_test test/test_box_geometry_migrations.py)
   ament_add_pytest_test(cylinder_geometry_migrations_test test/test_cylinder_geometry_migrations.py)
   ament_add_pytest_test(orbbec_gemini335le_test test/test_orbbec_gemini335le.py)
-
-  # ament_lint_auto cannot pass the project configuration file to Flake8.
-  list(APPEND AMENT_LINT_AUTO_EXCLUDE
-    ament_cmake_flake8)
-  ament_flake8(CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ament_flake8.ini")
-
-  # Register the remaining linters declared as test dependencies in package.xml.
-  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_package()

@@ -1,13 +1,12 @@
 from pathlib import Path
 
-from geometry_migration_helpers import (
-    assert_fatal,
-    expanded_root,
-    float_attribute,
-    geometry,
-    run_macro,
-)
 import pytest
+
+from geometry_migration_helpers import assert_fatal
+from geometry_migration_helpers import expanded_root
+from geometry_migration_helpers import float_attribute
+from geometry_migration_helpers import geometry
+from geometry_migration_helpers import run_macro
 
 WHEEL_MESH = 'robotics_description/meshes/wheels/standard_wheels/wheel.dae'
 AIRY_ARGUMENTS = {
@@ -193,7 +192,11 @@ def test_robosense_collision_uses_its_own_mesh_selection(
 )
 @pytest.mark.parametrize('transform', ['0 0 0 0 0', '0 0 0 0 0 0 0'])
 def test_robosense_rejects_invalid_parent_transform(
-    tmp_path: Path, macro_file: str, macro_name: str, base_arguments: dict[str, str], transform: str
+    tmp_path: Path,
+    macro_file: str,
+    macro_name: str,
+    base_arguments: dict[str, str],
+    transform: str,
 ) -> None:
     result = run_macro(
         tmp_path,
@@ -321,7 +324,9 @@ def test_wheels_select_visual_geometry_and_keep_primitive_collision(
     visual_origin = root.find("./link[@name='component_rotation_link']/visual/origin")
     collision_origin = root.find("./link[@name='component_rotation_link']/collision/origin")
     assert float_attribute(visual_origin, 'rpy') == pytest.approx((1.5707963267948966, 0.0, 0.0))
-    assert float_attribute(collision_origin, 'rpy') == pytest.approx((1.5707963267948966, 0.0, 0.0))
+    assert float_attribute(collision_origin, 'rpy') == pytest.approx(
+        (1.5707963267948966, 0.0, 0.0)
+    )
 
 
 @pytest.mark.parametrize(('macro_file', 'macro_name', 'base_arguments'), WHEELS)

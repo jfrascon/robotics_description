@@ -4,7 +4,7 @@ This package provides a collection of xacro macros to build robot descriptions a
 The xacro macros are located under the `urdf/` directory, and are organized into categories, according to their purpose:
 
 - `common/`: very generic macros. They do not define any specific robot component, but rather common operations such as **compute inertia for basic shapes**, **expand a topic with a namespace**, **create visual/collision/inertial elements for a <link>**, etc.
-- `extras/`: to be honest, components that are no sensors, like a `fork`, for example. Other components will be added here over time.
+- `extras/`: robot components that are not sensors, such as forks and baskets.
 - `gz_system_plugins/`: macros to set up Gazebo system plugins for simulation.
 - `sensors/`: generic sensor macros and model-specific implementations organized under directories such as `lidars/`, `imus/`, and `cameras/`.
 - `wheels/`: macros for different types of wheels, such as `regular wheels`, `steerable wheels`, `caster wheels`, etc.
