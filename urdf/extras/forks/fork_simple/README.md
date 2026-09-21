@@ -20,7 +20,7 @@ The carriage and tine-stop geometry always use box primitives.
 Example:
 
 ```xml
-<xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/extras/forks/fork_simple/fork_simple_macro.xacro"/>
 
 <xacro:fork_simple name="fork"
                    parent_frame="base_link"
@@ -40,7 +40,7 @@ New robot descriptions should use `fork_simple` unless they explicitly need to c
 Example:
 
 ```xml
-<xacro:include filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_legacy_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/extras/forks/fork_simple/fork_simple_legacy_macro.xacro"/>
 
 <xacro:fork_simple_legacy name="fork_legacy"
                           parent_frame="base_link"
@@ -57,7 +57,8 @@ Both legacy files may be removed after confirming that no robot description stil
 
 ## Mesh and inertia references
 
-The current tine mesh is stored under `meshes/extras/fork_tine/`.
-The legacy whole-fork meshes and their generator are stored under `meshes/extras/fork_simple/`.
-See `meshes/extras/fork_simple/README.md` for the legacy mesh frame convention.
+The current tine mesh is stored under `meshes/extras/forks/fork_tine/`.
+The legacy whole-fork meshes and their generator are stored under
+`meshes/extras/forks/fork_simple/`.
+See `meshes/extras/forks/fork_simple/README.md` for the legacy mesh frame convention.
 See `doc/how_to_compute_inertia_w_meshlab.md` for the MeshLab inertia procedure used by the legacy wrapper.

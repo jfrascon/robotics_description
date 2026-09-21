@@ -57,7 +57,7 @@ The `joint_parent_fr_root_fr` argument is interpreted as
                        joint_parent_fr_root_fr">
 
     <xacro:property name="tine_mesh"
-                    value="robotics_description/meshes/extras/fork_tine/basic_open_tine_120.stl"/>
+                  value="robotics_description/meshes/extras/forks/fork_tine/basic_open_tine_120.stl"/>
 
     <xacro:property name="tine_size_x"         value="1.20"/>
     <xacro:property name="tine_size_y"         value="0.12"/>

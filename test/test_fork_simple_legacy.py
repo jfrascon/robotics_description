@@ -2,14 +2,13 @@ from pathlib import Path
 import shutil
 import subprocess
 
-import pytest
-
 from geometry_migration_helpers import assert_fatal
 from geometry_migration_helpers import expanded_root
 from geometry_migration_helpers import run_macro
 from geometry_migration_helpers import source_test_env
+import pytest
 
-LEGACY_MESH = 'robotics_description/meshes/extras/fork_simple/fork_simple_closed_tines.stl'
+LEGACY_MESH = 'robotics_description/meshes/extras/forks/fork_simple/fork_simple_closed_tines.stl'
 
 
 def _legacy_wrapper_arguments(**overrides: str) -> dict[str, str]:
@@ -39,13 +38,13 @@ def test_current_and_legacy_fork_macros_can_be_included_together(tmp_path: Path)
 
     test_xacro = tmp_path / 'fork_current_and_legacy_validation.xacro'
     legacy_macro = (
-        '$(find robotics_description)/urdf/extras/fork_simple/fork_simple_legacy_macro.xacro'
+        '$(find robotics_description)/urdf/extras/forks/fork_simple/fork_simple_legacy_macro.xacro'
     )
     test_xacro.write_text(
         f"""<?xml version="1.0"?>
 <robot name="fork_current_and_legacy_validation" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include
-    filename="$(find robotics_description)/urdf/extras/fork_simple/fork_simple_macro.xacro"/>
+    filename="$(find robotics_description)/urdf/extras/forks/fork_simple/fork_simple_macro.xacro"/>
     <xacro:include filename="{legacy_macro}"/>
   <link name="base_link"/>
   <xacro:fork_simple name="fork_current"
@@ -77,7 +76,7 @@ def test_current_and_legacy_fork_macros_can_be_included_together(tmp_path: Path)
 def test_legacy_wrapper_rejects_invalid_scale_arity(tmp_path: Path, scale: str) -> None:
     result = run_macro(
         tmp_path,
-        macro_file='urdf/extras/fork_simple/fork_simple_legacy_macro.xacro',
+        macro_file='urdf/extras/forks/fork_simple/fork_simple_legacy_macro.xacro',
         macro_name='fork_simple_legacy',
         arguments=_legacy_wrapper_arguments(scale=scale),
     )
@@ -89,7 +88,7 @@ def test_legacy_wrapper_rejects_invalid_scale_arity(tmp_path: Path, scale: str) 
 def test_legacy_wrapper_rejects_non_positive_scale(tmp_path: Path, scale: str) -> None:
     result = run_macro(
         tmp_path,
-        macro_file='urdf/extras/fork_simple/fork_simple_legacy_macro.xacro',
+        macro_file='urdf/extras/forks/fork_simple/fork_simple_legacy_macro.xacro',
         macro_name='fork_simple_legacy',
         arguments=_legacy_wrapper_arguments(scale=scale),
     )
@@ -102,7 +101,8 @@ def test_legacy_helper_rejects_blank_mesh(tmp_path: Path, mesh: str) -> None:
     result = run_macro(
         tmp_path,
         macro_file=(
-            'urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro'
+            'urdf/extras/forks/fork_simple/generic_macros/'
+            'fork_simple_links_joints_legacy_macro.xacro'
         ),
         macro_name='fork_simple_links_joints_legacy',
         arguments=_legacy_helper_arguments(mesh=mesh),
@@ -116,7 +116,8 @@ def test_legacy_helper_rejects_invalid_parent_transform(tmp_path: Path, transfor
     result = run_macro(
         tmp_path,
         macro_file=(
-            'urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro'
+            'urdf/extras/forks/fork_simple/generic_macros/'
+            'fork_simple_links_joints_legacy_macro.xacro'
         ),
         macro_name='fork_simple_links_joints_legacy',
         arguments=_legacy_helper_arguments(joint_parent_fr_root_fr=transform),
@@ -132,7 +133,8 @@ def test_legacy_helper_requires_mass_with_inertial_elements(tmp_path: Path) -> N
     result = run_macro(
         tmp_path,
         macro_file=(
-            'urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro'
+            'urdf/extras/forks/fork_simple/generic_macros/'
+            'fork_simple_links_joints_legacy_macro.xacro'
         ),
         macro_name='fork_simple_links_joints_legacy',
         arguments=_legacy_helper_arguments(

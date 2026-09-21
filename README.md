@@ -17,14 +17,14 @@ The [`plugin_pose_publisher_in_reference_frame`](doc/plugin_pose_publisher_in_re
 
 When a xacro is too specific, like the [`robosense_helios_16_macro.xacro`](urdf/sensors/lidars/robosense_helios_16_macro.xacro) for example, it already contains the Gazebo plugin within it. Just check out the xacro macro parameters to see how to configure the macro in general and its Gazebo plugin in particular. Great care has been taken into make the interface of the xacro macros as consistent as possible across different sensor types and models, so the mental burden of using different macros for different sensors is minimized.
 
-However, some general macros, like the [`fork_simple_macro.xacro`](urdf/extras/fork_simple/fork_simple_macro.xacro) or the [`steerable_wheel_macro.xacro`](urdf/wheels/steerable_wheel_macro.xacro) for example, do not have any Gazebo plugin within them, because there is not a specific Gazebo plugin in the [SDF specification](https://sdformat.org/spec/) for these items per se. Instead, this kind of components can be associated to different Gazebo system plugins, depending on the specific simulation setup and requirements. For example, the `fork_simple_macro.xacro` defines a simple fork component that depending on the robot description where it is used, can be associated to a `JointPositionController` Gazebo plugin to control the position of the fork, either by using messages of type `actuator_msgs/msg/Actuators` or messages of type `std_msgs/msg/Float64`, either controlled with a `PID` controller or with `velocity commands`, etc.,
+However, some general macros, like the [`fork_simple_macro.xacro`](urdf/extras/forks/fork_simple/fork_simple_macro.xacro) or the [`steerable_wheel_macro.xacro`](urdf/wheels/steerable_wheel_macro.xacro) for example, do not have any Gazebo plugin within them, because there is not a specific Gazebo plugin in the [SDF specification](https://sdformat.org/spec/) for these items per se. Instead, this kind of components can be associated to different Gazebo system plugins, depending on the specific simulation setup and requirements. For example, the `fork_simple_macro.xacro` defines a simple fork component that depending on the robot description where it is used, can be associated to a `JointPositionController` Gazebo plugin to control the position of the fork, either by using messages of type `actuator_msgs/msg/Actuators` or messages of type `std_msgs/msg/Float64`, either controlled with a `PID` controller or with `velocity commands`, etc.,
 
-You can identify the components that do not have a Gazebo plugin within them, in other words, that are linked to Gazebo system plugins, if you go to their folder an inside a subdirectory called `generic_macros` you seer xacro macro wrappers around Gazebo system plugin.
-For example, in the case of the `fork_simple_macro.xacro`, you can find:
-- [`plugin_fork_joint_am_pos_pid_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_am_pos_pid_macro.xacro)
-- [`plugin_fork_joint_am_pos_velcmd_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_am_pos_velcmd_macro.xacro)
-- [`plugin_fork_joint_f64_pos_pid_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_f64_pos_pid_macro.xacro)
-- [`plugin_fork_joint_f64_pos_velcmd_macro.xacro`](urdf/extras/fork_simple/generic_macros/plugin_fork_joint_f64_pos_velcmd_macro.xacro)
+Fork Gazebo plugin wrappers are shared by all fork variants and live under
+[`urdf/extras/forks/gz_plugins/`](urdf/extras/forks/gz_plugins/):
+- [`plugin_fork_joint_am_pos_pid_macro.xacro`](urdf/extras/forks/gz_plugins/plugin_fork_joint_am_pos_pid_macro.xacro)
+- [`plugin_fork_joint_am_pos_velcmd_macro.xacro`](urdf/extras/forks/gz_plugins/plugin_fork_joint_am_pos_velcmd_macro.xacro)
+- [`plugin_fork_joint_f64_pos_pid_macro.xacro`](urdf/extras/forks/gz_plugins/plugin_fork_joint_f64_pos_pid_macro.xacro)
+- [`plugin_fork_joint_f64_pos_velcmd_macro.xacro`](urdf/extras/forks/gz_plugins/plugin_fork_joint_f64_pos_velcmd_macro.xacro)
 
 Many specific sensor macros already embed their Gazebo plugin. For that reason, their interfaces usually expose several simulation parameters, such as topics, update rates, noise models, field-of-view limits, and similar plugin-specific settings. You can always pass those parameters one by one when invoking the macro, which keeps the call site explicit and gives you full control.
 
@@ -186,7 +186,11 @@ Keep this section as the canonical reference when adding validation checks to ne
 
 ## Mesh generation scripts
 
-Some objects include Python generators under `meshes/` (for example in `meshes/extras/fork_simple`) that export STL files with a simplified body representation. These simplified meshes are intended to be lightweight and sufficient for simulation workflows (visual/collision/inertial approximation), while keeping geometry generation reproducible from script parameters.
+Some objects include Python generators under `meshes/` (for example in
+`meshes/extras/forks/fork_simple`) that export STL files with a simplified body representation.
+These simplified meshes are intended to be lightweight and sufficient for simulation workflows
+(visual/collision/inertial approximation), while keeping geometry generation reproducible from
+script parameters.
 
 For these generators, installing `cadquery` in the local user environment is recommended:
 

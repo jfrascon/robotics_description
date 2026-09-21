@@ -298,7 +298,7 @@ def test_fork_tines_select_visual_and_collision_independently(
     root = expanded_root(
         run_macro(
             tmp_path,
-            macro_file='urdf/extras/fork_simple/fork_simple_macro.xacro',
+            macro_file='urdf/extras/forks/fork_simple/fork_simple_macro.xacro',
             macro_name='fork_simple',
             arguments=_fork_arguments(use_v_mesh=use_v_mesh, use_c_mesh=use_c_mesh),
         )
@@ -313,7 +313,7 @@ def test_fork_tines_select_visual_and_collision_independently(
 def test_fork_rejects_non_positive_carriage_height(tmp_path: Path) -> None:
     result = run_macro(
         tmp_path,
-        macro_file='urdf/extras/fork_simple/fork_simple_macro.xacro',
+        macro_file='urdf/extras/forks/fork_simple/fork_simple_macro.xacro',
         macro_name='fork_simple',
         arguments=_fork_arguments(carriage_size_z='0.0'),
     )

@@ -89,8 +89,8 @@ To regenerate the two STL files used by the legacy macro in one step, run:
 
 The generated whole-fork meshes are retained for the legacy macro:
 
-- [`urdf/extras/fork_simple/fork_simple_legacy_macro.xacro`](../../../urdf/extras/fork_simple/fork_simple_legacy_macro.xacro)
-- [`urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro`](../../../urdf/extras/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro)
+- [`urdf/extras/forks/fork_simple/fork_simple_legacy_macro.xacro`](../../../../urdf/extras/forks/fork_simple/fork_simple_legacy_macro.xacro)
+- [`urdf/extras/forks/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro`](../../../../urdf/extras/forks/fork_simple/generic_macros/fork_simple_links_joints_legacy_macro.xacro)
 
 `fork_simple_legacy` selects one of two STL files:
 
