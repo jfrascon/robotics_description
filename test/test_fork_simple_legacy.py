@@ -2,11 +2,12 @@ from pathlib import Path
 import shutil
 import subprocess
 
+import pytest
+
 from geometry_migration_helpers import assert_fatal
 from geometry_migration_helpers import expanded_root
 from geometry_migration_helpers import run_macro
 from geometry_migration_helpers import source_test_env
-import pytest
 
 LEGACY_MESH = 'robotics_description/meshes/extras/forks/fork_simple/fork_simple_closed_tines.stl'
 

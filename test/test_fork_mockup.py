@@ -6,7 +6,9 @@ from geometry_migration_helpers import assert_fatal
 from geometry_migration_helpers import source_test_env
 
 
-def _run_fork_mockup(tmp_path: Path, *, limits: str, dynamics: str) -> subprocess.CompletedProcess[str]:
+def _run_fork_mockup(
+    tmp_path: Path, *, limits: str, dynamics: str
+) -> subprocess.CompletedProcess[str]:
     xacro_path = shutil.which('xacro')
     assert xacro_path, 'xacro is not installed'
 
@@ -49,32 +51,24 @@ def test_fork_mockup_rejects_invalid_dynamics_arity(tmp_path: Path) -> None:
 
 
 def test_fork_mockup_rejects_positive_lower_limit(tmp_path: Path) -> None:
-    result = _run_fork_mockup(
-        tmp_path, limits='0.01 0.2 0.2 20000.0', dynamics='10.0 1.0'
-    )
+    result = _run_fork_mockup(tmp_path, limits='0.01 0.2 0.2 20000.0', dynamics='10.0 1.0')
 
     assert_fatal(result, 'fork_mockup: limits lower value must be <= 0')
 
 
 def test_fork_mockup_rejects_negative_upper_limit(tmp_path: Path) -> None:
-    result = _run_fork_mockup(
-        tmp_path, limits='-0.2 -0.01 0.2 20000.0', dynamics='10.0 1.0'
-    )
+    result = _run_fork_mockup(tmp_path, limits='-0.2 -0.01 0.2 20000.0', dynamics='10.0 1.0')
 
     assert_fatal(result, 'fork_mockup: limits upper value must be >= 0')
 
 
 def test_fork_mockup_rejects_negative_damping(tmp_path: Path) -> None:
-    result = _run_fork_mockup(
-        tmp_path, limits='-0.005 0.2 0.2 20000.0', dynamics='-1.0 1.0'
-    )
+    result = _run_fork_mockup(tmp_path, limits='-0.005 0.2 0.2 20000.0', dynamics='-1.0 1.0')
 
     assert_fatal(result, 'fork_mockup: dynamics damping value must be >= 0')
 
 
 def test_fork_mockup_rejects_negative_friction(tmp_path: Path) -> None:
-    result = _run_fork_mockup(
-        tmp_path, limits='-0.005 0.2 0.2 20000.0', dynamics='10.0 -1.0'
-    )
+    result = _run_fork_mockup(tmp_path, limits='-0.005 0.2 0.2 20000.0', dynamics='10.0 -1.0')
 
     assert_fatal(result, 'fork_mockup: dynamics friction value must be >= 0')

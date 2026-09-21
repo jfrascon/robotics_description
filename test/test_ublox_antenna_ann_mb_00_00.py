@@ -6,8 +6,7 @@ import xml.etree.ElementTree as ET
 from test_imu_box import _source_test_env
 
 UBLOX_MACRO = (
-    '$(find robotics_description)/urdf/sensors/gnss/'
-    'ublox_antenna_ann_mb_00_00_macro.xacro'
+    '$(find robotics_description)/urdf/sensors/gnss/ublox_antenna_ann_mb_00_00_macro.xacro'
 )
 
 
