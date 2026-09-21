@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<!--
+u-blox ANN-MB-00-00 antenna macro.
+
+The macro defines the physical antenna body, its mounting frame, its NavSat data frame, and the
+optional Gazebo NavSat sensor. The nominal envelope is 60 x 82 x 22.5 mm.
+
+The mesh coordinate frames are at the geometric center of the antenna. The root-link frame is at
+the center of the lower face, so body_origin moves visual and collision geometry upward by half
+the antenna height. ${prefix}${name}_link is the NavSat data frame and is coincident with
+${prefix}${name}_root_link.
+
+Parameter type notation: R = real number, S = string, B = boolean.
+
+name (S): Antenna name used to derive link, joint, material, and sensor names.
+prefix (S): Optional prefix applied to generated names.
+parent_frame (S): Link to which the antenna root frame is attached.
+use_visual (B): If true, create visual geometry.
+use_collision (B): If true, create collision geometry.
+use_v_mesh (B): If true, use the ANN-MB-00-00 OBJ; otherwise use the nominal box.
+color (S): Optional RGBA visual color. An empty value preserves the OBJ material.
+use_c_mesh (B): If true, use the ANN-MB-00-00 STL; otherwise use the nominal box.
+joint_parent_fr_root_fr (S): Antenna root-frame pose relative to parent_frame, expressed as
+                              'x y z roll pitch yaw'.
+sim_enabled (B): If true, create the Gazebo NavSat sensor on ${prefix}${name}_link.
+sim_use_gravity (B): If true, enable gravity for the antenna root link in Gazebo.
+sim_always_on (B): If true, keep the simulated NavSat sensor active.
+sim_update_rate (R): Simulated sensor update rate in hertz.
+sim_*_noise (S): Eight SDF noise values in this order: type, mean, stddev, bias_mean,
+                 bias_stddev, dynamic_bias_stddev, dynamic_bias_correlation_time, precision.
+namespace (S): Optional namespace used to resolve a relative simulation topic.
+sim_topic (S): Gazebo NavSat topic. It must not be blank when sim_enabled is true.
+-->
+<robot name="ublox_antenna_ann_mb_00_00_macro"
+       xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include
+    filename="$(find robotics_description)/urdf/sensors/gnss/generic_macros/plugin_navsat_macro.xacro"/>
+
+  <xacro:macro name="ublox_antenna_ann_mb_00_00"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_v_mesh:=True
+                       color:=''
+                       use_c_mesh:=True
+                       joint_parent_fr_root_fr
+                       sim_enabled:=False
+                       sim_use_gravity:=True
+                       sim_always_on:=True
+                       sim_update_rate:=10
+                       sim_position_horizontal_noise:='gaussian 0 0 0 0 0 0 0'
+                       sim_position_vertical_noise:='gaussian 0 0 0 0 0 0 0'
+                       sim_velocity_horizontal_noise:='gaussian 0 0 0 0 0 0 0'
+                       sim_velocity_vertical_noise:='gaussian 0 0 0 0 0 0 0'
+                       namespace:=''
+                       sim_topic:=''">
+    <xacro:property name="size_x" value="0.060"/>
+    <xacro:property name="size_y" value="0.082"/>
+    <xacro:property name="size_z" value="0.0225"/>
+    <xacro:property name="size" value="${size_x} ${size_y} ${size_z}"/>
+
+    <xacro:property name="visual_mesh"
+                    value="robotics_description/meshes/sensors/gnss/ublox_antenna_ann_mb_00_00/ublox_antenna_ann_mb_00_00.obj"/>
+
+    <xacro:property name="collision_mesh"
+                    value="robotics_description/meshes/sensors/gnss/ublox_antenna_ann_mb_00_00/ublox_antenna_ann_mb_00_00.stl"/>
+
+    <xacro:property name="mesh_scale" value="1 1 1"/>
+
+    <!--
+    The mesh frames and URDF box frame are at the geometric center. Moving them upward by half
+    size_z places the root-link frame at the center of the antenna's lower face.
+    -->
+    <xacro:property name="body_origin"
+                    value="0.0 0.0 ${0.5 * size_z} 0.0 0.0 0.0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="visual_color"
+                        value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+        <xacro:if value="${use_v_mesh}">
+          <xacro:visual_mesh mesh="${visual_mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${body_origin}"
+                             color="${visual_color}"/>
+        </xacro:if>
+        <xacro:unless value="${use_v_mesh}">
+          <xacro:visual_box size="${size}"
+                            shape_origin="${body_origin}"
+                            color="${visual_color}"/>
+        </xacro:unless>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:if value="${use_c_mesh}">
+          <xacro:collision_mesh mesh="${collision_mesh}"
+                                scale="${mesh_scale}"
+                                mesh_origin="${body_origin}"/>
+        </xacro:if>
+        <xacro:unless value="${use_c_mesh}">
+          <xacro:collision_box size="${size}"
+                               shape_origin="${body_origin}"/>
+        </xacro:unless>
+      </xacro:if>
+
+      <!-- The antenna mass is not specified, so use the package's small placeholder inertia. -->
+      <xacro:null_inertia/>
+    </link>
+
+    <xacro:property name="parent_root_pose" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <xacro:if value="${len(parent_root_pose) != 6}">
+      ${xacro.fatal("ublox_antenna_ann_mb_00_00: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin xyz="${parent_root_pose[0]} ${parent_root_pose[1]} ${parent_root_pose[2]}"
+              rpy="${parent_root_pose[3]} ${parent_root_pose[4]} ${parent_root_pose[5]}"/>
+    </joint>
+
+    <!-- The NavSat measurement frame is intentionally coincident with the root-link frame. -->
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <xacro:if value="${sim_enabled and sim_topic.strip() == ''}">
+      ${xacro.fatal("ublox_antenna_ann_mb_00_00: sim_topic must not be blank when simulation is enabled")}
+    </xacro:if>
+
+    <xacro:if value="${sim_enabled}">
+      <xacro:plugin_navsat sensor_name="${prefix}${name}_gz"
+                           reference_link="${prefix}${name}_link"
+                           use_gravity="${sim_use_gravity}"
+                           always_on="${sim_always_on}"
+                           update_rate="${sim_update_rate}"
+                           position_horizontal_noise="${sim_position_horizontal_noise}"
+                           position_vertical_noise="${sim_position_vertical_noise}"
+                           velocity_horizontal_noise="${sim_velocity_horizontal_noise}"
+                           velocity_vertical_noise="${sim_velocity_vertical_noise}"
+                           namespace="${namespace}"
+                           topic="${sim_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>

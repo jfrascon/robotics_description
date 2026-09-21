@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+Public GNSS macro aggregator.
+
+The includes expose the GNSS simulation-configuration adapter and every concrete GNSS sensor from
+one entry point. Each concrete sensor includes its own implementation dependencies.
+-->
+<robot name="all_gnss" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include
+    filename="$(find robotics_description)/urdf/sensors/gnss/generic_macros/set_props_plugin_navsat_macro.xacro"/>
+  <xacro:include
+    filename="$(find robotics_description)/urdf/sensors/gnss/ublox_antenna_ann_mb_00_00_macro.xacro"/>
+</robot>

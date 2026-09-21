@@ -45,7 +45,11 @@ if(BUILD_TESTING)
   ament_add_pytest_test(fork_mockup_test test/test_fork_mockup.py)
   ament_add_pytest_test(fork_simple_legacy_test test/test_fork_simple_legacy.py)
   ament_add_pytest_test(imu_box_test test/test_imu_box.py)
+  ament_add_pytest_test(navsat_macros_test test/test_navsat_macros.py)
   ament_add_pytest_test(set_props_plugin_imu_test test/test_set_props_plugin_imu.py)
+  ament_add_pytest_test(
+    ublox_antenna_ann_mb_00_00_test test/test_ublox_antenna_ann_mb_00_00.py
+  )
   ament_add_pytest_test(um7_test test/test_um7.py)
   ament_add_pytest_test(xacro_test test/test_xacro.py)
   ament_add_pytest_test(bridge_configurations_test test/test_bridge_configurations.py)

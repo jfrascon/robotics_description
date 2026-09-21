@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+<!--
+Gazebo NavSat simulation macro.
+
+The plugin_navsat macro attaches an SDF 1.11 `navsat` sensor to reference_link. It does not
+create a link or joint. A higher-level GNSS macro must provide a correctly positioned sensor frame
+through reference_link.
+
+The sensor publishes Gazebo `gz::msgs::NavSat` messages with latitude, longitude, altitude, and
+velocity. The output topic is resolved from topic and namespace. always_on controls whether the
+sensor updates without subscribers, while update_rate is expressed in hertz.
+
+SDF configures the preferred `navsat` sensor type with its matching `navsat` element. The four noise
+arguments model horizontal and vertical position in metres, and horizontal and vertical velocity
+in metres per second. Each argument contains these eight values in order:
+
+  type mean stddev bias_mean bias_stddev dynamic_bias_stddev
+  dynamic_bias_correlation_time precision
+
+type accepts SDF noise-model names such as gaussian, gaussian_quantized, and none. The defaults
+use gaussian with zero-valued parameters so the complete Gaussian model is always present without
+changing ideal sensor readings. precision only affects gaussian_quantized.
+
+The Gazebo world must load the NavSat system plugin:
+<plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+-->
+<robot name="plugin_navsat_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include
+    filename="$(find robotics_description)/urdf/common/resolve_topic_macro.xacro"/>
+
+  <xacro:macro name="plugin_navsat"
+               params="sensor_name
+                       reference_link
+                       use_gravity:=True
+                       always_on:=True
+                       update_rate:=10
+                       position_horizontal_noise:='gaussian 0 0 0 0 0 0 0'
+                       position_vertical_noise:='gaussian 0 0 0 0 0 0 0'
+                       velocity_horizontal_noise:='gaussian 0 0 0 0 0 0 0'
+                       velocity_vertical_noise:='gaussian 0 0 0 0 0 0 0'
+                       namespace:=''
+                       topic">
+    <xacro:property name="position_horizontal_noise_values"
+                    value="${position_horizontal_noise.split()}"/>
+
+    <xacro:property name="position_vertical_noise_values"
+                    value="${position_vertical_noise.split()}"/>
+
+    <xacro:property name="velocity_horizontal_noise_values"
+                    value="${velocity_horizontal_noise.split()}"/>
+
+    <xacro:property name="velocity_vertical_noise_values"
+                    value="${velocity_vertical_noise.split()}"/>
+
+    <xacro:property name="noise_values"
+                    value="${[position_horizontal_noise_values,
+                              position_vertical_noise_values,
+                              velocity_horizontal_noise_values,
+                              velocity_vertical_noise_values]}"/>
+
+    <xacro:if value="${len([values for values in noise_values if len(values) != 8]) != 0}">
+      ${xacro.fatal(
+      'plugin_navsat: every noise argument must contain type, mean, stddev, bias_mean, '
+      'bias_stddev, dynamic_bias_stddev, dynamic_bias_correlation_time, and precision')}
+    </xacro:if>
+
+    <xacro:resolve_topic prop_id="resolved_topic"
+                         topic="${topic}"
+                         namespace="${namespace}"/>
+
+    <gazebo reference="${reference_link}">
+      <gravity>${use_gravity}</gravity>
+      <sensor type="navsat" name="${sensor_name}">
+        <topic>${resolved_topic}</topic>
+        <always_on>${always_on}</always_on>
+        <update_rate>${update_rate}</update_rate>
+        <enable_metrics>False</enable_metrics>
+        <navsat>
+          <position_sensing>
+            <horizontal>
+              <noise type="${position_horizontal_noise_values[0]}">
+                <mean>${position_horizontal_noise_values[1]}</mean>
+                <stddev>${position_horizontal_noise_values[2]}</stddev>
+                <bias_mean>${position_horizontal_noise_values[3]}</bias_mean>
+                <bias_stddev>${position_horizontal_noise_values[4]}</bias_stddev>
+                <dynamic_bias_stddev>${position_horizontal_noise_values[5]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${position_horizontal_noise_values[6]}</dynamic_bias_correlation_time>
+                <precision>${position_horizontal_noise_values[7]}</precision>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="${position_vertical_noise_values[0]}">
+                <mean>${position_vertical_noise_values[1]}</mean>
+                <stddev>${position_vertical_noise_values[2]}</stddev>
+                <bias_mean>${position_vertical_noise_values[3]}</bias_mean>
+                <bias_stddev>${position_vertical_noise_values[4]}</bias_stddev>
+                <dynamic_bias_stddev>${position_vertical_noise_values[5]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${position_vertical_noise_values[6]}</dynamic_bias_correlation_time>
+                <precision>${position_vertical_noise_values[7]}</precision>
+              </noise>
+            </vertical>
+          </position_sensing>
+          <velocity_sensing>
+            <horizontal>
+              <noise type="${velocity_horizontal_noise_values[0]}">
+                <mean>${velocity_horizontal_noise_values[1]}</mean>
+                <stddev>${velocity_horizontal_noise_values[2]}</stddev>
+                <bias_mean>${velocity_horizontal_noise_values[3]}</bias_mean>
+                <bias_stddev>${velocity_horizontal_noise_values[4]}</bias_stddev>
+                <dynamic_bias_stddev>${velocity_horizontal_noise_values[5]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${velocity_horizontal_noise_values[6]}</dynamic_bias_correlation_time>
+                <precision>${velocity_horizontal_noise_values[7]}</precision>
+              </noise>
+            </horizontal>
+            <vertical>
+              <noise type="${velocity_vertical_noise_values[0]}">
+                <mean>${velocity_vertical_noise_values[1]}</mean>
+                <stddev>${velocity_vertical_noise_values[2]}</stddev>
+                <bias_mean>${velocity_vertical_noise_values[3]}</bias_mean>
+                <bias_stddev>${velocity_vertical_noise_values[4]}</bias_stddev>
+                <dynamic_bias_stddev>${velocity_vertical_noise_values[5]}</dynamic_bias_stddev>
+                <dynamic_bias_correlation_time>${velocity_vertical_noise_values[6]}</dynamic_bias_correlation_time>
+                <precision>${velocity_vertical_noise_values[7]}</precision>
+              </noise>
+            </vertical>
+          </velocity_sensing>
+        </navsat>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+</robot>
