@@ -24,7 +24,6 @@ S means string
                        joint_parent_fr_basket_fr:='0 0 0 0 0 0'
                        color:=''">
     <joint name="${prefix}basket_chassis_joint" type="fixed">
-      <axis xyz="0 1 0"/>
       <xacro:origin_element origin="${joint_parent_fr_basket_fr}"/>
       <parent link="${parent}"/>
       <child link="${prefix}basket_chassis_link"/>
@@ -66,7 +65,6 @@ S means string
                        joint_parent_fr_container_fr:='-0.068 0 0.013 0 0 0'
                        color:=''">
     <joint name="${prefix}basket_container_joint" type="fixed">
-      <axis xyz="0 1 0"/>
       <xacro:origin_element origin="${joint_parent_fr_container_fr}"/>
       <parent link="${parent}"/>
       <child link="${prefix}basket_container_link"/>
