@@ -45,6 +45,7 @@ if(BUILD_TESTING)
   ament_add_pytest_test(fork_mockup_test test/test_fork_mockup.py)
   ament_add_pytest_test(fork_simple_legacy_test test/test_fork_simple_legacy.py)
   ament_add_pytest_test(imu_box_test test/test_imu_box.py)
+  ament_add_pytest_test(livox_mid360_imu_test test/test_livox_mid360_imu.py)
   ament_add_pytest_test(navsat_macros_test test/test_navsat_macros.py)
   ament_add_pytest_test(set_props_plugin_imu_test test/test_set_props_plugin_imu.py)
   ament_add_pytest_test(

@@ -84,10 +84,40 @@ Topic used by the GZ `gpu_lidar` plugin in simulation.
 This field must not be empty when sim_enabled is true.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
+
+sim_imu_*:
+parameters for the GZ IMU plugin.
+
+sim_imu_enabled (B):
+if true, include the GZ IMU plugin.
+
+sim_imu_use_gravity (B):
+if true, the IMU measures gravity in simulation.
+
+sim_imu_always_on (B):
+if true, the IMU is always active in simulation.
+
+sim_imu_update_rate (R):
+update rate of the IMU in simulation.
+
+sim_imu_ang_vel_gaussian_noise (S), sim_imu_ang_vel_gaussian_noise_bias (S),
+sim_imu_ang_vel_gaussian_noise_dynamic_bias (S), sim_imu_lin_acc_gaussian_noise (S),
+sim_imu_lin_acc_gaussian_noise_bias (S), sim_imu_lin_acc_gaussian_noise_dynamic_bias (S):
+Gaussian noise and bias parameters for angular velocity and linear acceleration.
+
+sim_imu_use_orientation (B):
+if true, the IMU plugin provides orientation data in simulation.
+
+sim_imu_topic (S):
+Topic used by the GZ IMU plugin in simulation.
+This field must not be empty when sim_imu_enabled is true.
+If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
+namespace.
 -->
 <robot name="livox_mid360_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/imus/generic_macros/plugin_imu_macro.xacro"/>
 
   <xacro:macro name="livox_mid360"
                params="name
@@ -113,8 +143,20 @@ namespace.
                        sim_dist_span
                        sim_dist_res:=0.0
                        sim_gaussian_noise:='0 0'
+                       sim_imu_enabled:=False
+                       sim_imu_use_gravity:=True
+                       sim_imu_always_on:=True
+                       sim_imu_update_rate:=100
+                       sim_imu_ang_vel_gaussian_noise:='0 0 0 0 0 0'
+                       sim_imu_ang_vel_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_imu_ang_vel_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise_bias:='0 0 0 0 0 0'
+                       sim_imu_lin_acc_gaussian_noise_dynamic_bias:='0 0 0 0 0 0'
+                       sim_imu_use_orientation:=True
                        namespace:=''
-                       sim_base_topic:=''">
+                       sim_base_topic:=''
+                       sim_imu_topic:=''">
 
     <xacro:property name="mass" value="0.265"/>
 
@@ -219,6 +261,17 @@ namespace.
       <origin rpy="0 0 0" xyz="0 0 0.047"/>
     </joint>
 
+    <!-- The integrated IMU frame is offset from the lidar data frame in the product geometry. -->
+    <link name="${prefix}${name}_imu_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <joint name="${prefix}${name}_imu_joint" type="fixed">
+      <parent link="${prefix}${name}_link"/>
+      <child link="${prefix}${name}_imu_link"/>
+      <origin rpy="0 0 0" xyz="0.011 0.02329 -0.04412"/>
+    </joint>
+
     <!--
     sim_enabled controls whether the Gazebo lidar sensor is created.
     A non-empty sim_base_topic is required when simulation is enabled.
@@ -252,6 +305,28 @@ namespace.
         gaussian_noise="${sim_gaussian_noise}"
         namespace="${namespace}"
         base_topic="${sim_base_topic}"/>
+    </xacro:if>
+
+    <xacro:if value="${sim_imu_enabled and sim_imu_topic.strip() == ''}">
+      ${xacro.fatal("livox_mid360: sim_imu_topic must not be empty when IMU simulation is enabled")}
+    </xacro:if>
+
+    <xacro:if value="${sim_imu_enabled}">
+      <xacro:plugin_imu
+        sensor_name="${prefix}${name}_imu_gz"
+        reference_link="${prefix}${name}_imu_link"
+        use_gravity="${sim_imu_use_gravity}"
+        always_on="${sim_imu_always_on}"
+        update_rate="${sim_imu_update_rate}"
+        ang_vel_gaussian_noise="${sim_imu_ang_vel_gaussian_noise}"
+        ang_vel_gaussian_noise_bias="${sim_imu_ang_vel_gaussian_noise_bias}"
+        ang_vel_gaussian_noise_dynamic_bias="${sim_imu_ang_vel_gaussian_noise_dynamic_bias}"
+        lin_acc_gaussian_noise="${sim_imu_lin_acc_gaussian_noise}"
+        lin_acc_gaussian_noise_bias="${sim_imu_lin_acc_gaussian_noise_bias}"
+        lin_acc_gaussian_noise_dynamic_bias="${sim_imu_lin_acc_gaussian_noise_dynamic_bias}"
+        use_orientation="${sim_imu_use_orientation}"
+        namespace="${namespace}"
+        topic="${sim_imu_topic}"/>
     </xacro:if>
   </xacro:macro>
 </robot>
