@@ -16,12 +16,13 @@ S means string
   joint_parent_fr_basket_fr (S): Basket chassis pose relative to parent.
       joint_parent_fr_basket_fr (S) = 'x y z roll pitch yaw'
   color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, the mesh may use its embedded color.
   -->
   <xacro:macro name="basket_chassis_macro"
                params="prefix
                        parent
                        joint_parent_fr_basket_fr:='0 0 0 0 0 0'
-                       color:='red_color 1.0 0.0 0.0 1.0'">
+                       color:=''">
     <joint name="${prefix}basket_chassis_joint" type="fixed">
       <axis xyz="0 1 0"/>
       <xacro:origin_element origin="${joint_parent_fr_basket_fr}"/>
@@ -36,7 +37,6 @@ S means string
     </link>
 
     <gazebo reference="${prefix}basket_chassis_link">
-      <material>Gazebo/Red</material>
       <gravity>true</gravity>
     </gazebo>
   </xacro:macro>
@@ -46,12 +46,13 @@ S means string
   joint_parent_fr_container_fr (S): Basket container pose relative to parent.
       joint_parent_fr_container_fr (S) = 'x y z roll pitch yaw'
   color (S): Optional material in the form '<color_name> r g b a'.
+             If empty, the mesh may use its embedded color.
   -->
   <xacro:macro name="basket_container_macro"
                params="prefix
                        parent
                        joint_parent_fr_container_fr:='-0.068 0 0.013 0 0 0'
-                       color:='alu_color 0.1 0.1 0.1 1.0'">
+                       color:=''">
     <joint name="${prefix}basket_container_joint" type="fixed">
       <axis xyz="0 1 0"/>
       <xacro:origin_element origin="${joint_parent_fr_container_fr}"/>
@@ -66,7 +67,6 @@ S means string
     </link>
 
     <gazebo reference="${prefix}basket_container_link">
-      <material>Gazebo/Red</material>
       <gravity>true</gravity>
     </gazebo>
   </xacro:macro>
@@ -80,8 +80,8 @@ S means string
                        parent
                        joint_parent_fr_basket_fr:='0 0 0 0 0 0'
                        joint_basket_fr_container_fr:='-0.068 0 0.013 0 0 0'
-                       basket_chassis_color:='red_color 1.0 0.0 0.0 1.0'
-                       basket_container_color:='alu_color 0.1 0.1 0.1 1.0'">
+                       basket_chassis_color:=''
+                       basket_container_color:=''">
     <xacro:basket_chassis_macro prefix="${prefix}"
                                 parent="${parent}"
                                 joint_parent_fr_basket_fr="${joint_parent_fr_basket_fr}"
