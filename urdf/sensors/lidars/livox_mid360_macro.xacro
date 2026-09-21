@@ -1,0 +1,257 @@
+<?xml version="1.0"?>
+<!--
+Convention for parameter types:
+R means real number
+I means integer
+S means string
+B means boolean
+
+name (S):
+name of the lidar, used to name the links and joints.
+
+prefix (S):
+optional prefix for the names of the links and joints.
+
+namespace (S):
+ROS / GZ namespace used to build default simulation topics.
+
+parent_frame (S):
+name of the parent frame to which the lidar's root frame is attached.
+
+use_visual (B):
+if true, include visual element.
+
+use_collision (B):
+if true, include collision element.
+
+use_inertial (B):
+if true, include inertial element.
+
+use_v_mesh (B):
+if true, use the visual mesh. If false, use a primitive box.
+
+v_mesh_use_low_res (B):
+kept for API compatibility with other lidar macros. The Livox Mid-360 has one visual mesh.
+
+color (S):
+String of the form 'r (R) g (R) b (R) a (R)'.
+Used only if use_visual is true.
+If color is not empty, the provided color is applied to the object used in the visual element.
+If color is empty, the mesh color is preserved when available.
+
+use_c_mesh (B):
+if true, use the collision mesh. If false, use a primitive box.
+
+c_mesh_use_low_res (B):
+kept for API compatibility with other lidar macros. The Livox Mid-360 has one collision mesh.
+
+joint_parent_fr_root_fr (S):
+Pose of the lidar's root frame w.r.t the parent's frame.
+joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+
+sim_enabled (B):
+if true, include the GZ 3D lidar plugin.
+
+sim_always_on (B):
+if true, the lidar is always active in simulation.
+
+sim_visualize (B):
+if true, GZ visualizes the lidar rays in simulation.
+
+sim_update_rate (R):
+update rate of the lidar in simulation.
+
+sim_hor_fov_deg (S):
+horizontal field of view, in degrees, as 'min max'.
+
+sim_hor_res_deg (R):
+horizontal angular resolution, in degrees.
+
+sim_ver_fov_deg (S):
+vertical field of view, in degrees, as 'min max'.
+
+sim_ver_res_deg (R):
+vertical angular resolution, in degrees.
+
+sim_dist_span (S):
+measurable distance span, in meters, as 'min max'.
+
+sim_gaussian_noise (S):
+Gaussian noise parameters for range measurements as 'mean stddev'.
+
+sim_base_topic (S):
+Topic used by the GZ `gpu_lidar` plugin in simulation.
+This field must not be empty when sim_enabled is true.
+If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
+namespace.
+-->
+<robot name="livox_mid360_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+  <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_3d_ring_macro.xacro"/>
+
+  <xacro:macro name="livox_mid360"
+               params="name
+                       prefix:=''
+                       parent_frame
+                       use_visual:=True
+                       use_collision:=True
+                       use_inertial:=True
+                       use_v_mesh:=False
+                       v_mesh_use_low_res:=True
+                       color:=''
+                       use_c_mesh:=False
+                       c_mesh_use_low_res:=True
+                       joint_parent_fr_root_fr
+                       sim_enabled:=False
+                       sim_always_on:=True
+                       sim_visualize:=False
+                       sim_update_rate
+                       sim_hor_fov_deg
+                       sim_hor_res_deg
+                       sim_ver_fov_deg
+                       sim_ver_res_deg
+                       sim_dist_span
+                       sim_dist_res:=0.0
+                       sim_gaussian_noise:='0 0'
+                       namespace:=''
+                       sim_base_topic:=''">
+
+    <xacro:property name="mass" value="0.265"/>
+
+    <!--
+    The Livox Mid-360 LiDAR body is approximated as a box with a 65 mm square base and
+    60 mm height.
+    -->
+    <xacro:property name="side" value="0.065"/>
+    <xacro:property name="length" value="0.060"/>
+
+    <!--
+    The visual mesh represents the lidar body, and its frame is located at the geometric center.
+    Scale is 1 1 1. To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="visual_mesh"
+                    value="robotics_description/meshes/sensors/lidars/livox_mid360/livox_mid360.obj"/>
+
+    <!--
+    The collision mesh represents the lidar body, and its frame is located at the geometric center.
+    Scale is 1 1 1. To access the mesh just use <package>/<path_to_mesh_within_package>.
+    -->
+    <xacro:property name="collision_mesh"
+                    value="robotics_description/meshes/sensors/lidars/livox_mid360/livox_mid360.stl"/>
+
+    <!-- Both meshes use scale 1 1 1. -->
+    <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
+
+    <!--
+    The visual and collision meshes represent a box whose coordinate frame is at its geometric
+    center. A URDF box primitive is also centered on its coordinate frame and its dimensions
+    follow X, Y and Z. Therefore, visual and collision geometry can use the same body_origin
+    whether they select a mesh or the box primitive. The body frame is located at the center of
+    the bottom face of the box.
+    -->
+    <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * length} 0.0 0.0 0.0"/>
+
+    <link name="${prefix}${name}_root_link">
+      <xacro:if value="${use_visual}">
+        <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
+
+        <xacro:if value="${use_v_mesh}">
+          <xacro:visual_mesh mesh="${visual_mesh}"
+                             scale="${mesh_scale}"
+                             mesh_origin="${body_origin}"
+                             color="${v_color}"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_v_mesh}">
+          <xacro:visual_box size="${side} ${side} ${length}"
+                            shape_origin="${body_origin}"
+                            color="${v_color}"/>
+        </xacro:unless>
+      </xacro:if>
+
+      <xacro:if value="${use_collision}">
+        <xacro:if value="${use_c_mesh}">
+          <xacro:collision_mesh mesh="${collision_mesh}"
+                                scale="${mesh_scale}"
+                                mesh_origin="${body_origin}"/>
+        </xacro:if>
+
+        <xacro:unless value="${use_c_mesh}">
+          <xacro:collision_box size="${side} ${side} ${length}"
+                               shape_origin="${body_origin}"/>
+        </xacro:unless>
+      </xacro:if>
+
+      <xacro:if value="${use_inertial}">
+        <xacro:solid_box_inertia mass="${mass}"
+                                 size="${side} ${side} ${length}"
+                                 origin="${body_origin}"/>
+      </xacro:if>
+
+      <xacro:unless value="${use_inertial}">
+        <xacro:null_inertia/>
+      </xacro:unless>
+    </link>
+
+    <!-- This fixed joint attaches the lidar root link to parent_frame. -->
+    <xacro:property name="parent_root_items" value="${joint_parent_fr_root_fr.split()}"/>
+
+    <xacro:if value="${len(parent_root_items) != 6}">
+      ${xacro.fatal("livox_mid360: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
+    </xacro:if>
+
+    <joint name="${prefix}${name}_root_joint" type="fixed">
+      <parent link="${parent_frame}"/>
+      <child link="${prefix}${name}_root_link"/>
+      <origin rpy="${parent_root_items[3]} ${parent_root_items[4]} ${parent_root_items[5]}"
+              xyz="${parent_root_items[0]} ${parent_root_items[1]} ${parent_root_items[2]}"/>
+    </joint>
+
+    <!-- Definition of the data link '${prefix}${name}_link'. -->
+    <link name="${prefix}${name}_link">
+      <xacro:null_inertia/>
+    </link>
+
+    <!-- This fixed joint places the lidar data link 47 mm above the root link. -->
+    <joint name="${prefix}${name}_joint" type="fixed">
+      <parent link="${prefix}${name}_root_link"/>
+      <child link="${prefix}${name}_link"/>
+      <origin rpy="0 0 0" xyz="0 0 0.047"/>
+    </joint>
+
+    <!--
+    sim_enabled controls whether the Gazebo lidar sensor is created.
+    A non-empty sim_base_topic is required when simulation is enabled.
+    -->
+    <xacro:if value="${sim_enabled and sim_base_topic.strip() == ''}">
+      ${xacro.fatal("livox_mid360: sim_base_topic must not be empty when simulation is enabled")}
+    </xacro:if>
+
+    <xacro:if value="${sim_enabled}">
+      <xacro:if value="${use_visual and color != ''}">
+        <gazebo reference="${prefix}${name}_root_link">
+          <material>
+            <ambient>${color}</ambient>
+            <diffuse>${color}</diffuse>
+          </material>
+        </gazebo>
+      </xacro:if>
+
+      <xacro:plugin_lidar_3d_ring
+        sensor_name="${prefix}${name}_gz"
+        reference_link="${prefix}${name}_link"
+        always_on="${sim_always_on}"
+        visualize="${sim_visualize}"
+        update_rate="${sim_update_rate}"
+        hor_fov_deg="${sim_hor_fov_deg}"
+        hor_res_deg="${sim_hor_res_deg}"
+        ver_fov_deg="${sim_ver_fov_deg}"
+        ver_res_deg="${sim_ver_res_deg}"
+        dist_span="${sim_dist_span}"
+        dist_res="${sim_dist_res}"
+        gaussian_noise="${sim_gaussian_noise}"
+        namespace="${namespace}"
+        base_topic="${sim_base_topic}"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>

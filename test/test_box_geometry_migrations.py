@@ -2,8 +2,6 @@ from pathlib import Path
 import shutil
 import subprocess
 
-import pytest
-
 from geometry_migration_helpers import assert_fatal
 from geometry_migration_helpers import expanded_root
 from geometry_migration_helpers import float_attribute
@@ -11,6 +9,7 @@ from geometry_migration_helpers import geometry
 from geometry_migration_helpers import PACKAGE_ROOT
 from geometry_migration_helpers import run_macro
 from geometry_migration_helpers import source_test_env
+import pytest
 
 LIDAR_SIMULATION_ARGUMENTS = {
     'sim_enabled': 'False',
@@ -25,6 +24,11 @@ REALSENSE_ARGUMENTS = {
 }
 HOKUYO_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
 LEUZE_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
+LIVOX_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {
+    'joint_parent_fr_root_fr': '0 0 0 0 0 0',
+    'sim_ver_fov_deg': '-7 52',
+    'sim_ver_res_deg': '1.0',
+}
 SICK_ARGUMENTS = LIDAR_SIMULATION_ARGUMENTS | {'joint_parent_fr_root_fr': '0 0 0 0 0 0'}
 
 BOX_COMPONENTS = [
@@ -63,6 +67,18 @@ BOX_COMPONENTS = [
         'robotics_description/meshes/sensors/lidars/leuze_rsl400/mesh.stl',
         'robotics_description/meshes/sensors/lidars/leuze_rsl400/mesh_low_res.stl',
         id='leuze-rsl400',
+    ),
+    pytest.param(
+        'urdf/sensors/lidars/livox_mid360_macro.xacro',
+        'livox_mid360',
+        'component_root_link',
+        LIVOX_ARGUMENTS,
+        (0.065, 0.065, 0.060),
+        (0.0, 0.0, 0.030),
+        0.265,
+        'robotics_description/meshes/sensors/lidars/livox_mid360/livox_mid360.obj',
+        'robotics_description/meshes/sensors/lidars/livox_mid360/livox_mid360.stl',
+        id='livox-mid360',
     ),
     pytest.param(
         'urdf/sensors/lidars/sick_s300_macro.xacro',
@@ -227,6 +243,13 @@ def test_box_components_preserve_mesh_resolution_and_inertia(
             LEUZE_ARGUMENTS,
             "leuze_rsl400: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'",
             id='leuze-rsl400',
+        ),
+        pytest.param(
+            'urdf/sensors/lidars/livox_mid360_macro.xacro',
+            'livox_mid360',
+            LIVOX_ARGUMENTS,
+            "livox_mid360: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'",
+            id='livox-mid360',
         ),
         pytest.param(
             'urdf/sensors/lidars/sick_s300_macro.xacro',
