@@ -23,17 +23,9 @@ S means string
                        parent
                        joint_parent_fr_basket_fr:='0 0 0 0 0 0'
                        color:=''">
-    <xacro:property name="joint_parent_fr_basket_fr_items"
-                    value="${joint_parent_fr_basket_fr.split()}"/>
-
-    <xacro:if value="${len(joint_parent_fr_basket_fr_items) != 6}">
-      ${xacro.fatal("basket_chassis_macro: joint_parent_fr_basket_fr must be 'x y z roll pitch yaw'")}
-    </xacro:if>
-
     <joint name="${prefix}basket_chassis_joint" type="fixed">
       <axis xyz="0 1 0"/>
-      <origin xyz="${joint_parent_fr_basket_fr_items[0]} ${joint_parent_fr_basket_fr_items[1]} ${joint_parent_fr_basket_fr_items[2]}"
-              rpy="${joint_parent_fr_basket_fr_items[3]} ${joint_parent_fr_basket_fr_items[4]} ${joint_parent_fr_basket_fr_items[5]}"/>
+      <xacro:origin_element origin="${joint_parent_fr_basket_fr}"/>
       <parent link="${parent}"/>
       <child link="${prefix}basket_chassis_link"/>
     </joint>
@@ -73,17 +65,9 @@ S means string
                        parent
                        joint_parent_fr_container_fr:='-0.068 0 0.013 0 0 0'
                        color:=''">
-    <xacro:property name="joint_parent_fr_container_fr_items"
-                    value="${joint_parent_fr_container_fr.split()}"/>
-
-    <xacro:if value="${len(joint_parent_fr_container_fr_items) != 6}">
-      ${xacro.fatal("basket_container_macro: joint_parent_fr_container_fr must be 'x y z roll pitch yaw'")}
-    </xacro:if>
-
     <joint name="${prefix}basket_container_joint" type="fixed">
       <axis xyz="0 1 0"/>
-      <origin xyz="${joint_parent_fr_container_fr_items[0]} ${joint_parent_fr_container_fr_items[1]} ${joint_parent_fr_container_fr_items[2]}"
-              rpy="${joint_parent_fr_container_fr_items[3]} ${joint_parent_fr_container_fr_items[4]} ${joint_parent_fr_container_fr_items[5]}"/>
+      <xacro:origin_element origin="${joint_parent_fr_container_fr}"/>
       <parent link="${parent}"/>
       <child link="${prefix}basket_container_link"/>
     </joint>
