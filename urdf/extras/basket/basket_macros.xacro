@@ -94,8 +94,8 @@ S means string
   </xacro:macro>
 
   <!--
-  Macro for the complete legacy basket assembly.
-  The container offset keeps the old RB-VOGUI value until the container STL frame is normalized.
+  Macro for the complete basket assembly.
+  The container offset stays explicit until the container STL frame is normalized.
   -->
   <xacro:macro name="basket_full_macro"
                params="prefix
