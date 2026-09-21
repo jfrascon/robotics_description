@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<robot name="test_fork_mockup" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/extras/forks/fork_mockup/fork_mockup_macro.xacro"/>
+
+  <link name="base_link"/>
+
+  <xacro:fork_mockup prefix="test_"
+                     parent="base_link"
+                     limits="-0.005 0.2 0.2 20000.0"
+                     dynamics="10.0 1.0"
+                     joint_parent_fr_fork_mockup_fr="0 0 0 0 0 0"/>
+</robot>

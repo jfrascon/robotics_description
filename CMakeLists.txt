@@ -42,7 +42,7 @@ if(BUILD_TESTING)
   ament_flake8(CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ament_flake8.ini")
 
   ament_add_pytest_test(all_imus_macros_test test/test_all_imus_macros.py)
-  ament_add_pytest_test(basket_test test/test_basket.py)
+  ament_add_pytest_test(fork_mockup_test test/test_fork_mockup.py)
   ament_add_pytest_test(fork_simple_legacy_test test/test_fork_simple_legacy.py)
   ament_add_pytest_test(imu_box_test test/test_imu_box.py)
   ament_add_pytest_test(set_props_plugin_imu_test test/test_set_props_plugin_imu.py)

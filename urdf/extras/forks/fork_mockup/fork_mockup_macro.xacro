@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<!--
+Convention for parameter types:
+S means string
+-->
+<robot name="fork_mockup_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
+
+  <xacro:property name="fork_mockup_visual_mesh"
+                  value="robotics_description/meshes/extras/forks/fork_mockup/fork_mockup.obj"/>
+  <xacro:property name="fork_mockup_collision_mesh"
+                  value="robotics_description/meshes/extras/forks/fork_mockup/fork_mockup.stl"/>
+
+  <!--
+  Macro for the fork mockup.
+  joint_parent_fr_fork_mockup_fr (S): Fork mockup pose relative to parent.
+      joint_parent_fr_fork_mockup_fr (S) = 'x y z roll pitch yaw'
+  limits (S): Joint limits.
+      limits (S) = 'lower upper velocity effort'
+  dynamics (S): Joint dynamics parameters.
+      dynamics (S) = 'damping friction'
+  -->
+  <xacro:macro name="fork_mockup"
+               params="prefix
+                       parent
+                       limits
+                       dynamics
+                       joint_parent_fr_fork_mockup_fr:='0 0 0 0 0 0'">
+    <xacro:property name="limits_seq" value="${str(limits).split()}"/>
+    <xacro:property name="dynamics_seq" value="${str(dynamics).split()}"/>
+
+    <xacro:if value="${len(limits_seq) != 4}">
+      ${xacro.fatal("fork_mockup: limits must contain exactly 4 values: lower upper velocity effort")}
+    </xacro:if>
+
+    <xacro:if value="${len(dynamics_seq) != 2}">
+      ${xacro.fatal("fork_mockup: dynamics must contain exactly 2 values: damping friction")}
+    </xacro:if>
+
+    <xacro:property name="lower_limit_value" value="${float(limits_seq[0])}"/>
+    <xacro:property name="upper_limit_value" value="${float(limits_seq[1])}"/>
+    <xacro:property name="damping_value"     value="${float(dynamics_seq[0])}"/>
+    <xacro:property name="friction_value"    value="${float(dynamics_seq[1])}"/>
+
+    <xacro:if value="${lower_limit_value > 0.0}">
+      ${xacro.fatal("fork_mockup: limits lower value must be &lt;= 0")}
+    </xacro:if>
+
+    <xacro:if value="${upper_limit_value &lt; 0.0}">
+      ${xacro.fatal("fork_mockup: limits upper value must be &gt;= 0")}
+    </xacro:if>
+
+    <xacro:if value="${damping_value &lt; 0.0}">
+      ${xacro.fatal("fork_mockup: dynamics damping value must be &gt;= 0")}
+    </xacro:if>
+
+    <xacro:if value="${friction_value &lt; 0.0}">
+      ${xacro.fatal("fork_mockup: dynamics friction value must be &gt;= 0")}
+    </xacro:if>
+
+    <joint name="${prefix}fork_root_joint" type="prismatic">
+      <xacro:origin_element origin="${joint_parent_fr_fork_mockup_fr}"/>
+      <parent link="${parent}"/>
+      <child link="${prefix}fork_root_link"/>
+      <axis xyz="0 0 1"/>
+      <dynamics damping="${dynamics_seq[0]}"
+                friction="${dynamics_seq[1]}"/>
+      <limit lower="${limits_seq[0]}"
+             upper="${limits_seq[1]}"
+             effort="${limits_seq[3]}"
+             velocity="${limits_seq[2]}"/>
+    </joint>
+
+    <link name="${prefix}fork_root_link">
+      <xacro:visual_mesh mesh="${fork_mockup_visual_mesh}"/>
+      <xacro:collision_mesh mesh="${fork_mockup_collision_mesh}"/>
+      <xacro:null_inertia/>
+    </link>
+  </xacro:macro>
+</robot>
