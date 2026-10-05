@@ -307,6 +307,23 @@ def test_box_lidars_reject_empty_topic_when_simulation_is_enabled(
     assert_fatal(result, f'{macro_name}: sim_topic must not be empty when simulation is enabled')
 
 
+def test_livox_mid360_default_collision_uses_mesh(tmp_path: Path) -> None:
+    """Use the maintained Livox collision mesh when geometry selectors retain their defaults."""
+    root = expanded_root(
+        run_macro(
+            tmp_path,
+            macro_file='urdf/sensors/lidars/livox_mid360_macro.xacro',
+            macro_name='livox_mid360',
+            arguments=LIVOX_ARGUMENTS,
+        )
+    )
+    collision = geometry(root, 'component_root_link', 'collision')
+    assert collision is not None and collision.tag == 'mesh'
+    assert collision.get('filename') == (
+        'package://robotics_description/meshes/sensors/lidars/livox_mid360/livox_mid360.stl'
+    )
+
+
 def _fork_arguments(**overrides: str) -> dict[str, str]:
     return {'joint_parent_fr_root_fr': '0 0 0 0 0 0', 'limits': '-0.1 0.1 1.0 100.0'} | overrides
 

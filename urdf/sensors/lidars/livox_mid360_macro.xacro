@@ -129,7 +129,7 @@ namespace.
                        use_v_mesh:=False
                        v_mesh_use_low_res:=True
                        color:=''
-                       use_c_mesh:=False
+                       use_c_mesh:=True
                        c_mesh_use_low_res:=True
                        joint_parent_fr_root_fr
                        sim_enabled:=False
@@ -186,10 +186,12 @@ namespace.
 
     <!--
     The visual and collision meshes represent a box whose coordinate frame is at its geometric
-    center. A URDF box primitive is also centered on its coordinate frame and its dimensions
-    follow X, Y and Z. Therefore, visual and collision geometry can use the same body_origin
-    whether they select a mesh or the box primitive. The body frame is located at the center of
-    the bottom face of the box.
+    center.
+    A URDF box primitive is also centered on its coordinate frame and its dimensions follow X, Y
+    and Z.
+    Therefore, visual and collision geometry can use the same body_origin whether they select a mesh
+    or the box primitive.
+    The body frame is located at the center of the bottom face of the box.
     -->
     <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * length} 0.0 0.0 0.0"/>
 
