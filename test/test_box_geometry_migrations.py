@@ -82,16 +82,18 @@ BOX_COMPONENTS = [
         id='livox-mid360',
     ),
     pytest.param(
-        'urdf/sensors/lidars/sick_s300_macro.xacro',
-        'sick_s300',
+        'urdf/sensors/lidars/sick_mics3_cbaz40pz1_macro.xacro',
+        'sick_mics3_cbaz40pz1',
         'component_root_link',
         SICK_ARGUMENTS,
-        (0.106, 0.102, 0.152),
-        (0.0, 0.0, 0.076),
-        1.2,
-        'robotics_description/meshes/sensors/lidars/sick_s300/mesh.stl',
-        'robotics_description/meshes/sensors/lidars/sick_s300/mesh_low_res.stl',
-        id='sick-s300',
+        (0.1111, 0.1111, 0.1507),
+        (0.0, 0.0, 0.07535),
+        1.45,
+        'robotics_description/meshes/sensors/lidars/sick_microscan3_mics3_cbaz40pz1/'
+        'sick_microscan3_mics3_cbaz40pz1.obj',
+        'robotics_description/meshes/sensors/lidars/sick_microscan3_mics3_cbaz40pz1/'
+        'sick_microscan3_mics3_cbaz40pz1.stl',
+        id='sick-mics3-cbaz40pz1',
     ),
 ]
 
@@ -137,7 +139,7 @@ def test_box_components_select_visual_and_collision_independently(
 ) -> None:
     del body_mass, detailed_mesh, low_resolution_mesh
     geometry_arguments = {'use_v_mesh': use_v_mesh, 'use_c_mesh': use_c_mesh}
-    if macro_name != 'realsense_d435_links_joints':
+    if macro_name not in ('realsense_d435_links_joints', 'sick_mics3_cbaz40pz1'):
         geometry_arguments |= {'v_mesh_use_low_res': 'True', 'c_mesh_use_low_res': 'True'}
 
     root = expanded_root(
@@ -197,7 +199,7 @@ def test_box_components_preserve_mesh_resolution_and_inertia(
 ) -> None:
     del body_size
     geometry_arguments = {'use_v_mesh': 'True', 'use_c_mesh': 'True'}
-    if macro_name != 'realsense_d435_links_joints':
+    if macro_name not in ('realsense_d435_links_joints', 'sick_mics3_cbaz40pz1'):
         geometry_arguments |= {'v_mesh_use_low_res': 'False', 'c_mesh_use_low_res': 'True'}
 
     root = expanded_root(
@@ -253,11 +255,11 @@ def test_box_components_preserve_mesh_resolution_and_inertia(
             id='livox-mid360',
         ),
         pytest.param(
-            'urdf/sensors/lidars/sick_s300_macro.xacro',
-            'sick_s300',
+            'urdf/sensors/lidars/sick_mics3_cbaz40pz1_macro.xacro',
+            'sick_mics3_cbaz40pz1',
             SICK_ARGUMENTS,
-            "sick_s300: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'",
-            id='sick-s300',
+            "sick_mics3_cbaz40pz1: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'",
+            id='sick-mics3-cbaz40pz1',
         ),
     ],
 )
@@ -285,7 +287,9 @@ def test_box_components_reject_invalid_parent_transform(
     [
         pytest.param('urdf/sensors/lidars/hokuyo_utm30lx_macro.xacro', 'hokuyo_utm30lx'),
         pytest.param('urdf/sensors/lidars/leuze_rsl400_macro.xacro', 'leuze_rsl400'),
-        pytest.param('urdf/sensors/lidars/sick_s300_macro.xacro', 'sick_s300'),
+        pytest.param(
+            'urdf/sensors/lidars/sick_mics3_cbaz40pz1_macro.xacro', 'sick_mics3_cbaz40pz1'
+        ),
     ],
 )
 @pytest.mark.parametrize('topic', ['', '   '])

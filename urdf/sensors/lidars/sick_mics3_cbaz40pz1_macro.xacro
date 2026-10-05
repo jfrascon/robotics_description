@@ -28,20 +28,20 @@ use_inertial (B):
 if true, include inertial element.
 
 use_v_mesh (B):
-if true, use a mesh for the visual element. If false, use a primitive box.
+if true, use the visual mesh. If false, use a primitive box.
 
-    color (S):
-    String of the form 'r (R) g (R) b (R) a (R)'.
-    Used only if use_visual is true.
+color (S):
+String of the form 'r (R) g (R) b (R) a (R)'.
+Used only if use_visual is true.
 If color is not empty, the provided color is applied to the object used in the visual element.
 If color is empty, the mesh color is preserved when available.
 
 use_c_mesh (B):
-if true, use a mesh for the collision element. If false, use a primitive box.
+if true, use the collision mesh. If false, use a primitive box.
 
-    joint_parent_fr_root_fr (S):
-    Pose of the lidar's root frame w.r.t the parent's frame.
-    joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+joint_parent_fr_root_fr (S):
+Pose of the lidar's root frame w.r.t the parent's frame.
+joint_parent_fr_root_fr (S) = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
 
 sim_*:
 parameters for the GZ 2D lidar plugin.
@@ -76,12 +76,12 @@ This field must not be empty when sim_enabled is true.
 If it starts with '/', it is treated as absolute. Otherwise, it is resolved inside the robot
 namespace.
 -->
-<robot name="sick_s300_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+<robot name="sick_mics3_cbaz40pz1_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
   <xacro:include filename="$(find robotics_description)/urdf/sensors/lidars/generic_macros/plugin_lidar_2d_macro.xacro"/>
 
   <xacro:macro
-    name="sick_s300"
+    name="sick_mics3_cbaz40pz1"
     params="name
             prefix:=''
             parent_frame
@@ -89,10 +89,8 @@ namespace.
             use_collision:=True
             use_inertial:=True
             use_v_mesh:=False
-            v_mesh_use_low_res:=True
             color:=''
-            use_c_mesh:=False
-            c_mesh_use_low_res:=True
+            use_c_mesh:=True
             joint_parent_fr_root_fr
             sim_enabled:=True
             sim_always_on:=True
@@ -106,39 +104,35 @@ namespace.
             namespace:=''
             sim_topic:=''">
 
-    <xacro:property name="mass"   value="1.2"/>
-    <xacro:property name="size_x" value="0.106"/>
-    <xacro:property name="size_y" value="0.102"/>
-    <xacro:property name="size_z" value="0.152"/>
+    <xacro:property name="mass"   value="1.45"/>
+    <xacro:property name="size_x" value="0.1111"/>
+    <xacro:property name="size_y" value="0.1111"/>
+    <xacro:property name="size_z" value="0.1507"/>
 
     <!--
-    The mesh represents a box.
-    The frame of the mesh is located at its geometric center (See MeshLab).
-    Scale is 1 1 1.
-    The standard mesh does not have color information, so a color is encouraged.
-    To access the mesh just use <package>/<path_to_mesh_within_package>.
+    The visual mesh represents the lidar body, and its frame is located at the geometric center.
+    Scale is 1 1 1. To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
-    <xacro:property name="mesh"
-                    value="robotics_description/meshes/sensors/lidars/sick_s300/mesh.stl"/>
+    <xacro:property name="visual_mesh"
+                    value="robotics_description/meshes/sensors/lidars/sick_microscan3_mics3_cbaz40pz1/sick_microscan3_mics3_cbaz40pz1.obj"/>
 
     <!--
-    The mesh represents a box and its frame is located at its geometric center (see MeshLab).
-    Scale is 1 1 1.
-    The standard mesh does not have color information, so passing a visual color is encouraged.
+    The collision mesh represents the lidar body, and its frame is located at the geometric center.
+    Scale is 1 1 1. To access the mesh just use <package>/<path_to_mesh_within_package>.
     -->
-    <xacro:property name="low_res_mesh"
-                    value="robotics_description/meshes/sensors/lidars/sick_s300/mesh_low_res.stl"/>
+    <xacro:property name="collision_mesh"
+                    value="robotics_description/meshes/sensors/lidars/sick_microscan3_mics3_cbaz40pz1/sick_microscan3_mics3_cbaz40pz1.stl"/>
 
-    <!-- Scale for both meshes, standard mesh and low resolution mesh. -->
+    <!-- Both meshes use scale 1 1 1. -->
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
 
     <!--
-    The detailed and low-resolution meshes represent the rectangular lidar body.
-    The coordinate frame of each mesh is at its geometric center, as verified in MeshLab.
+    The visual and collision meshes represent a box whose coordinate frame is at its geometric
+    center.
     A URDF box primitive is also centered on its coordinate frame and its dimensions follow X, Y
     and Z.
-    Therefore, both meshes and the box primitive have the same center and axis orientation.
-    Visual and collision geometry can use the same body_origin whether they select a mesh or box.
+    Therefore, visual and collision geometry can use the same body_origin whether they select a mesh
+    or the box primitive.
     The body frame is located at the center of the bottom face of the box.
     -->
     <xacro:property name="body_origin" value="0.0 0.0 ${0.5 * size_z} 0 0 0"/>
@@ -148,7 +142,7 @@ namespace.
         <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
 
         <xacro:if value="${use_v_mesh}">
-          <xacro:visual_mesh mesh="${low_res_mesh if v_mesh_use_low_res else mesh}"
+          <xacro:visual_mesh mesh="${visual_mesh}"
                              scale="${mesh_scale}"
                              mesh_origin="${body_origin}"
                              color="${v_color}"/>
@@ -163,7 +157,7 @@ namespace.
 
       <xacro:if value="${use_collision}">
         <xacro:if value="${use_c_mesh}">
-          <xacro:collision_mesh mesh="${low_res_mesh if c_mesh_use_low_res else mesh}"
+          <xacro:collision_mesh mesh="${collision_mesh}"
                                 scale="${mesh_scale}"
                                 mesh_origin="${body_origin}"/>
         </xacro:if>
@@ -192,7 +186,7 @@ namespace.
     <xacro:property name="parent_root_items" value="${joint_parent_fr_root_fr.split()}"/>
 
     <xacro:if value="${len(parent_root_items) != 6}">
-      ${xacro.fatal("sick_s300: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
+      ${xacro.fatal("sick_mics3_cbaz40pz1: joint_parent_fr_root_fr must be 'x y z roll pitch yaw'")}
     </xacro:if>
 
     <joint name="${prefix}${name}_root_joint" type="fixed">
@@ -216,7 +210,7 @@ namespace.
     <joint name="${prefix}${name}_joint" type="fixed">
       <parent link="${prefix}${name}_root_link"/>
       <child link="${prefix}${name}_link"/>
-      <origin rpy="0 0 0" xyz="0 0 0.116"/>
+      <origin rpy="0 0 0" xyz="0 0 0.1106"/>
     </joint>
 
     <!--
@@ -224,7 +218,7 @@ namespace.
     A non-empty sim_topic is required when simulation is enabled.
     -->
     <xacro:if value="${sim_enabled and sim_topic.strip() == ''}">
-      ${xacro.fatal("sick_s300: sim_topic must not be empty when simulation is enabled")}
+      ${xacro.fatal("sick_mics3_cbaz40pz1: sim_topic must not be empty when simulation is enabled")}
     </xacro:if>
 
     <xacro:if value="${sim_enabled}">
