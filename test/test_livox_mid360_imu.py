@@ -5,10 +5,7 @@ import xml.etree.ElementTree as ET
 
 from test_imu_box import _source_test_env
 
-
-LIVOX_MID360_MACRO = (
-    '$(find robotics_description)/urdf/sensors/lidars/livox_mid360_macro.xacro'
-)
+LIVOX_MID360_MACRO = '$(find robotics_description)/urdf/sensors/lidars/livox_mid360_macro.xacro'
 
 
 def test_livox_mid360_uses_the_specified_imu_frame_and_plugin(tmp_path: Path) -> None:
@@ -57,10 +54,7 @@ def test_livox_mid360_uses_the_specified_imu_frame_and_plugin(tmp_path: Path) ->
     assert imu_joint is not None
     assert imu_joint.find('parent').attrib['link'] == 'robot_lidar_link'
     assert imu_joint.find('child').attrib['link'] == 'robot_lidar_imu_link'
-    assert imu_joint.find('origin').attrib == {
-        'rpy': '0 0 0',
-        'xyz': '0.011 0.02329 -0.04412',
-    }
+    assert imu_joint.find('origin').attrib == {'rpy': '0 0 0', 'xyz': '0.011 0.02329 -0.04412'}
 
     sensor = root.find("gazebo[@reference='robot_lidar_imu_link']/sensor[@type='imu']")
     assert sensor is not None
