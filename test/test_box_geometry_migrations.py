@@ -41,8 +41,8 @@ BOX_COMPONENTS = [
         (0.02505, 0.09, 0.025),
         (-0.008225, -0.0175, 0.0),
         0.072,
-        'robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl',
-        'robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl',
+        'robotics_description/meshes/sensors/cameras/realsense_d435/realsense_d435.obj',
+        'robotics_description/meshes/sensors/cameras/realsense_d435/realsense_d435.stl',
         id='realsense-d435',
     ),
     pytest.param(
@@ -161,8 +161,13 @@ def test_box_components_select_visual_and_collision_independently(
     collision_origin = root.find(f"./link[@name='{body_link}']/collision/origin")
     assert visual_origin is not None
     assert collision_origin is not None
-    assert float_attribute(visual_origin, 'xyz') == pytest.approx(body_origin)
-    assert float_attribute(collision_origin, 'xyz') == pytest.approx(body_origin)
+    mesh_origin = (0.0043, -0.0175, 0.0) if macro_name == 'realsense_d435_links_joints' else body_origin
+    assert float_attribute(visual_origin, 'xyz') == pytest.approx(
+        mesh_origin if visual.tag == 'mesh' else body_origin
+    )
+    assert float_attribute(collision_origin, 'xyz') == pytest.approx(
+        mesh_origin if collision.tag == 'mesh' else body_origin
+    )
 
     for shape in [visual, collision]:
         if shape.tag == 'box':

@@ -1,0 +1,41 @@
+# Separate editable material for each D435 object
+newmtl body
+Kd 0.69 0.69 0.65
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 32
+d 1
+illum 2
+
+newmtl lens_1
+Kd 0.0 0.0 0.0
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 32
+d 1
+illum 2
+
+newmtl lens_2
+Kd 0.0 0.0 0.0
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 32
+d 1
+illum 2
+
+newmtl lens_3
+Kd 0.0 0.0 0.0
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 32
+d 1
+illum 2
+
+newmtl lens_4
+Kd 0.0 0.0 0.0
+Ka 0 0 0
+Ks 0.1 0.1 0.1
+Ns 32
+d 1
+illum 2
+

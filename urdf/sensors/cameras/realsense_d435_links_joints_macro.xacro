@@ -1,66 +1,77 @@
 <?xml version="1.0"?>
 <!--
-RealSense D435 links-and-joints macro.
+Add the physical model and coordinate frames of one RealSense D435 to a robot.
 
-This file defines the physical URDF structure of the RealSense D435:
-- the body link
-- the attachment joint to the parent frame
-- and, optionally, the nominal depth, color, infra1, and infra2 frames
+Include this file and call `realsense_d435_links_joints` after creating the parent link.
+For example, this adds a camera to an existing `base_link` without nominal sensor frames:
 
-It does not define Gazebo sensor plugins.
-Those are added by higher-level macros such as:
-- `realsense_d435_split_macro.xacro`
-- `realsense_d435_rgbd_macro.xacro`
+<xacro:realsense_d435_links_joints name="camera" parent_frame="base_link"
+                                  use_sensor_frames_and_joints="False"/>
 
-Base file used to create this file:
+The macro builds this fixed frame chain:
+parent_frame -> <prefix><name>_bottom_screw_frame -> <prefix><name>_link
+
+The bottom-screw frame represents the physical tripod mount. The body link stores the visual,
+collision and inertial elements, but its frame is at the nominal depth reference, not at the
+center of the camera case. Optional depth, infrared and color frames are children of that link.
+A frame is a coordinate system; a joint specifies the position and orientation of its child
+frame relative to its parent. All joints created here are fixed, so the camera has no moving parts.
+
+This file does not create Gazebo camera sensors. For simulated image streams, use
+`realsense_d435_split_macro.xacro` or `realsense_d435_rgbd_macro.xacro`. Those wrappers reuse
+this physical model and add the sensor definitions.
+
+Reading order: define dimensions and offsets, place the tripod-mount frame, choose body
+geometries and inertia, place the body frame, and optionally add the sensor frames.
+
+Parameter notation: B = boolean, S = string, R = real number within a value list.
+Distances are in meters, angles in radians, and mass in kilograms. Lists use spaces as separators.
+In the body and nominal sensor frames, X points forward through the camera front, Y points left,
+and Z points up. Optical frames use the image-axis convention described below.
+
+Based on the reference model:
 https://github.com/IntelRealSense/realsense-ros/blob/ros2-master/realsense2_description/urdf/_d435.urdf.xacro
 
-Convention for parameter types:
-R means real number
-I means integer
-S means string
-B means boolean
+name (S, required): camera instance name used in link and joint names.
+prefix (S, default ''): text prepended to those names, for example a robot-specific prefix.
+parent_frame (S, required): existing robot link to which the tripod-mount frame is attached.
 
-name (S): name of the realsense, used to name the links and joints.
+use_visual (B, default True): include the geometry shown by the visualizer.
+use_collision (B, default True): include the geometry used for collision checks.
+Disabling either element does not remove the camera links or joints.
 
-prefix (S): optional prefix for the names of the links and joints.
+use_v_mesh (B, default True): select the visual OBJ when True, or a box when False.
+This selector is only used when use_visual is True.
+use_c_mesh (B, default False): select the collision STL when True, or a box when False.
+This selector is only used when use_collision is True.
+The two selectors are independent: an OBJ visual with box collision is the default combination.
 
-parent_frame (S): name of the parent frame to which the camera root frame is attached.
+color (S, default ''): optional 'r g b a' values for red, green, blue and opacity.
+It is only used when use_visual is True. A nonempty value adds one URDF material to the visual
+geometry, overriding the OBJ materials. Leave it empty to preserve the OBJ and adjacent MTL colors.
+For a box, an empty value adds no material here; the visualizer chooses its default appearance.
 
-use_visual (B): if true, include visual element.
+use_inertial (B, default True): approximate the camera as a uniform solid box of mass 0.072 kg.
+False selects the shared null_inertia placeholder instead of removing the inertial element.
+That placeholder has a mass of 0.01 kg; it is not the camera's physical mass.
 
-use_collision (B): if true, include collision element.
+use_sensor_frames_and_joints (B, required): add depth, infra1, infra2 and color frames when True.
+Each also gets an optical-frame child. Their nominal extrinsics are the model's approximate
+relative sensor positions and orientations, not calibration measurements for a specific device.
+Use False when a camera driver or another publisher supplies those same transforms.
+The tripod-mount frame, body link and their attachment joints are created in either case.
 
-use_inertial (B): if true, include inertial element.
-
-use_v_mesh (B): if true, use the camera mesh for the visual element. If false, use a box shape.
-
-color (S): String of the form 'r (R) g (R) b (R) a (R)'. Used only if `use_visual` is true.
-           If `color` is not empty, the provided color is applied to the object used in the visual
-           element, either a mesh or a box shape.
-           If `color` is empty:
-               If a mesh is used and has its own color, the mesh color is displayed.
-               If a mesh is used with no color data associated, or a box shape is used, a default
-               whitish color is used.
-
-use_c_mesh (B): if true, use the camera mesh for the collision element. If false, use a box shape.
-
-use_sensor_frames_and_joints (B): if true, create the depth, color, infra1 and infra2 frames.
-The frames use the nominal extrinsics of the RealSense model.
-If false, this macro only creates the mechanical body link and its attachment joint. This is useful
-when calibrated extrinsics are expected to be published elsewhere, for example by a driver or TF
-publisher.
-
-joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the parent frame.
-    joint_parent_fr_root_fr = 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'
-
+joint_parent_fr_root_fr (S, default '0 0 0 0 0 0'): tripod-mount pose relative to parent_frame.
+Supply exactly six values: 'x (R) y (R) z (R) roll (R) pitch (R) yaw (R)'.
+XYZ gives the mount position in the parent frame. Roll, pitch and yaw orient the camera about
+the parent's fixed X, Y and Z axes. This pose places the whole camera, including optional frames.
 -->
 
 <robot name="realsense_d435_links_joints_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:include filename="$(find robotics_description)/urdf/common/all_commons.xacro"/>
 
   <xacro:macro name="realsense_d435_links_joints"
-               params="name
+    params="name
                        prefix:=''
                        parent_frame
                        use_visual:=True
@@ -72,60 +83,87 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
                        use_sensor_frames_and_joints
                        joint_parent_fr_root_fr:='0.0 0.0 0.0 0.0 0.0 0.0'">
     <!--
-    These offsets are approximate.
-    If a camera node or driver publishes calibrated TF values, those calibrated extrinsics should be
-    preferred over these nominal ones.
+    Nominal sensor positions along the body's Y axis, relative to the depth frame.
+    infra1 shares the depth position, infra2 is 50 mm toward negative Y, and color is 15 mm
+    toward positive Y. These approximate values are used only for the optional sensor frames.
+    Prefer a device driver's calibrated transforms when they are available.
     -->
     <xacro:property name="cam_depth_to_infra1_offset" value="0.0"/>
     <xacro:property name="cam_depth_to_infra2_offset" value="-0.050"/>
     <xacro:property name="cam_depth_to_color_offset"  value="0.015"/>
 
     <!--
-    These dimensions model the aluminum outer case of the D435 camera.
-    The camera attachment joint is represented at the physical tripod-mount location of the camera.
+    Outer case dimensions: X = depth, Y = width, Z = height. These values define the fallback
+    boxes and the solid-box inertia approximation. The prepared OBJ and STL have the same
+    outer dimensions, so selecting a box preserves the camera's overall size.
     -->
-    <xacro:property name="body_size_x"                  value="0.02505"/>
-    <xacro:property name="body_size_y"                  value="0.090"/>
-    <xacro:property name="body_size_z"                  value="0.025"/>
-    <xacro:property name="body_size"
-                    value="${body_size_x} ${body_size_y} ${body_size_z}"/>
-    <xacro:property name="body_mass"                    value="0.072"/>
-    <!-- glass cover is 0.1 mm inwards from front aluminium plate -->
+    <xacro:property name="body_size_x" value="0.02505"/>
+    <xacro:property name="body_size_y" value="0.090"/>
+    <xacro:property name="body_size_z" value="0.025"/>
+    <xacro:property name="body_size"   value="${body_size_x} ${body_size_y} ${body_size_z}"/>
+    <xacro:property name="body_mass"   value="0.072"/>
+    <!-- The front glass is recessed 0.1 mm behind the front aluminum plane. -->
     <xacro:property name="glass_to_front"               value="0.1e-3"/>
-    <!-- see datasheet Revision 007, Fig. 4-4 page 65 -->
+    <!-- Depth-reference distance to the glass: datasheet Revision 007, Fig. 4-4, page 65. -->
     <xacro:property name="zero_depth_to_glass"          value="4.2e-3"/>
-    <!-- convenience precomputation to avoid clutter-->
+    <!--
+    In this model, the front aluminum plane is 14.9 mm ahead of the tripod mount along X.
+    Subtract the depth-to-glass and glass-to-front distances to locate the body frame, whose
+    X origin is the nominal depth reference. mesh_x_offset is this joint translation; it is
+    different from mesh_origin_x, which places geometry inside the body link.
+    -->
     <xacro:property name="cam_mount_from_center_offset" value="0.0149"/>
     <xacro:property name="mesh_x_offset"
                     value="${cam_mount_from_center_offset - zero_depth_to_glass - glass_to_front}"/>
 
-    <!-- This offset is expressed relative to the physical D435 tripod mount. -->
+    <!--
+    Offsets inherited from the reference model, expressed relative to the tripod-mount frame.
+    The body joint uses cam_depth_py and cam_depth_pz for Y and Z, but mesh_x_offset for X.
+    cam_depth_px retains the reference value; it is not used in that joint's X translation.
+    -->
     <xacro:property name="cam_depth_px" value="${cam_mount_from_center_offset}"/>
     <xacro:property name="cam_depth_py" value="0.0175"/>
     <xacro:property name="cam_depth_pz" value="${body_size_z * 0.5}"/>
 
     <!--
-    The mesh represents the rectangular body of the RealSense D435.
-    Its coordinate frame is at the geometric center of the mesh, as verified in MeshLab.
-    A URDF box primitive is also centered on its coordinate frame and its dimensions follow X, Y
-    and Z.
-    Therefore, the mesh and box primitive have the same center and axis orientation.
-    Visual and collision geometry can use the same body_origin whether they select the mesh or box.
-    The mesh scale is `1 1 1`.
-    The mesh does not include color information, so providing `color` is recommended.
-    Mesh paths follow the usual `<package>/<path_within_package>` convention.
+    The OBJ supplies visual geometry and refers to the adjacent MTL file for its materials.
+    The STL supplies collision geometry. Both were prepared in meters with the same local frame:
+    its origin is at the front-face center, X runs from -body_size_x to 0, and Y and Z are centered.
+    Keep scale at 1 1 1 and keep the MTL beside the OBJ so its material reference remains valid.
+    The shared mesh helpers add package:// to these <package>/<path_within_package> paths.
     -->
-    <xacro:property name="mesh"
-                    value="robotics_description/meshes/sensors/cameras/realsense_d435/mesh.stl"/>
+    <xacro:property name="visual_mesh"
+      value="robotics_description/meshes/sensors/cameras/realsense_d435/realsense_d435.obj"/>
+    <xacro:property name="collision_mesh"
+      value="robotics_description/meshes/sensors/cameras/realsense_d435/realsense_d435.stl"/>
     <xacro:property name="mesh_scale" value="1.0 1.0 1.0"/>
-    <xacro:property name="body_origin"
-                    value="${(-body_size_x * 0.5) + zero_depth_to_glass + glass_to_front} ${-cam_depth_py} 0 0 0 0"/>
+    <!--
+    Geometry origins are poses relative to the body link, not relative to the tripod mount.
+    mesh_origin places the prepared meshes' front-face center at (0.0043, -0.0175, 0) m.
+    A primitive box has its origin at its center, so move that origin half the depth backward:
+      box_origin_x = (-body_size_x / 2) + mesh_origin_x
+      box_origin_y = mesh_origin_y
+      box_origin_z = mesh_origin_z
+    The resulting box center is (-0.008225, -0.0175, 0) m. This aligns the box and mesh outer
+    bounds; it does not reproduce the mesh's recesses or openings.
+    Both pose strings contain 'x y z roll pitch yaw'. Their zero rotations preserve the axes.
+    -->
+    <xacro:property name="mesh_origin_x" value="${zero_depth_to_glass + glass_to_front}"/>
+    <xacro:property name="mesh_origin_y" value="${-cam_depth_py}"/>
+    <xacro:property name="mesh_origin_z" value="0"/>
+    <xacro:property name="mesh_origin"   value="${mesh_origin_x} ${mesh_origin_y} ${mesh_origin_z} 0 0 0"/>
+    <xacro:property name="box_origin_x"  value="${(-body_size_x / 2) + mesh_origin_x}"/>
+    <xacro:property name="box_origin_y"  value="${mesh_origin_y}"/>
+    <xacro:property name="box_origin_z"  value="${mesh_origin_z}"/>
+    <xacro:property name="box_origin"    value="${box_origin_x} ${box_origin_y} ${box_origin_z} 0 0 0"/>
 
-    <!-- Root frame of the camera. -->
+    <!-- The tripod mount is the attachment frame used to position the complete camera. -->
     <link name="${prefix}${name}_bottom_screw_frame"/>
 
     <!--
-    Fixed joint that attaches `${prefix}${name}_bottom_screw_frame` to `parent_frame`.
+    Read the requested mount pose before creating the parent-to-camera joint.
+    The first three values are XYZ and the last three are roll, pitch and yaw.
+    Reject a missing or extra value instead of silently building an incorrect transform.
     -->
     <xacro:property name="parent_root_items" value="${joint_parent_fr_root_fr.split()}"/>
 
@@ -135,129 +173,150 @@ joint_parent_fr_root_fr (S): pose of the camera root frame with respect to the p
 
     <joint name="${prefix}${name}_joint" type="fixed">
       <parent link="${parent_frame}"/>
-      <child link="${prefix}${name}_bottom_screw_frame" />
+      <child link="${prefix}${name}_bottom_screw_frame"/>
       <origin rpy="${parent_root_items[3]} ${parent_root_items[4]} ${parent_root_items[5]}"
-              xyz="${parent_root_items[0]} ${parent_root_items[1]} ${parent_root_items[2]}"/>
+        xyz="${parent_root_items[0]} ${parent_root_items[1]} ${parent_root_items[2]}"/>
     </joint>
 
+    <!--
+    Add the body geometry and inertia to the nominal depth-reference frame.
+    The origins inside visual, collision and inertial elements place those elements within
+    this link; they do not change the link frame or any sensor frame.
+    -->
     <link name="${prefix}${name}_link">
+      <!-- The visual is optional; its selector chooses the OBJ or the matching outer box. -->
       <xacro:if value="${use_visual}">
+        <!--
+        The material helper expects a name followed by RGBA; an empty string adds no material.
+        -->
         <xacro:property name="v_color" value="${(prefix + name + '_color ' + color) if color != '' else ''}"/>
 
         <xacro:if value="${use_v_mesh}">
-          <xacro:visual_mesh mesh="${mesh}"
-                             scale="${mesh_scale}"
-                             mesh_origin="${body_origin}"
-                             color="${v_color}"/>
+          <xacro:visual_mesh mesh="${visual_mesh}"
+            scale="${mesh_scale}"
+            mesh_origin="${mesh_origin}"
+            color="${v_color}"/>
         </xacro:if>
 
         <xacro:unless value="${use_v_mesh}">
           <xacro:visual_box size="${body_size}"
-                            shape_origin="${body_origin}"
-                            color="${v_color}"/>
+            shape_origin="${box_origin}"
+            color="${v_color}"/>
         </xacro:unless>
       </xacro:if>
 
+      <!-- Collision is selected independently of the visual and has no color setting. -->
       <xacro:if value="${use_collision}">
         <xacro:if value="${use_c_mesh}">
-          <xacro:collision_mesh mesh="${mesh}"
-                                scale="${mesh_scale}"
-                                mesh_origin="${body_origin}"/>
+          <xacro:collision_mesh mesh="${collision_mesh}"
+            scale="${mesh_scale}"
+            mesh_origin="${mesh_origin}"/>
         </xacro:if>
 
         <xacro:unless value="${use_c_mesh}">
           <xacro:collision_box size="${body_size}"
-                               shape_origin="${body_origin}"/>
+            shape_origin="${box_origin}"/>
         </xacro:unless>
       </xacro:if>
 
+      <!-- Keep the solid-box center of mass at box_origin even when the geometry uses meshes. -->
       <xacro:if value="${use_inertial}">
         <xacro:solid_box_inertia mass="${body_mass}"
-                                 size="${body_size}"
-                                 origin="${body_origin}"/>
+          size="${body_size}"
+          origin="${box_origin}"/>
       </xacro:if>
 
+      <!--
+      False keeps the standard 10 g placeholder at the link origin; it does not omit inertia.
+      -->
       <xacro:unless value="${use_inertial}">
         <xacro:null_inertia/>
       </xacro:unless>
     </link>
 
+    <!--
+    Locate the body frame relative to the tripod mount. This transform remains the same for
+    meshes and boxes: only the geometry origins inside the body link depend on that choice.
+    -->
     <joint name="${prefix}${name}_link_joint" type="fixed">
       <parent link="${prefix}${name}_bottom_screw_frame"/>
-      <child link="${prefix}${name}_link" />
+      <child link="${prefix}${name}_link"/>
       <origin rpy="0.0 0.0 0.0" xyz="${mesh_x_offset} ${cam_depth_py} ${cam_depth_pz}"/>
     </joint>
 
     <!--
-    Create the nominal camera frames only when calibrated extrinsics are not expected to be
-    published elsewhere, for example when the device is used in simulation.
+    Add the nominal sensor-frame tree when requested, for example for simulation.
+    Each sensor gets a frame with the body-axis convention and an optical-frame child whose
+    axes are X right, Y down and Z forward. The optical joint changes orientation, not position.
+    Every optical joint uses the same roll=-pi/2, pitch=0, yaw=-pi/2 rotation.
+    These frames describe sensor poses; their creation alone does not create image streams.
     -->
     <xacro:if value="${use_sensor_frames_and_joints}">
-      <!-- camera depth joints and links -->
+      <!-- The depth frame coincides with the body frame at the nominal depth reference. -->
       <link name="${prefix}${name}_depth_frame"/>
 
       <joint name="${prefix}${name}_depth_joint" type="fixed">
         <parent link="${prefix}${name}_link"/>
-        <child link="${prefix}${name}_depth_frame" />
+        <child link="${prefix}${name}_depth_frame"/>
         <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
       </joint>
 
       <link name="${prefix}${name}_depth_optical_frame"/>
 
       <joint name="${prefix}${name}_depth_optical_joint" type="fixed">
-        <parent link="${prefix}${name}_depth_frame" />
-        <child link="${prefix}${name}_depth_optical_frame" />
+        <parent link="${prefix}${name}_depth_frame"/>
+        <child link="${prefix}${name}_depth_optical_frame"/>
         <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
       </joint>
 
-      <!-- camera left IR joints and links -->
+      <!-- infra1 shares the depth-frame position and has its own optical-frame name. -->
       <link name="${prefix}${name}_infra1_frame"/>
 
       <joint name="${prefix}${name}_infra1_joint" type="fixed">
-        <parent link="${prefix}${name}_link" />
-        <child link="${prefix}${name}_infra1_frame" />
+        <parent link="${prefix}${name}_link"/>
+        <child link="${prefix}${name}_infra1_frame"/>
         <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_infra1_offset} 0.0"/>
       </joint>
 
       <link name="${prefix}${name}_infra1_optical_frame"/>
 
       <joint name="${prefix}${name}_infra1_optical_joint" type="fixed">
-        <parent link="${prefix}${name}_infra1_frame" />
-        <child link="${prefix}${name}_infra1_optical_frame" />
+        <parent link="${prefix}${name}_infra1_frame"/>
+        <child link="${prefix}${name}_infra1_optical_frame"/>
         <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
       </joint>
 
-      <!-- camera right IR joints and links -->
+      <!-- infra2 is displaced 50 mm along negative Y, forming the nominal stereo baseline. -->
       <link name="${prefix}${name}_infra2_frame"/>
 
       <joint name="${prefix}${name}_infra2_joint" type="fixed">
-        <parent link="${prefix}${name}_link" />
-        <child link="${prefix}${name}_infra2_frame" />
+        <parent link="${prefix}${name}_link"/>
+        <child link="${prefix}${name}_infra2_frame"/>
         <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_infra2_offset} 0.0"/>
       </joint>
 
       <link name="${prefix}${name}_infra2_optical_frame"/>
 
       <joint name="${prefix}${name}_infra2_optical_joint" type="fixed">
-        <parent link="${prefix}${name}_infra2_frame" />
-        <child link="${prefix}${name}_infra2_optical_frame" />
+        <parent link="${prefix}${name}_infra2_frame"/>
+        <child link="${prefix}${name}_infra2_optical_frame"/>
         <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
       </joint>
 
-      <!-- camera color joints and links -->
+      <!-- The color frame is displaced 15 mm along positive Y from the depth reference. -->
       <link name="${prefix}${name}_color_frame"/>
 
       <joint name="${prefix}${name}_color_joint" type="fixed">
-        <parent link="${prefix}${name}_link" />
-        <child link="${prefix}${name}_color_frame" />
+        <parent link="${prefix}${name}_link"/>
+        <child link="${prefix}${name}_color_frame"/>
         <origin rpy="0.0 0.0 0.0" xyz="0 ${cam_depth_to_color_offset} 0.0"/>
       </joint>
 
       <link name="${prefix}${name}_color_optical_frame"/>
 
       <joint name="${prefix}${name}_color_optical_joint" type="fixed">
-        <parent link="${prefix}${name}_color_frame" />
-        <child link="${prefix}${name}_color_optical_frame" />
+        <parent link="${prefix}${name}_color_frame"/>
+        <child link="${prefix}${name}_color_optical_frame"/>
         <origin rpy="${-pi * 0.5} 0 ${-pi * 0.5}" xyz="0.0 0.0 0.0"/>
       </joint>
     </xacro:if>
